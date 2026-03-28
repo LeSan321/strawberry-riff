@@ -4,36 +4,46 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import AppLayout from "./components/AppLayout";
 import Home from "./pages/Home";
+import Upload from "./pages/Upload";
+import MyRiffs from "./pages/MyRiffs";
+import Friends from "./pages/Friends";
+import Playlists from "./pages/Playlists";
+import Pricing from "./pages/Pricing";
+import ProfileSetup from "./pages/ProfileSetup";
+import About from "./pages/About";
+import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <AppLayout>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/upload" component={Upload} />
+        <Route path="/my-riffs" component={MyRiffs} />
+        <Route path="/friends" component={Friends} />
+        <Route path="/playlists" component={Playlists} />
+        <Route path="/pricing" component={Pricing} />
+        <Route path="/profile-setup" component={ProfileSetup} />
+        <Route path="/about" component={About} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </AppLayout>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="light">
+        <AudioPlayerProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AudioPlayerProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
