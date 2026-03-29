@@ -39,3 +39,12 @@
 - [x] Vitest unit tests for all tRPC routers (35 tests passing)
 - [x] Loading states, empty states, error handling throughout
 - [x] Mobile responsive layout
+
+## Phase 8: Vercel Styling Integration
+- [x] Audit original Vercel app (strawberry-orpin-one.vercel.app)
+- [x] Update global CSS — blush pink background, gradient utilities
+- [x] Rebuild Home page — original copy, hero, features, testimonials, track cards, CTA
+- [x] Rebuild Pricing page — feature comparison table, tipping section, FAQ, CTA
+- [x] Rebuild About page — Our Vision, value pillars, Strawberry Jam Session characters, contact accordion
+- [x] Update AppHeader — Sign In + Get Started buttons, correct nav order
+- [x] Fix profiles.get returning null (not undefined) — resolves tRPC runtime error

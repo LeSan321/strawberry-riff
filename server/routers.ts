@@ -49,11 +49,12 @@ const authRouter = router({
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 const profilesRouter = router({
   get: publicProcedure
-    .input(z.object({ userId: z.number().optional() }))
+    .input(z.object({ userId: z.number().int().optional() }))
     .query(async ({ ctx, input }) => {
       const uid = input.userId ?? ctx.user?.id;
       if (!uid) return null;
-      return getProfileByUserId(uid);
+      const profile = await getProfileByUserId(uid);
+      return profile ?? null;
     }),
 
   upsert: protectedProcedure

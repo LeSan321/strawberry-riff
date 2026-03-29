@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -57,22 +57,23 @@
   --chart-4: oklch(0.55 0.18 260);
   --chart-5: oklch(0.50 0.16 240);
   --radius: 0.75rem;
-  --background: oklch(0.98 0.005 300);
-  --foreground: oklch(0.15 0.02 280);
+  /* Blush pink background matching original Vercel app */
+  --background: oklch(0.97 0.012 340);
+  --foreground: oklch(0.18 0.02 280);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.15 0.02 280);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.02 280);
-  --secondary: oklch(0.94 0.03 300);
+  --secondary: oklch(0.93 0.04 310);
   --secondary-foreground: oklch(0.30 0.05 280);
-  --muted: oklch(0.95 0.01 300);
-  --muted-foreground: oklch(0.55 0.03 280);
-  --accent: oklch(0.92 0.06 300);
+  --muted: oklch(0.94 0.015 330);
+  --muted-foreground: oklch(0.52 0.04 300);
+  --accent: oklch(0.91 0.06 320);
   --accent-foreground: oklch(0.30 0.08 280);
   --destructive: oklch(0.60 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.90 0.02 300);
-  --input: oklch(0.90 0.02 300);
+  --border: oklch(0.89 0.025 320);
+  --input: oklch(0.89 0.025 320);
   --ring: oklch(0.60 0.22 340);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.15 0.02 280);
@@ -126,6 +127,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+    font-weight: 700;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

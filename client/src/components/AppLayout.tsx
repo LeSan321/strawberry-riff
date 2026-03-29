@@ -41,9 +41,8 @@ const navItems = [
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/playlists", label: "Playlists", icon: ListMusic },
-  { href: "/my-riffs", label: "My Riffs", icon: Music, authRequired: true },
-  { href: "/pricing", label: "Pricing", icon: DollarSign },
   { href: "/about", label: "About", icon: Info },
+  { href: "/pricing", label: "Pricing", icon: DollarSign },
 ];
 
 function AppHeader() {
@@ -65,7 +64,7 @@ function AppHeader() {
     toast.success("Signed out successfully");
   };
 
-  const visibleItems = navItems.filter((item) => !item.authRequired || isAuthenticated);
+  const visibleItems = navItems;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm">
@@ -117,48 +116,60 @@ function AppHeader() {
           {/* Auth + Mobile Menu */}
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                    <Avatar className="h-9 w-9 border-2 border-pink-200">
-                      <AvatarImage src={avatarUrl ?? undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
-                        {displayName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/my-riffs" className="cursor-pointer">
-                      <Music className="w-4 h-4 mr-2" /> My Riffs
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile-setup" className="cursor-pointer">
-                      <User className="w-4 h-4 mr-2" /> Edit Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
-                    <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                      <Avatar className="h-9 w-9 border-2 border-pink-200">
+                        <AvatarImage src={avatarUrl ?? undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
+                          {displayName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/my-riffs" className="cursor-pointer">
+                        <Music className="w-4 h-4 mr-2" /> My Riffs
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile-setup" className="cursor-pointer">
+                        <User className="w-4 h-4 mr-2" /> Edit Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0"
-                onClick={() => (window.location.href = getLoginUrl())}
-              >
-                <LogIn className="w-4 h-4 mr-1.5" />
-                Sign In
-              </Button>
+              <div className="hidden sm:flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-pink-600"
+                  onClick={() => (window.location.href = getLoginUrl())}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  size="sm"
+                  className="rounded-full px-4 text-white border-0 font-semibold"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                  onClick={() => (window.location.href = getLoginUrl())}
+                >
+                  Get Started
+                </Button>
+              </div>
             )}
 
             {/* Mobile menu button */}
