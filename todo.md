@@ -48,3 +48,6 @@
 - [x] Rebuild About page — Our Vision, value pillars, Strawberry Jam Session characters, contact accordion
 - [x] Update AppHeader — Sign In + Get Started buttons, correct nav order
 - [x] Fix profiles.get returning null (not undefined) — resolves tRPC runtime error
+
+## Bug Fixes
+- [x] Upload page "failed to fetch" error — root cause: unauthenticated request; fixed CSS @import order; Google Fonts moved to index.html
