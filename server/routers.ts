@@ -8,8 +8,10 @@ import {
   deleteTrack,
   followUser,
   getAllUsers,
+  getFollowerCount,
   getFollowers,
   getFollowing,
+  getFollowingCount,
   getInnerCircleTracks,
   getLikedTrackIds,
   getPlaylistById,
@@ -17,8 +19,10 @@ import {
   getPlaylistsByUserId,
   getProfileByUserId,
   getPublicTracks,
+  getPublicTracksByUserId,
   getTrackById,
   getTracksByUserId,
+  getUserByDisplayName,
   getUserById,
   isFollowing,
   likeTrack,
@@ -155,10 +159,16 @@ const tracksRouter = router({
     .input(z.object({ limit: z.number().int().max(100).default(50) }))
     .query(async ({ input }) => {
       const trackList = await getPublicTracks(input.limit);
-      return trackList.map((t) => ({
-        ...t,
-        moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-      }));
+      return Promise.all(
+        trackList.map(async (t) => {
+          const profile = await getProfileByUserId(t.userId);
+          return {
+            ...t,
+            moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
+            creatorUsername: profile?.displayName ?? null,
+          };
+        })
+      );
     }),
 
   friendFeed: protectedProcedure.query(async ({ ctx }) => {
@@ -381,6 +391,42 @@ const playlistsRouter = router({
     }),
 });
 
+// ─── Creators (public profiles) ─────────────────────────────────────────────
+const creatorsRouter = router({
+  publicProfile: publicProcedure
+    .input(z.object({ username: z.string().min(1).max(100) }))
+    .query(async ({ ctx, input }) => {
+      const found = await getUserByDisplayName(input.username);
+      if (!found) throw new TRPCError({ code: "NOT_FOUND", message: "Creator not found" });
+      const { user, profile } = found;
+
+      const publicTracks = await getPublicTracksByUserId(user.id);
+      const followerCount = await getFollowerCount(user.id);
+      const followingCount = await getFollowingCount(user.id);
+
+      // If the requesting user is logged in, check if they already follow this creator
+      const viewerIsFollowing = ctx.user
+        ? await isFollowing(ctx.user.id, user.id)
+        : false;
+
+      return {
+        userId: user.id,
+        displayName: profile.displayName ?? user.name ?? "Creator",
+        bio: profile.bio ?? null,
+        avatarUrl: profile.avatarUrl ?? null,
+        followerCount,
+        followingCount,
+        trackCount: publicTracks.length,
+        isOwnProfile: ctx.user?.id === user.id,
+        viewerIsFollowing,
+        tracks: publicTracks.map((t) => ({
+          ...t,
+          moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
+        })),
+      };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -389,6 +435,7 @@ export const appRouter = router({
   tracks: tracksRouter,
   friends: friendsRouter,
   playlists: playlistsRouter,
+  creators: creatorsRouter,
 });
 
 export type AppRouter = typeof appRouter;

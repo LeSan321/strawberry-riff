@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   Friend,
@@ -266,6 +266,45 @@ export async function isFollowing(followerId: number, followingId: number): Prom
     .where(and(eq(friends.followerId, followerId), eq(friends.followingId, followingId)))
     .limit(1);
   return result.length > 0;
+}
+
+export async function getUserByDisplayName(displayName: string): Promise<{ user: User; profile: Profile } | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  // Case-insensitive match on displayName
+  const profileResult = await db
+    .select()
+    .from(profiles)
+    .where(sql`LOWER(${profiles.displayName}) = LOWER(${displayName})`)
+    .limit(1);
+  if (!profileResult[0]) return undefined;
+  const userResult = await db.select().from(users).where(eq(users.id, profileResult[0].userId)).limit(1);
+  if (!userResult[0]) return undefined;
+  return { user: userResult[0], profile: profileResult[0] };
+}
+
+export async function getPublicTracksByUserId(userId: number): Promise<Track[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(tracks)
+    .where(and(eq(tracks.userId, userId), eq(tracks.visibility, "public")))
+    .orderBy(desc(tracks.createdAt));
+}
+
+export async function getFollowerCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select().from(friends).where(eq(friends.followingId, userId));
+  return result.length;
+}
+
+export async function getFollowingCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select().from(friends).where(eq(friends.followerId, userId));
+  return result.length;
 }
 
 export async function getAllUsers(excludeId?: number): Promise<User[]> {

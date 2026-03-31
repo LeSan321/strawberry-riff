@@ -56,3 +56,11 @@
 - [x] Make Discover feed publicly browsable without login — new /discover route, search + mood filter, guest CTA
 - [x] Rebuild Easter egg concert ticket modal — trigger button on home page, animated strawberry audience
 - [x] Add rotating Strawberry Band Members section — 5 characters (Jam, Melody, Bass, Riff, Chord), auto-rotate, desktop + mobile carousel
+
+## Phase 10: Public Creator Profiles
+- [x] Add `getUserByDisplayName` DB helper (case-insensitive lookup by displayName)
+- [x] Add `creators.publicProfile` tRPC procedure (public, returns profile + public tracks + follower/following counts)
+- [x] Build CreatorProfilePage UI at /creator/:username
+- [x] Register /creator/:username route in App.tsx
+- [x] Add follow/unfollow from creator page (authenticated users only)
+- [x] Add Vitest tests for new creator procedure

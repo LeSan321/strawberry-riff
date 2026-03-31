@@ -14,6 +14,7 @@ import Pricing from "./pages/Pricing";
 import ProfileSetup from "./pages/ProfileSetup";
 import About from "./pages/About";
 import Discover from "./pages/Discover";
+import CreatorProfile from "./pages/CreatorProfile";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/pricing" component={Pricing} />
         <Route path="/profile-setup" component={ProfileSetup} />
         <Route path="/about" component={About} />
+        <Route path="/creator/:username" component={CreatorProfile} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

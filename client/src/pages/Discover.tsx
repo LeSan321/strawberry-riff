@@ -33,6 +33,7 @@ function TrackCard({ track, index }: {
     duration?: number | null;
     moodTags: string[];
     gradient?: string | null;
+    creatorUsername?: string | null;
   };
   index: number;
 }) {
@@ -99,7 +100,15 @@ function TrackCard({ track, index }: {
       {/* Info */}
       <div className="p-4">
         <p className="font-semibold text-foreground truncate">{track.title}</p>
-        <p className="text-sm text-muted-foreground truncate mb-2">{track.artist ?? "Unknown Artist"}</p>
+        {track.creatorUsername ? (
+          <Link href={`/creator/${encodeURIComponent(track.creatorUsername)}`}>
+            <p className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer">
+              {track.artist ?? track.creatorUsername ?? "Unknown Artist"}
+            </p>
+          </Link>
+        ) : (
+          <p className="text-sm text-muted-foreground truncate mb-2">{track.artist ?? "Unknown Artist"}</p>
+        )}
 
         {/* Mood tags */}
         {track.moodTags.length > 0 && (
