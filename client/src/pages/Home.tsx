@@ -6,12 +6,87 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import {
   Upload, Users, Music, Zap, BarChart2, ListMusic,
-  Sparkles, Play, Heart, Globe, Lock, UserCheck, Quote
+  Sparkles, Play, Heart, Globe, Lock, UserCheck, Quote, Ticket, ChevronLeft, ChevronRight
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import ConcertTicketEasterEgg from "@/components/ConcertTicketEasterEgg";
+
+// ─── Strawberry Band Members ─────────────────────────────────────────────────
+const BAND_MEMBERS = [
+  {
+    name: "Jam",
+    role: "The Drummer",
+    desc: "Keeping the rhythm alive and kicking since the first berry dropped.",
+    gradient: "from-violet-400 to-purple-600",
+    emoji: "🥁",
+    color: "#a855f7",
+  },
+  {
+    name: "Melody",
+    role: "The Composer",
+    desc: "Crafting beautiful harmonies that make your heart ache in the best way.",
+    gradient: "from-blue-400 to-cyan-500",
+    emoji: "🎵",
+    color: "#06b6d4",
+  },
+  {
+    name: "Bass",
+    role: "The Foundation",
+    desc: "Laying down the groove so deep you feel it in your roots.",
+    gradient: "from-teal-400 to-emerald-500",
+    emoji: "🎸",
+    color: "#10b981",
+  },
+  {
+    name: "Riff",
+    role: "The Lead",
+    desc: "The one who steps into the spotlight and makes the crowd lose their minds.",
+    gradient: "from-pink-400 to-rose-500",
+    emoji: "🎤",
+    color: "#ec4899",
+  },
+  {
+    name: "Chord",
+    role: "The Keyboardist",
+    desc: "Weaving textures and color into every track like a sonic painter.",
+    gradient: "from-amber-400 to-orange-500",
+    emoji: "🎹",
+    color: "#f97316",
+  },
+];
+
+// Strawberry SVG character
+function StrawberryAvatar({ gradient, emoji, size = 80 }: { gradient: string; emoji: string; size?: number }) {
+  return (
+    <div
+      className={`rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      <svg viewBox="0 0 60 80" width={size * 0.7} height={size * 0.7} xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="50" rx="20" ry="22" fill="#e8324a" />
+        {[[22,44],[30,40],[38,44],[20,54],[30,58],[40,54],[25,49],[35,49]].map(([cx,cy],i) => (
+          <ellipse key={i} cx={cx} cy={cy} rx="1.5" ry="2" fill="#c0182e" />
+        ))}
+        <ellipse cx="22" cy="44" rx="5" ry="7" fill="#ff6b7a" opacity="0.4" />
+        <path d="M20 30 Q15 20 25 22 Q22 28 30 28" fill="#2d8a4e" />
+        <path d="M40 30 Q45 20 35 22 Q38 28 30 28" fill="#2d8a4e" />
+        <path d="M30 28 Q28 18 30 14 Q32 18 30 28" fill="#3aab60" />
+        <circle cx="25" cy="48" r="3" fill="white" />
+        <circle cx="35" cy="48" r="3" fill="white" />
+        <circle cx="26" cy="48.5" r="1.8" fill="#1a1a2e" />
+        <circle cx="36" cy="48.5" r="1.8" fill="#1a1a2e" />
+        <circle cx="26.8" cy="47.8" r="0.6" fill="white" />
+        <circle cx="36.8" cy="47.8" r="0.6" fill="white" />
+        <path d="M24 54 Q30 59 36 54" stroke="#1a1a2e" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        <circle cx="21" cy="52" r="3" fill="#ff9eb5" opacity="0.5" />
+        <circle cx="39" cy="52" r="3" fill="#ff9eb5" opacity="0.5" />
+      </svg>
+    </div>
+  );
+}
 
 // ─── Gradient icon square ─────────────────────────────────────────────────────
 function IconBox({ gradient, children }: { gradient: string; children: React.ReactNode }) {
@@ -120,6 +195,24 @@ const PLACEHOLDER_TRACKS = [
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [easterEggOpen, setEasterEggOpen] = useState(false);
+  const [activeMember, setActiveMember] = useState(0);
+  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    autoRef.current = setInterval(() => {
+      setActiveMember(m => (m + 1) % BAND_MEMBERS.length);
+    }, 3200);
+    return () => { if (autoRef.current) clearInterval(autoRef.current); };
+  }, []);
+
+  const prevMember = () => {
+    if (autoRef.current) clearInterval(autoRef.current);
+    setActiveMember(m => (m - 1 + BAND_MEMBERS.length) % BAND_MEMBERS.length);
+  };
+  const nextMember = () => {
+    if (autoRef.current) clearInterval(autoRef.current);
+    setActiveMember(m => (m + 1) % BAND_MEMBERS.length);
+  };
 
   const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 3 });
 
@@ -370,6 +463,128 @@ export default function Home() {
           )}
         </motion.div>
       </section>
+
+      {/* ── Meet the Band ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 bg-white/50">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-2">Meet the Band</h2>
+            <p className="text-muted-foreground">The Strawberry Jam Session crew — the heart behind the riff</p>
+          </motion.div>
+
+          {/* Desktop: all members side by side */}
+          <div className="hidden md:flex items-end justify-center gap-8">
+            {BAND_MEMBERS.map((m, i) => (
+              <motion.div
+                key={m.name}
+                className="flex flex-col items-center gap-3 cursor-pointer"
+                animate={{
+                  scale: i === activeMember ? 1.15 : 0.9,
+                  opacity: i === activeMember ? 1 : 0.55,
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                onClick={() => { if (autoRef.current) clearInterval(autoRef.current); setActiveMember(i); }}
+              >
+                <motion.div
+                  animate={i === activeMember ? { y: [0, -10, 0] } : { y: 0 }}
+                  transition={i === activeMember ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : {}}
+                >
+                  <StrawberryAvatar gradient={m.gradient} emoji={m.emoji} size={i === activeMember ? 96 : 72} />
+                </motion.div>
+                <div className="text-center">
+                  <p className="font-bold text-sm" style={{ color: m.color }}>{m.name}</p>
+                  <p className="text-xs text-muted-foreground">{m.role}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Active member description */}
+          <motion.div
+            key={activeMember}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="hidden md:block mt-8 bg-white rounded-2xl px-8 py-5 shadow-sm max-w-md mx-auto"
+          >
+            <p className="text-sm text-muted-foreground italic">"{BAND_MEMBERS[activeMember].desc}"</p>
+          </motion.div>
+
+          {/* Mobile: carousel */}
+          <div className="md:hidden relative">
+            <div className="flex items-center justify-center gap-4">
+              <button onClick={prevMember} className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <motion.div
+                key={activeMember}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center gap-3"
+              >
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <StrawberryAvatar gradient={BAND_MEMBERS[activeMember].gradient} emoji={BAND_MEMBERS[activeMember].emoji} size={96} />
+                </motion.div>
+                <p className="font-bold" style={{ color: BAND_MEMBERS[activeMember].color }}>{BAND_MEMBERS[activeMember].name}</p>
+                <p className="text-sm text-muted-foreground">{BAND_MEMBERS[activeMember].role}</p>
+                <p className="text-sm text-muted-foreground italic max-w-xs">"{BAND_MEMBERS[activeMember].desc}"</p>
+              </motion.div>
+              <button onClick={nextMember} className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+            {/* Dots */}
+            <div className="flex justify-center gap-2 mt-4">
+              {BAND_MEMBERS.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { if (autoRef.current) clearInterval(autoRef.current); setActiveMember(i); }}
+                  className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-pink-500 w-4" : "bg-pink-200"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Dot indicators (desktop) */}
+          <div className="hidden md:flex justify-center gap-2 mt-6">
+            {BAND_MEMBERS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { if (autoRef.current) clearInterval(autoRef.current); setActiveMember(i); }}
+                className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-pink-500 w-4" : "bg-pink-200"}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Concert Ticket Easter Egg trigger ─────────────────────────────── */}
+      <div className="flex justify-center py-8">
+        <motion.button
+          whileHover={{ scale: 1.05, rotate: 1 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setEasterEggOpen(true)}
+          className="group relative flex items-center gap-3 px-6 py-3 rounded-2xl shadow-md cursor-pointer select-none"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #db2777 100%)" }}
+          title="Psst... click me 🍓"
+        >
+          <Ticket className="w-5 h-5 text-yellow-300" />
+          <span className="text-white font-semibold text-sm">Special Event</span>
+          <motion.span
+            className="text-yellow-300 text-lg"
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            🍓
+          </motion.span>
+          {/* Subtle hint tooltip */}
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white px-2 py-1 rounded-lg shadow-sm">
+            Psst... something special inside
+          </span>
+        </motion.button>
+      </div>
 
       {/* ── Easter Egg ────────────────────────────────────────────────────── */}
       <ConcertTicketEasterEgg open={easterEggOpen} onClose={() => setEasterEggOpen(false)} />

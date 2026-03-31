@@ -21,6 +21,7 @@ import {
   Volume2,
   X,
   Menu,
+  Compass,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -37,7 +38,8 @@ import { Slider } from "./ui/slider";
 import { toast } from "sonner";
 
 const navItems = [
-  { href: "/", label: "Discover", icon: Home },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/discover", label: "Discover", icon: Compass },
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/playlists", label: "Playlists", icon: ListMusic },

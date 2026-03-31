@@ -51,3 +51,8 @@
 
 ## Bug Fixes
 - [x] Upload page "failed to fetch" error — root cause: unauthenticated request; fixed CSS @import order; Google Fonts moved to index.html
+
+## Phase 9: Public Discovery & Brand Characters
+- [x] Make Discover feed publicly browsable without login — new /discover route, search + mood filter, guest CTA
+- [x] Rebuild Easter egg concert ticket modal — trigger button on home page, animated strawberry audience
+- [x] Add rotating Strawberry Band Members section — 5 characters (Jam, Melody, Bass, Riff, Chord), auto-rotate, desktop + mobile carousel

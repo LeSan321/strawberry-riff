@@ -13,6 +13,7 @@ import Playlists from "./pages/Playlists";
 import Pricing from "./pages/Pricing";
 import ProfileSetup from "./pages/ProfileSetup";
 import About from "./pages/About";
+import Discover from "./pages/Discover";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/discover" component={Discover} />
         <Route path="/upload" component={Upload} />
         <Route path="/my-riffs" component={MyRiffs} />
         <Route path="/friends" component={Friends} />
