@@ -88,3 +88,7 @@
 - [x] Add animated share button to track cards in My Riffs page (public tracks only)
 - [x] On-brand toast: "Link copied — drop it somewhere good 🍓"
 - [x] Move Premium subscription card to bottom of Profile Setup page
+
+## Bug Fix: Stripe Checkout Popup Blocker
+- [x] Replace `window.open(url, "_blank")` with `window.location.href = url` in Pricing page checkout mutation (popup blockers were silently blocking the Stripe redirect for some users)
+- [x] Same fix applied to the Customer Portal mutation in ProfileSetup page

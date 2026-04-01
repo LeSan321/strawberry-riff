@@ -47,7 +47,7 @@ export default function ProfileSetup() {
   const stripeStatusQuery = trpc.stripe.status.useQuery(undefined, { enabled: !!user });
   const portalMutation = trpc.stripe.createPortalSession.useMutation({
     onSuccess: ({ url }) => {
-      if (url) window.open(url, "_blank");
+      if (url) window.location.href = url;
     },
     onError: (e) => toast.error(e.message),
   });

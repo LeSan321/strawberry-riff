@@ -94,7 +94,7 @@ export default function Pricing() {
     onSuccess: ({ url }) => {
       if (url) {
         toast.info("Redirecting to secure checkout…");
-        window.open(url, "_blank");
+        window.location.href = url;
       }
     },
     onError: (err) => {
