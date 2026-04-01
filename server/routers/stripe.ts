@@ -5,7 +5,8 @@ import { getUserById, getUserByStripeCustomerId, setUserPremium } from "../db";
 
 // ─── Stripe client ────────────────────────────────────────────────────────────
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
-const PRICE_ID = "price_1THDluPtUHhlXfc6LpkndC3K";
+// Test mode price ID (switch to live price ID when going live)
+const PRICE_ID = process.env.STRIPE_PRICE_ID ?? "price_1THEWwPolbXM9WcDNias3U48";
 
 function getStripe() {
   if (!STRIPE_SECRET_KEY) {
