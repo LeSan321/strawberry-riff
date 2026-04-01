@@ -13,6 +13,7 @@ import {
   UserCheck,
   ArrowLeft,
   Share2,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,7 @@ function TrackCard({
   const { isAuthenticated } = useAuth();
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const [liked, setLiked] = useState(false);
+  const [shareAnimating, setShareAnimating] = useState(false);
 
   const gradient =
     track.gradient ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length];
@@ -73,6 +75,19 @@ function TrackCard({
         audioUrl: track.audioUrl,
         gradient,
       });
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/track/${track.id}`;
+    setShareAnimating(true);
+    setTimeout(() => setShareAnimating(false), 600);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied — drop it somewhere good 🍓", { duration: 2500 });
+    } catch {
+      toast.info(`Share: ${url}`);
     }
   };
 
@@ -156,9 +171,20 @@ function TrackCard({
               <span>{track.likes}</span>
             </a>
           )}
-          {track.duration && (
-            <span className="text-xs">{fmt(track.duration)}</span>
-          )}
+          <div className="flex items-center gap-2">
+            {track.duration && (
+              <span className="text-xs">{fmt(track.duration)}</span>
+            )}
+            <motion.button
+              onClick={handleShare}
+              animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+              transition={{ duration: 0.4 }}
+              className={`flex items-center gap-1 transition-colors ${shareAnimating ? "text-pink-500" : "hover:text-pink-500"}`}
+              title="Copy track link"
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -323,8 +349,7 @@ export default function CreatorProfile() {
           <div
             className="h-32 w-full"
             style={{
-              background:
-                "linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #fce7f3 100%)",
+              background: "linear-gradient(135deg, #fce7f3 0%, #ede9fe 50%, #dbeafe 100%)",
             }}
           />
 

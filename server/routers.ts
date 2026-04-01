@@ -21,6 +21,7 @@ import {
   getPublicTracks,
   getPublicTracksByUserId,
   getTrackById,
+  getTrackWithCreator,
   getTracksByUserId,
   getUserByDisplayName,
   getUserById,
@@ -155,6 +156,20 @@ const tracksRouter = router({
       moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
     }));
   }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.number().int() }))
+    .query(async ({ input }) => {
+      const result = await getTrackWithCreator(input.id);
+      if (!result) return null;
+      return {
+        ...result.track,
+        moodTags: result.track.moodTags ? (JSON.parse(result.track.moodTags) as string[]) : [],
+        creatorUsername: result.creatorUsername,
+        creatorAvatarUrl: result.creatorAvatarUrl,
+        creatorBio: result.creatorBio,
+      };
+    }),
 
   publicFeed: publicProcedure
     .input(z.object({ limit: z.number().int().max(100).default(50) }))

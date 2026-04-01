@@ -421,3 +421,31 @@ export async function getUserByStripeCustomerId(customerId: string): Promise<Use
     .limit(1);
   return result[0];
 }
+
+export async function getTrackWithCreator(trackId: number): Promise<{
+  track: Track;
+  creatorUsername: string | null;
+  creatorAvatarUrl: string | null;
+  creatorBio: string | null;
+} | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select({
+      track: tracks,
+      creatorUsername: profiles.displayName,
+      creatorAvatarUrl: profiles.avatarUrl,
+      creatorBio: profiles.bio,
+    })
+    .from(tracks)
+    .leftJoin(profiles, eq(tracks.userId, profiles.userId))
+    .where(and(eq(tracks.id, trackId), eq(tracks.visibility, "public")))
+    .limit(1);
+  if (!result[0]) return undefined;
+  return {
+    track: result[0].track,
+    creatorUsername: result[0].creatorUsername ?? null,
+    creatorAvatarUrl: result[0].creatorAvatarUrl ?? null,
+    creatorBio: result[0].creatorBio ?? null,
+  };
+}

@@ -19,6 +19,7 @@ import {
   Loader2,
   Check,
   X,
+  Link as LinkIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -208,6 +209,20 @@ function TrackCard({ track }: { track: Track }) {
   const utils = trpc.useUtils();
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [shareAnimating, setShareAnimating] = useState(false);
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/track/${track.id}`;
+    setShareAnimating(true);
+    setTimeout(() => setShareAnimating(false), 600);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied — drop it somewhere good 🍓", { duration: 2500 });
+    } catch {
+      toast.info(`Share: ${url}`);
+    }
+  };
 
   const isCurrentTrack = currentTrack?.id === track.id;
 
@@ -285,6 +300,17 @@ function TrackCard({ track }: { track: Track }) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    {track.visibility === "public" && (
+                      <motion.button
+                        onClick={handleShare}
+                        animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+                        transition={{ duration: 0.4 }}
+                        className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
+                        title="Copy track link"
+                      >
+                        <LinkIcon className="w-4 h-4" />
+                      </motion.button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"

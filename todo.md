@@ -78,3 +78,13 @@
 - [x] Add `createPortalSession` tRPC procedure to stripe router (Stripe Customer Portal)
 - [x] Add Premium status + "Manage Subscription" section to Profile page
 - [x] Add Vitest tests for the new procedure
+
+## Phase 13: Track Share Links & Share UX
+- [x] Add `tracks.getById` tRPC procedure (public, returns single track + creator info)
+- [x] Build `/track/:id` individual track page (player, title, artist, creator profile link)
+- [x] Register `/track/:id` route in App.tsx
+- [x] Add animated share button to track cards in Discover page
+- [x] Add animated share button to track cards in CreatorProfile page
+- [x] Add animated share button to track cards in My Riffs page (public tracks only)
+- [x] On-brand toast: "Link copied — drop it somewhere good 🍓"
+- [x] Move Premium subscription card to bottom of Profile Setup page

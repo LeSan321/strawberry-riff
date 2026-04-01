@@ -157,50 +157,6 @@ export default function ProfileSetup() {
           </p>
         </div>
 
-        {/* ── Premium / Subscription Card ── */}
-        {stripeStatusQuery.data?.isPremium && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-6"
-          >
-            <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">Strawberry Riff Premium</p>
-                      <p className="text-xs text-muted-foreground">
-                        {stripeStatusQuery.data.premiumSince
-                          ? `Active since ${new Date(stripeStatusQuery.data.premiumSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
-                          : "Active"}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50 gap-2"
-                    onClick={() => portalMutation.mutate()}
-                    disabled={portalMutation.isPending}
-                  >
-                    {portalMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ExternalLink className="w-4 h-4" />
-                    )}
-                    Manage Subscription
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle>Creator Profile</CardTitle>
@@ -332,6 +288,50 @@ export default function ProfileSetup() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* ── Premium / Subscription Card ── */}
+        {stripeStatusQuery.data?.isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mt-6"
+          >
+            <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">Strawberry Riff Premium</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stripeStatusQuery.data.premiumSince
+                          ? `Active since ${new Date(stripeStatusQuery.data.premiumSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
+                          : "Active"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50 gap-2"
+                    onClick={() => portalMutation.mutate()}
+                    disabled={portalMutation.isPending}
+                  >
+                    {portalMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-4 h-4" />
+                    )}
+                    Manage Subscription
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

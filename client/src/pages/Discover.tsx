@@ -3,12 +3,13 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import { Play, Pause, Heart, Music, Search, SlidersHorizontal } from "lucide-react";
+import { Play, Pause, Heart, Music, Search, SlidersHorizontal, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { toast } from "sonner";
 
 const CARD_GRADIENTS = [
   "from-purple-400 via-pink-400 to-pink-500",
@@ -42,6 +43,7 @@ function TrackCard({ track, index }: {
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const [liked, setLiked] = useState(false);
   const [likeCount] = useState(Math.floor(Math.random() * 200) + 20);
+  const [shareAnimating, setShareAnimating] = useState(false);
 
   const gradient = track.gradient ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 
@@ -56,6 +58,19 @@ function TrackCard({ track, index }: {
       pause();
     } else {
       play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl });
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/track/${track.id}`;
+    setShareAnimating(true);
+    setTimeout(() => setShareAnimating(false), 600);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied — drop it somewhere good 🍓", { duration: 2500 });
+    } catch {
+      toast.info(`Share: ${url}`);
     }
   };
 
@@ -137,9 +152,20 @@ function TrackCard({ track, index }: {
               <span>{likeCount}</span>
             </a>
           )}
-          {track.duration && (
-            <span className="text-xs">{fmt(track.duration)}</span>
-          )}
+          <div className="flex items-center gap-2">
+            {track.duration && (
+              <span className="text-xs">{fmt(track.duration)}</span>
+            )}
+            <motion.button
+              onClick={handleShare}
+              animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+              transition={{ duration: 0.4 }}
+              className={`flex items-center gap-1 transition-colors ${shareAnimating ? "text-pink-500" : "hover:text-pink-500"}`}
+              title="Copy track link"
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>
