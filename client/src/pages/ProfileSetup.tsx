@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
-import { User, Camera, CheckCircle2, Loader2 } from "lucide-react";
+import { User, Camera, CheckCircle2, Loader2, Sparkles, ExternalLink, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,26 @@ export default function ProfileSetup() {
       setForm((p) => ({ ...p, displayName: user.name ?? "" }));
     }
   }, [profile, user]);
+
+  // ── Stripe subscription ──────────────────────────────────────────────────
+  const stripeStatusQuery = trpc.stripe.status.useQuery(undefined, { enabled: !!user });
+  const portalMutation = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: ({ url }) => {
+      if (url) window.open(url, "_blank");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const profileUrl = form.displayName
+    ? `${window.location.origin}/creator/${encodeURIComponent(form.displayName)}`
+    : null;
+
+  const copyProfileLink = () => {
+    if (profileUrl) {
+      navigator.clipboard.writeText(profileUrl);
+      toast.success("Profile link copied!");
+    }
+  };
 
   const uploadAvatarMutation = trpc.profiles.uploadAvatar.useMutation();
   const upsertMutation = trpc.profiles.upsert.useMutation({
@@ -137,6 +157,50 @@ export default function ProfileSetup() {
           </p>
         </div>
 
+        {/* ── Premium / Subscription Card ── */}
+        {stripeStatusQuery.data?.isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-6"
+          >
+            <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">Strawberry Riff Premium</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stripeStatusQuery.data.premiumSince
+                          ? `Active since ${new Date(stripeStatusQuery.data.premiumSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
+                          : "Active"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50 gap-2"
+                    onClick={() => portalMutation.mutate()}
+                    disabled={portalMutation.isPending}
+                  >
+                    {portalMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-4 h-4" />
+                    )}
+                    Manage Subscription
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Creator Profile</CardTitle>
@@ -225,6 +289,25 @@ export default function ProfileSetup() {
                 </span>
               </div>
             </div>
+
+            {/* Share profile link */}
+            {profileUrl && (
+              <div className="p-4 bg-pink-50 rounded-xl">
+                <p className="text-xs font-semibold text-pink-600 uppercase tracking-wide mb-2">Your Public Profile Link</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-700 truncate flex-1">{profileUrl}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-shrink-0 text-pink-500 hover:text-pink-700 hover:bg-pink-100 gap-1"
+                    onClick={copyProfileLink}
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Save */}
             <Button

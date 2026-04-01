@@ -484,9 +484,14 @@ vi.mock("stripe", () => {
   });
   const mockCustomerCreate = vi.fn().mockResolvedValue({ id: "cus_test123" });
 
+  const mockPortalCreate = vi.fn().mockResolvedValue({
+    url: "https://billing.stripe.com/session/test_portal",
+  });
+
   const MockStripe = vi.fn().mockImplementation(() => ({
     checkout: { sessions: { create: mockCheckoutCreate } },
     customers: { create: mockCustomerCreate },
+    billingPortal: { sessions: { create: mockPortalCreate } },
   }));
 
   return { default: MockStripe };
@@ -552,5 +557,33 @@ describe("stripe", () => {
   it("createCheckoutSession throws UNAUTHORIZED for anonymous users", async () => {
     const caller = appRouter.createCaller(makeAnonCtx());
     await expect(caller.stripe.createCheckoutSession()).rejects.toThrow();
+  });
+});
+
+describe("stripe.createPortalSession", () => {
+  it("returns a portal URL for a premium user with a stripeCustomerId", async () => {
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 1,
+      isPremium: true,
+      stripeCustomerId: "cus_test123",
+    } as any);
+    const caller = appRouter.createCaller(makeAuthCtx());
+    const result = await caller.stripe.createPortalSession();
+    expect(result.url).toContain("billing.stripe.com");
+  });
+
+  it("throws BAD_REQUEST when user has no stripeCustomerId", async () => {
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 1,
+      isPremium: false,
+      stripeCustomerId: null,
+    } as any);
+    const caller = appRouter.createCaller(makeAuthCtx());
+    await expect(caller.stripe.createPortalSession()).rejects.toThrow("No active subscription found.");
+  });
+
+  it("throws UNAUTHORIZED for anonymous users", async () => {
+    const caller = appRouter.createCaller(makeAnonCtx());
+    await expect(caller.stripe.createPortalSession()).rejects.toThrow();
   });
 });

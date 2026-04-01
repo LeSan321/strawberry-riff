@@ -73,3 +73,8 @@
 - [x] Update Pricing page with live Upgrade button wired to Stripe checkout
 - [x] Create `/premium/success` page for post-checkout landing
 - [x] Add Vitest tests for Stripe procedures (44 total tests passing)
+
+## Phase 12: Manage Subscription
+- [x] Add `createPortalSession` tRPC procedure to stripe router (Stripe Customer Portal)
+- [x] Add Premium status + "Manage Subscription" section to Profile page
+- [x] Add Vitest tests for the new procedure

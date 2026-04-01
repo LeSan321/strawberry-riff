@@ -57,6 +57,28 @@ export const stripeRouter = router({
     return { url: session.url };
   }),
 
+  /** Create a Stripe Customer Portal session so the user can manage their subscription */
+  createPortalSession: protectedProcedure.mutation(async ({ ctx }) => {
+    const stripe = getStripe();
+    const user = await getUserById(ctx.user.id);
+
+    if (!user?.stripeCustomerId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No active subscription found.",
+      });
+    }
+
+    const origin = (ctx.req.headers.origin as string | undefined) ?? "https://strawberryriff.com";
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${origin}/profile-setup`,
+    });
+
+    return { url: session.url };
+  }),
+
   /** Return the current user's premium status */
   status: protectedProcedure.query(async ({ ctx }) => {
     const user = await getUserById(ctx.user.id);
