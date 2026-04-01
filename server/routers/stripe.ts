@@ -4,18 +4,18 @@ import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getUserById, getUserByStripeCustomerId, setUserPremium } from "../db";
 
 // ─── Stripe client ────────────────────────────────────────────────────────────
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
 // Live mode price ID — also readable from STRIPE_PRICE_ID env var
 const PRICE_ID = process.env.STRIPE_PRICE_ID ?? "price_1THDluPtUHhlXfc6LpkndC3K";
 
 function getStripe() {
-  if (!STRIPE_SECRET_KEY) {
+  const secretKey = process.env.STRIPE_SECRET_KEY ?? "";
+  if (!secretKey) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "Stripe is not configured. Please add STRIPE_SECRET_KEY.",
     });
   }
-  return new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2026-03-25.dahlia" });
+  return new Stripe(secretKey, { apiVersion: "2026-03-25.dahlia" });
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -96,12 +96,13 @@ export async function handleStripeWebhook(
 ): Promise<{ received: boolean }> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 
-  if (!STRIPE_SECRET_KEY) {
+  const secretKey = process.env.STRIPE_SECRET_KEY ?? "";
+  if (!secretKey) {
     console.warn("[Stripe Webhook] STRIPE_SECRET_KEY not set — skipping");
     return { received: false };
   }
 
-  const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2026-03-25.dahlia" });
+  const stripe = new Stripe(secretKey, { apiVersion: "2026-03-25.dahlia" });
 
   let event: Stripe.Event;
   try {
