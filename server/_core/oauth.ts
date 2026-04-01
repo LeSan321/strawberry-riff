@@ -2,6 +2,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
+import { notifyOwner } from "./notification";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -28,13 +29,24 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
-      await db.upsertUser({
+      const { isNew } = await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
         email: userInfo.email ?? null,
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
       });
+
+      // Fire a welcome notification to the owner when a brand-new user joins
+      if (isNew) {
+        const displayName = userInfo.name || "Someone";
+        const email = userInfo.email ? ` (${userInfo.email})` : "";
+        notifyOwner({
+          title: "🍓 New Strawberry Riff member!",
+          content: `${displayName}${email} just joined the community. Say hi!`,
+        }).catch((err) => console.warn("[OAuth] Welcome notification failed:", err));
+        console.log(`[OAuth] New user signed up: ${displayName}${email}`);
+      }
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",

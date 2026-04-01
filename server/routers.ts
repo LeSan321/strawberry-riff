@@ -178,10 +178,12 @@ const tracksRouter = router({
       return Promise.all(
         trackList.map(async (t) => {
           const profile = await getProfileByUserId(t.userId);
+          const creator = await getUserById(t.userId);
           return {
             ...t,
             moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
             creatorUsername: profile?.displayName ?? null,
+            creatorIsPremium: creator?.isPremium ?? false,
           };
         })
       );
@@ -430,6 +432,7 @@ const creatorsRouter = router({
         displayName: profile.displayName ?? user.name ?? "Creator",
         bio: profile.bio ?? null,
         avatarUrl: profile.avatarUrl ?? null,
+        isPremium: user.isPremium ?? false,
         followerCount,
         followingCount,
         trackCount: publicTracks.length,

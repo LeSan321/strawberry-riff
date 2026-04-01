@@ -430,8 +430,11 @@ export default function CreatorProfile() {
 
             {/* Name + bio */}
             <div className="mt-4">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 {creator.displayName}
+                {creator.isPremium && (
+                  <span title="Premium member" className="text-xl leading-none">🍓</span>
+                )}
               </h1>
               {creator.bio && (
                 <p className="text-muted-foreground mt-1.5 max-w-xl leading-relaxed">

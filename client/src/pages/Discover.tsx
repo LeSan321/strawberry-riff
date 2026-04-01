@@ -35,6 +35,7 @@ function TrackCard({ track, index }: {
     moodTags: string[];
     gradient?: string | null;
     creatorUsername?: string | null;
+    creatorIsPremium?: boolean;
   };
   index: number;
 }) {
@@ -117,8 +118,11 @@ function TrackCard({ track, index }: {
         <p className="font-semibold text-foreground truncate">{track.title}</p>
         {track.creatorUsername ? (
           <Link href={`/creator/${encodeURIComponent(track.creatorUsername)}`}>
-            <p className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer">
-              {track.artist ?? track.creatorUsername ?? "Unknown Artist"}
+            <p className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer flex items-center gap-1">
+              <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>
+              {track.creatorIsPremium && (
+                <span title="Premium member" className="flex-shrink-0 text-xs">🍓</span>
+              )}
             </p>
           </Link>
         ) : (

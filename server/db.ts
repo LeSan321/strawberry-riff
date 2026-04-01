@@ -36,10 +36,14 @@ export async function getDb() {
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
-export async function upsertUser(user: InsertUser): Promise<void> {
+export async function upsertUser(user: InsertUser): Promise<{ isNew: boolean }> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) return;
+  if (!db) return { isNew: false };
+
+  // Check if user already exists before upserting
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.openId, user.openId)).limit(1);
+  const isNew = existing.length === 0;
 
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
@@ -69,6 +73,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
 
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  return { isNew };
 }
 
 export async function getUserByOpenId(openId: string): Promise<User | undefined> {

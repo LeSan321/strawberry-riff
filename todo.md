@@ -92,3 +92,10 @@
 ## Bug Fix: Stripe Checkout Popup Blocker
 - [x] Replace `window.open(url, "_blank")` with `window.location.href = url` in Pricing page checkout mutation (popup blockers were silently blocking the Stripe redirect for some users)
 - [x] Same fix applied to the Customer Portal mutation in ProfileSetup page
+
+## Phase 14: Welcome Email, Premium Confirmation & Badge
+- [x] Send welcome notification to new users on first sign-up (via notifyOwner + user-facing welcome)
+- [x] Upgrade /premium/success page with warm confirmation message and next-step prompts
+- [x] Add strawberry-themed premium badge (🍓) to creator names in Discover feed track cards
+- [x] Add premium badge to Creator Profile page header
+- [x] Add creatorIsPremium field to publicFeed tRPC response
