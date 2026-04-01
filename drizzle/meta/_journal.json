@@ -15,6 +15,13 @@
       "when": 1774663927825,
       "tag": "0001_shocking_blob",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775008206605,
+      "tag": "0002_real_celestials",
+      "breakpoints": true
     }
   ]
 }

@@ -34,6 +34,7 @@ import {
   upsertProfile,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
+import { stripeRouter } from "./routers/stripe";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -436,6 +437,7 @@ export const appRouter = router({
   friends: friendsRouter,
   playlists: playlistsRouter,
   creators: creatorsRouter,
+  stripe: stripeRouter,
 });
 
 export type AppRouter = typeof appRouter;

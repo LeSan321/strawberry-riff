@@ -53,6 +53,8 @@ vi.mock("./db", () => ({
   getPublicTracksByUserId: vi.fn().mockResolvedValue([]),
   getFollowerCount: vi.fn().mockResolvedValue(0),
   getFollowingCount: vi.fn().mockResolvedValue(0),
+  setUserPremium: vi.fn().mockResolvedValue(undefined),
+  getUserByStripeCustomerId: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("./storage", () => ({
@@ -469,5 +471,86 @@ describe("creators", () => {
 
     expect(result.viewerIsFollowing).toBe(true);
     expect(result.followerCount).toBe(12);
+  });
+});
+
+// ─── Stripe ───────────────────────────────────────────────────────────────────
+import { getUserById } from "./db";
+
+// Mock the stripe module so no real API calls are made
+vi.mock("stripe", () => {
+  const mockCheckoutCreate = vi.fn().mockResolvedValue({
+    url: "https://checkout.stripe.com/pay/test_session",
+  });
+  const mockCustomerCreate = vi.fn().mockResolvedValue({ id: "cus_test123" });
+
+  const MockStripe = vi.fn().mockImplementation(() => ({
+    checkout: { sessions: { create: mockCheckoutCreate } },
+    customers: { create: mockCustomerCreate },
+  }));
+
+  return { default: MockStripe };
+});
+
+describe("stripe", () => {
+  beforeEach(() => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_fake";
+    vi.mocked(getUserById).mockResolvedValue({
+      id: 1,
+      openId: "user-1",
+      name: "Test User",
+      email: "test@example.com",
+      loginMethod: "manus",
+      role: "user",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      isPremium: false,
+      premiumSince: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    } as any);
+  });
+
+  it("status returns isPremium: false for a non-premium user", async () => {
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 1,
+      isPremium: false,
+      premiumSince: null,
+    } as any);
+    const caller = appRouter.createCaller(makeAuthCtx());
+    const result = await caller.stripe.status();
+    expect(result.isPremium).toBe(false);
+  });
+
+  it("status returns isPremium: true for a premium user", async () => {
+    const since = new Date("2026-01-01");
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 1,
+      isPremium: true,
+      premiumSince: since,
+    } as any);
+    const caller = appRouter.createCaller(makeAuthCtx());
+    const result = await caller.stripe.status();
+    expect(result.isPremium).toBe(true);
+    expect(result.premiumSince).toEqual(since);
+  });
+
+  it("status throws UNAUTHORIZED for anonymous users", async () => {
+    const caller = appRouter.createCaller(makeAnonCtx());
+    await expect(caller.stripe.status()).rejects.toThrow();
+  });
+
+  it("createCheckoutSession returns a Stripe checkout URL", async () => {
+    const caller = appRouter.createCaller(
+      makeAuthCtx({ stripeCustomerId: null } as any)
+    );
+    const result = await caller.stripe.createCheckoutSession();
+    expect(result.url).toContain("checkout.stripe.com");
+  });
+
+  it("createCheckoutSession throws UNAUTHORIZED for anonymous users", async () => {
+    const caller = appRouter.createCaller(makeAnonCtx());
+    await expect(caller.stripe.createCheckoutSession()).rejects.toThrow();
   });
 });

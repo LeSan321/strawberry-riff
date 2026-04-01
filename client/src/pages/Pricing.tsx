@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Music, Zap, Users, ListMusic, User, BarChart2, Download, Star, Heart, Shield,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, CheckCircle2, Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const FREE_FEATURES = [
   { icon: Music, label: "Uploads", value: "5/month" },
@@ -47,6 +49,10 @@ const FAQS = [
     q: "Is my music mine?",
     a: "Always. You retain full ownership of everything you upload. Strawberry Riff is just the stage — the music is yours, forever.",
   },
+  {
+    q: "What payment methods do you accept?",
+    a: "We accept all major credit and debit cards (Visa, Mastercard, Amex), as well as Apple Pay and Google Pay via Stripe's secure checkout.",
+  },
 ];
 
 function FaqItem({ q, a }: { q: string; a: string }) {
@@ -75,6 +81,40 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function Pricing() {
   const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+
+  // Fetch premium status for logged-in users
+  const { data: stripeStatus } = trpc.stripe.status.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+
+  const isPremium = stripeStatus?.isPremium ?? false;
+
+  const checkoutMutation = trpc.stripe.createCheckoutSession.useMutation({
+    onSuccess: ({ url }) => {
+      if (url) {
+        toast.info("Redirecting to secure checkout…");
+        window.open(url, "_blank");
+      }
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Could not start checkout. Please try again.");
+    },
+  });
+
+  const handleUpgrade = () => {
+    if (!isAuthenticated) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    if (isPremium) {
+      toast.info("You're already a Premium member! 🍓");
+      return;
+    }
+    checkoutMutation.mutate();
+  };
+
+  const isLoading = checkoutMutation.isPending;
 
   return (
     <div className="min-h-screen py-16 px-4">
@@ -98,33 +138,53 @@ export default function Pricing() {
         <p className="text-muted-foreground max-w-lg mx-auto">
           Strawberry Riff is free to try, with premium features when you're ready for more room to grow.
         </p>
-        <div className="flex gap-3 justify-center mt-6 flex-wrap">
-          {isAuthenticated ? (
-            <Link href="/upload">
-              <Button
-                className="rounded-full px-6 text-white border-0"
-                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-              >
-                Start Free
-              </Button>
-            </Link>
-          ) : (
-            <a href={getLoginUrl()}>
-              <Button
-                className="rounded-full px-6 text-white border-0"
-                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-              >
-                Start Free
-              </Button>
-            </a>
-          )}
-          <Button
-            variant="outline"
-            className="rounded-full px-6 border-pink-300 text-pink-600 hover:bg-pink-50"
+
+        {isPremium && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-full px-5 py-2.5 text-sm font-medium text-pink-700"
           >
-            Upgrade to Premium
-          </Button>
-        </div>
+            <CheckCircle2 className="w-4 h-4 text-pink-500" />
+            You're a Premium member — thank you for supporting Strawberry Riff! 🍓
+          </motion.div>
+        )}
+
+        {!isPremium && (
+          <div className="flex gap-3 justify-center mt-6 flex-wrap">
+            {isAuthenticated ? (
+              <Link href="/upload">
+                <Button
+                  className="rounded-full px-6 text-white border-0"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                >
+                  Start Free
+                </Button>
+              </Link>
+            ) : (
+              <a href={getLoginUrl()}>
+                <Button
+                  className="rounded-full px-6 text-white border-0"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                >
+                  Start Free
+                </Button>
+              </a>
+            )}
+            <Button
+              variant="outline"
+              className="rounded-full px-6 border-pink-300 text-pink-600 hover:bg-pink-50"
+              onClick={handleUpgrade}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening Checkout…</>
+              ) : (
+                "Upgrade to Premium"
+              )}
+            </Button>
+          </div>
+        )}
       </motion.div>
 
       {/* Pricing Cards */}
@@ -138,9 +198,7 @@ export default function Pricing() {
         >
           <h2 className="text-xl font-bold text-center mb-1">Free Tier</h2>
           <div className="text-center mb-1">
-            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>
-              $0
-            </span>
+            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>$0</span>
           </div>
           <p className="text-center text-sm text-muted-foreground mb-5">
             Perfect for getting started
@@ -150,7 +208,7 @@ export default function Pricing() {
             className="w-full rounded-full border-dashed border-pink-300 text-pink-600 hover:bg-pink-50 mb-6"
             onClick={() => !isAuthenticated && (window.location.href = getLoginUrl())}
           >
-            Get Started Free
+            {isAuthenticated ? "Your Current Plan" : "Get Started Free"}
           </Button>
           <div className="space-y-3">
             {FREE_FEATURES.map(({ icon: Icon, label, value }) => (
@@ -176,24 +234,29 @@ export default function Pricing() {
             className="absolute -top-3 right-6 text-white border-0"
             style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
           >
-            Popular
+            {isPremium ? "Your Plan ✓" : "Popular"}
           </Badge>
           <h2 className="text-xl font-bold text-center mb-1">Premium Tier</h2>
           <div className="text-center mb-1">
-            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>
-              $5
-            </span>
+            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>$4.99</span>
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
           <p className="text-center text-sm text-muted-foreground mb-5">
             For creators ready to grow
           </p>
           <button
-            className="w-full rounded-full py-2 text-white font-semibold mb-6 text-sm"
+            className="w-full rounded-full py-2 text-white font-semibold mb-6 text-sm disabled:opacity-60 flex items-center justify-center gap-2"
             style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-            onClick={() => !isAuthenticated && (window.location.href = getLoginUrl())}
+            onClick={handleUpgrade}
+            disabled={isLoading || isPremium}
           >
-            Upgrade to Premium
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Opening Checkout…</>
+            ) : isPremium ? (
+              <><CheckCircle2 className="w-4 h-4" /> Active — Thank You!</>
+            ) : (
+              "Upgrade to Premium"
+            )}
           </button>
           <div className="space-y-3">
             {PRO_FEATURES.map(({ icon: Icon, label, value }) => (
@@ -234,6 +297,7 @@ export default function Pricing() {
           <Button
             variant="outline"
             className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50"
+            onClick={() => toast.info("Tipping feature coming soon!")}
           >
             Learn More About Tipping
           </Button>

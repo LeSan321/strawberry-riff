@@ -64,3 +64,12 @@
 - [x] Register /creator/:username route in App.tsx
 - [x] Add follow/unfollow from creator page (authenticated users only)
 - [x] Add Vitest tests for new creator procedure
+
+## Phase 11: Stripe Subscription Integration
+- [x] Add `stripeCustomerId`, `stripeSubscriptionId`, `isPremium`, `premiumSince` fields to users table
+- [x] Add `setUserPremium` and `getUserByStripeCustomerId` DB helpers
+- [x] Create `server/routers/stripe.ts` with `createCheckoutSession` and `status` procedures
+- [x] Register Stripe webhook endpoint at `/api/stripe/webhook` (raw body, before json middleware)
+- [x] Update Pricing page with live Upgrade button wired to Stripe checkout
+- [x] Create `/premium/success` page for post-checkout landing
+- [x] Add Vitest tests for Stripe procedures (44 total tests passing)

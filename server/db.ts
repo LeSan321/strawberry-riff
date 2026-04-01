@@ -387,3 +387,37 @@ export async function getPlaylistTracks(playlistId: number): Promise<Track[]> {
   const trackIds = pts.map((pt) => pt.trackId);
   return db.select().from(tracks).where(inArray(tracks.id, trackIds));
 }
+
+// ─── Stripe / Premium ─────────────────────────────────────────────────────────
+export async function setUserPremium(
+  userId: number,
+  data: {
+    isPremium: boolean;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    premiumSince?: Date | null;
+  }
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(users)
+    .set({
+      isPremium: data.isPremium,
+      ...(data.stripeCustomerId !== undefined && { stripeCustomerId: data.stripeCustomerId }),
+      ...(data.stripeSubscriptionId !== undefined && { stripeSubscriptionId: data.stripeSubscriptionId }),
+      ...(data.premiumSince !== undefined && { premiumSince: data.premiumSince }),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.stripeCustomerId, customerId))
+    .limit(1);
+  return result[0];
+}
