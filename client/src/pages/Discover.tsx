@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { StrawberryBadge } from "@/components/StrawberryBadge";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -121,7 +122,7 @@ function TrackCard({ track, index }: {
             <p className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer flex items-center gap-1">
               <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>
               {track.creatorIsPremium && (
-                <span title="Premium member" className="flex-shrink-0 text-xs">🍓</span>
+                <StrawberryBadge size={14} className="flex-shrink-0" />
               )}
             </p>
           </Link>

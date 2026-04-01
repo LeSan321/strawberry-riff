@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link, useParams } from "wouter";
+import { StrawberryBadge } from "@/components/StrawberryBadge";
 import { toast } from "sonner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -433,7 +434,7 @@ export default function CreatorProfile() {
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 {creator.displayName}
                 {creator.isPremium && (
-                  <span title="Premium member" className="text-xl leading-none">🍓</span>
+                  <StrawberryBadge size={20} />
                 )}
               </h1>
               {creator.bio && (

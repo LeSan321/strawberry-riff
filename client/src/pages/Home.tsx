@@ -262,9 +262,14 @@ export default function Home() {
                 </Button>
               </a>
             )}
-            <Link href="/discover">
+            <Link href="/pricing">
               <Button size="lg" variant="outline" className="rounded-full px-8 text-base font-semibold border-pink-400 text-pink-600 hover:bg-pink-50">
                 Join the Tribe
+              </Button>
+            </Link>
+            <Link href="/discover">
+              <Button size="lg" variant="outline" className="rounded-full px-8 text-base font-semibold border-purple-400 text-purple-600 hover:bg-purple-50">
+                Discover
               </Button>
             </Link>
           </div>

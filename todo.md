@@ -99,3 +99,10 @@
 - [x] Add strawberry-themed premium badge (🍓) to creator names in Discover feed track cards
 - [x] Add premium badge to Creator Profile page header
 - [x] Add creatorIsPremium field to publicFeed tRPC response
+
+## Phase 15: Home CTA Fixes & SVG Premium Badge
+- [x] Replace emoji 🍓 premium badge with SVG icon component (cross-platform rendering)
+- [x] Update Discover.tsx to use SVG StrawberryBadge
+- [x] Update CreatorProfile.tsx to use SVG StrawberryBadge
+- [x] Reroute "Join the Tribe" button on Home page to /pricing
+- [x] Add "Discover" button to Home page CTA row
