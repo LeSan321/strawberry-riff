@@ -238,7 +238,7 @@ export default function Pricing() {
           </Badge>
           <h2 className="text-xl font-bold text-center mb-1">Premium Tier</h2>
           <div className="text-center mb-1">
-            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>$4.99</span>
+            <span className="text-4xl font-bold" style={{ color: "#ec4899" }}>$5.00</span>
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
           <p className="text-center text-sm text-muted-foreground mb-5">
