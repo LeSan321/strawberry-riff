@@ -119,3 +119,7 @@
 - [x] Overlay tagline text on left side with natural negative space
 - [x] Ensure hero looks great on mobile and desktop
 - [x] Preserve all CTA buttons (Start Creating, Join the Tribe, Discover)
+
+## Bug Fix: Ghost Account Prevention
+- [x] Delete 138 null-name ghost accounts from database
+- [x] Fix OAuth callback to only create user records when name AND email are present

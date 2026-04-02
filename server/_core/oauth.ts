@@ -29,6 +29,13 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Reject bot/crawler hits: require at least a name or email to create a real account
+      if (!userInfo.name && !userInfo.email) {
+        console.warn("[OAuth] Blocked anonymous callback with no name or email (likely bot/crawler)");
+        res.status(400).json({ error: "User identity could not be verified" });
+        return;
+      }
+
       const { isNew } = await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
