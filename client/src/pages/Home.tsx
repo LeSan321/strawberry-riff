@@ -228,13 +228,13 @@ export default function Home() {
       <section
         className="relative min-h-[92vh] flex items-center overflow-hidden"
         style={{
-          backgroundImage: `url(https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/hero-bg_926a6d65.png)`,
+          backgroundImage: `url(https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/hero-bg-clean_7cf36a42.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center 30%",
         }}
       >
-        {/* Dark overlay — stronger on right to let image breathe on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20" />
+        {/* Dark overlay — left side readable, right side lets image breathe */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/10" />
         {/* Bottom fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
@@ -254,11 +254,13 @@ export default function Home() {
             <h1
               className="text-5xl md:text-7xl font-bold leading-tight mb-6"
               style={{
-                background: "linear-gradient(135deg, #f9a8d4 0%, #e879f9 50%, #f9a8d4 100%)",
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 700,
+                background: "linear-gradient(120deg, #ff4d4d 0%, #ff6b35 20%, #e8175d 45%, #ff9a3c 65%, #e8175d 80%, #c0392b 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-                textShadow: "none",
+                filter: "drop-shadow(0 2px 12px rgba(232,23,93,0.35))",
               }}
             >
               Strawberry Riff
