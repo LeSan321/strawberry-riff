@@ -225,56 +225,99 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="pt-24 pb-20 text-center px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight"
-            style={{
-              background: "linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #ec4899 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+      <section
+        className="relative min-h-[92vh] flex items-center overflow-hidden"
+        style={{
+          backgroundImage: `url(https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/hero-bg_926a6d65.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center 30%",
+        }}
+      >
+        {/* Dark overlay — stronger on right to let image breathe on the left */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20" />
+        {/* Bottom fade into page */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-24 pb-16">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="max-w-xl"
           >
-            Strawberry Riff
-          </h1>
-          <p className="text-xl md:text-2xl text-foreground/80 font-medium mb-2">Music made by us. Not markets</p>
-          <p className="text-xl md:text-2xl text-foreground/80 font-medium mb-2">No judgement. No algorithms.</p>
-          <p className="text-xl md:text-2xl text-foreground/80 font-medium mb-6">Just heartbeat-driven sound.</p>
-          <p className="text-base text-muted-foreground mb-8">Share Your Vibe. Build Your Tribe.</p>
-          <p className="text-sm italic text-muted-foreground mb-10">
-            "Some revolutions hum. Others drop bass."
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {isAuthenticated ? (
-              <Link href="/upload">
-                <Button size="lg" className="rounded-full px-8 text-base font-semibold"
-                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
+            {/* Eyebrow */}
+            <p className="text-pink-300 text-sm font-semibold tracking-widest uppercase mb-4">
+              Share Your Vibe. Build Your Tribe.
+            </p>
+
+            {/* Main headline */}
+            <h1
+              className="text-5xl md:text-7xl font-bold leading-tight mb-6"
+              style={{
+                background: "linear-gradient(135deg, #f9a8d4 0%, #e879f9 50%, #f9a8d4 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "none",
+              }}
+            >
+              Strawberry Riff
+            </h1>
+
+            {/* Taglines */}
+            <div className="space-y-1 mb-6">
+              <p className="text-lg md:text-xl text-white/90 font-medium">Music made by us. Not markets.</p>
+              <p className="text-lg md:text-xl text-white/90 font-medium">No judgement. No algorithms.</p>
+              <p className="text-lg md:text-xl text-white/90 font-medium">Just heartbeat-driven sound.</p>
+            </div>
+
+            <p className="text-sm italic text-white/60 mb-10">
+              "Some revolutions hum. Others drop bass."
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3">
+              {isAuthenticated ? (
+                <Link href="/upload">
+                  <Button
+                    size="lg"
+                    className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
+                    style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                  >
+                    Start Creating
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                  onClick={() => setSignInModalOpen(true)}
+                >
                   Start Creating
                 </Button>
+              )}
+              <Link href="/pricing">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                >
+                  Join the Tribe
+                </Button>
               </Link>
-            ) : (
-              <Button size="lg" className="rounded-full px-8 text-base font-semibold"
-                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-                onClick={() => setSignInModalOpen(true)}>
-                Start Creating
-              </Button>
-            )}
-            <Link href="/pricing">
-              <Button size="lg" variant="outline" className="rounded-full px-8 text-base font-semibold border-pink-400 text-pink-600 hover:bg-pink-50">
-                Join the Tribe
-              </Button>
-            </Link>
-            <Link href="/discover">
-              <Button size="lg" variant="outline" className="rounded-full px-8 text-base font-semibold border-purple-400 text-purple-600 hover:bg-purple-50">
-                Discover
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
+              <Link href="/discover">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                >
+                  Discover
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* ── Features ──────────────────────────────────────────────────────── */}

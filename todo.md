@@ -112,3 +112,10 @@
 - [x] Wire modal to "Start Creating" CTA on Home page (logged-out state)
 - [x] Wire modal to "Claim Your Sonic Space" CTA on Home page
 - [x] Wire modal to nav "Sign In" and "Get Started" buttons in AppLayout
+
+## Phase 17: Hero Section Visual Upgrade
+- [x] Upload StrawberryRiffLogo4fixed.png to CDN
+- [x] Redesign Home.tsx hero with full-width cinematic background image
+- [x] Overlay tagline text on left side with natural negative space
+- [x] Ensure hero looks great on mobile and desktop
+- [x] Preserve all CTA buttons (Start Creating, Join the Tribe, Discover)
