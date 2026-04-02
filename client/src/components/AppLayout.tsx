@@ -24,6 +24,7 @@ import {
   Compass,
 } from "lucide-react";
 import { useState } from "react";
+import { SignInExplainerModal } from "./SignInExplainerModal";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -51,6 +52,7 @@ function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
 
   const profileQuery = trpc.profiles.get.useQuery(
     { userId: user?.id },
@@ -69,6 +71,7 @@ function AppHeader() {
   const visibleItems = navItems;
 
   return (
+    <>
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm">
       <div className="container">
         <div className="flex items-center justify-between h-16">
@@ -159,7 +162,7 @@ function AppHeader() {
                   variant="ghost"
                   size="sm"
                   className="text-gray-600 hover:text-pink-600"
-                  onClick={() => (window.location.href = getLoginUrl())}
+                  onClick={() => setSignInModalOpen(true)}
                 >
                   Sign In
                 </Button>
@@ -167,7 +170,7 @@ function AppHeader() {
                   size="sm"
                   className="rounded-full px-4 text-white border-0 font-semibold"
                   style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-                  onClick={() => (window.location.href = getLoginUrl())}
+                  onClick={() => setSignInModalOpen(true)}
                 >
                   Get Started
                 </Button>
@@ -217,6 +220,12 @@ function AppHeader() {
         </AnimatePresence>
       </div>
     </header>
+    <SignInExplainerModal
+      open={signInModalOpen}
+      onClose={() => setSignInModalOpen(false)}
+      loginUrl={getLoginUrl()}
+    />
+    </>
   );
 }
 

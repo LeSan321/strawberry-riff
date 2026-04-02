@@ -106,3 +106,9 @@
 - [x] Update CreatorProfile.tsx to use SVG StrawberryBadge
 - [x] Reroute "Join the Tribe" button on Home page to /pricing
 - [x] Add "Discover" button to Home page CTA row
+
+## Phase 16: Sign-In Explainer Modal
+- [x] Create SignInExplainerModal component (explains manus.im redirect before it happens)
+- [x] Wire modal to "Start Creating" CTA on Home page (logged-out state)
+- [x] Wire modal to "Claim Your Sonic Space" CTA on Home page
+- [x] Wire modal to nav "Sign In" and "Get Started" buttons in AppLayout

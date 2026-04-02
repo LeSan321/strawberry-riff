@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import ConcertTicketEasterEgg from "@/components/ConcertTicketEasterEgg";
+import { SignInExplainerModal } from "@/components/SignInExplainerModal";
 
 // ─── Strawberry Band Members ─────────────────────────────────────────────────
 const BAND_MEMBERS = [
@@ -195,6 +196,7 @@ const PLACEHOLDER_TRACKS = [
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [easterEggOpen, setEasterEggOpen] = useState(false);
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
   const [activeMember, setActiveMember] = useState(0);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -255,12 +257,11 @@ export default function Home() {
                 </Button>
               </Link>
             ) : (
-              <a href={getLoginUrl()}>
-                <Button size="lg" className="rounded-full px-8 text-base font-semibold"
-                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
-                  Start Creating
-                </Button>
-              </a>
+              <Button size="lg" className="rounded-full px-8 text-base font-semibold"
+                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                onClick={() => setSignInModalOpen(true)}>
+                Start Creating
+              </Button>
             )}
             <Link href="/pricing">
               <Button size="lg" variant="outline" className="rounded-full px-8 text-base font-semibold border-pink-400 text-pink-600 hover:bg-pink-50">
@@ -460,11 +461,10 @@ export default function Home() {
               </Button>
             </Link>
           ) : (
-            <a href={getLoginUrl()}>
-              <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold">
-                Claim Your Sonic Space
-              </Button>
-            </a>
+            <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold"
+              onClick={() => setSignInModalOpen(true)}>
+              Claim Your Sonic Space
+            </Button>
           )}
         </motion.div>
       </section>
@@ -593,6 +593,12 @@ export default function Home() {
 
       {/* ── Easter Egg ────────────────────────────────────────────────────── */}
       <ConcertTicketEasterEgg open={easterEggOpen} onClose={() => setEasterEggOpen(false)} />
+      <SignInExplainerModal
+        open={signInModalOpen}
+        onClose={() => setSignInModalOpen(false)}
+        loginUrl={getLoginUrl()}
+        reason="to start creating"
+      />
     </div>
   );
 }
