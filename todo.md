@@ -131,3 +131,10 @@
 - [x] Add AddToPlaylistButton to TrackPage (individual track detail)
 - [x] Add AddToPlaylistButton to CreatorProfile track cards
 - [x] Write Vitest tests for playlists.addTrack, removeTrack, getTracks, list (55 total tests passing)
+
+## Phase 18: Audio Player Queue, Shuffle & Repeat
+- [x] Extend AudioPlayerContext with queue state, shuffle mode, repeat mode (off/one/all), next, previous
+- [x] Update player bar UI with next/prev skip buttons, shuffle toggle, repeat toggle
+- [x] Wire playlist play to load full playlist as queue (playing any track in a playlist loads the rest)
+- [x] Auto-advance to next track when current track ends
+- [x] Shuffle randomizes queue order; toggling off restores original order

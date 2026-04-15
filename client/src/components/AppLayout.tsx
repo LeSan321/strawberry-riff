@@ -22,6 +22,9 @@ import {
   X,
   Menu,
   Compass,
+  Shuffle,
+  Repeat,
+  Repeat1,
 } from "lucide-react";
 import { useState } from "react";
 import { SignInExplainerModal } from "./SignInExplainerModal";
@@ -230,8 +233,12 @@ function AppHeader() {
 }
 
 function PersistentPlayer() {
-  const { currentTrack, isPlaying, progress, currentTime, duration, volume, play, pause, resume, seek, setVolume } =
-    useAudioPlayer();
+  const {
+    currentTrack, isPlaying, progress, currentTime, duration, volume,
+    pause, resume, seek, setVolume,
+    next, previous, toggleShuffle, toggleRepeat,
+    shuffle, repeat, queue, queueIndex,
+  } = useAudioPlayer();
 
   if (!currentTrack) return null;
 
@@ -242,6 +249,12 @@ function PersistentPlayer() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const hasNext = queue.length > 0 && (queueIndex < queue.length - 1 || repeat === "all");
+  const hasPrev = queue.length > 0;
+
+  const RepeatIcon = repeat === "one" ? Repeat1 : Repeat;
+  const repeatActive = repeat !== "off";
+
   return (
     <motion.div
       initial={{ y: 100 }}
@@ -249,21 +262,43 @@ function PersistentPlayer() {
       className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-pink-100 shadow-lg"
     >
       <div className="container py-2">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Track info */}
           <div
             className={`w-10 h-10 rounded-lg bg-gradient-to-br ${currentTrack.gradient || "from-pink-400 to-purple-500"} flex-shrink-0 flex items-center justify-center`}
           >
             <Music className="w-5 h-5 text-white" />
           </div>
-          <div className="flex-1 min-w-0 hidden sm:block">
+          <div className="flex-1 min-w-0 hidden sm:block max-w-[140px]">
             <p className="text-sm font-semibold text-gray-800 truncate">{currentTrack.title}</p>
             <p className="text-xs text-muted-foreground truncate">{currentTrack.artist || "Unknown Artist"}</p>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400" disabled>
+          {/* Shuffle (desktop only) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 w-8 p-0 hidden md:flex ${
+              shuffle ? "text-purple-500" : "text-gray-300 hover:text-gray-500"
+            }`}
+            onClick={toggleShuffle}
+            title="Shuffle"
+          >
+            <Shuffle className="w-4 h-4" />
+          </Button>
+
+          {/* Transport controls */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-8 w-8 p-0 ${
+                hasPrev ? "text-gray-500 hover:text-gray-800" : "text-gray-200"
+              }`}
+              onClick={previous}
+              disabled={!hasPrev}
+              title="Previous"
+            >
               <SkipBack className="w-4 h-4" />
             </Button>
             <Button
@@ -273,10 +308,32 @@ function PersistentPlayer() {
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400" disabled>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-8 w-8 p-0 ${
+                hasNext ? "text-gray-500 hover:text-gray-800" : "text-gray-200"
+              }`}
+              onClick={next}
+              disabled={!hasNext}
+              title="Next"
+            >
               <SkipForward className="w-4 h-4" />
             </Button>
           </div>
+
+          {/* Repeat (desktop only) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 w-8 p-0 hidden md:flex ${
+              repeatActive ? "text-purple-500" : "text-gray-300 hover:text-gray-500"
+            }`}
+            onClick={toggleRepeat}
+            title={repeat === "off" ? "Repeat off" : repeat === "all" ? "Repeat all" : "Repeat one"}
+          >
+            <RepeatIcon className="w-4 h-4" />
+          </Button>
 
           {/* Progress */}
           <div className="flex items-center gap-2 flex-1 max-w-xs hidden md:flex">
@@ -290,6 +347,13 @@ function PersistentPlayer() {
             />
             <span className="text-xs text-muted-foreground w-8">{formatTime(duration)}</span>
           </div>
+
+          {/* Queue indicator */}
+          {queue.length > 1 && (
+            <span className="text-xs text-muted-foreground hidden lg:block whitespace-nowrap">
+              {queueIndex + 1} / {queue.length}
+            </span>
+          )}
 
           {/* Volume */}
           <div className="items-center gap-2 hidden lg:flex">
