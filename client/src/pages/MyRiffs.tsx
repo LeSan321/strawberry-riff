@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
 
 type Visibility = "private" | "inner-circle" | "public";
 
@@ -311,6 +312,7 @@ function TrackCard({ track }: { track: Track }) {
                         <LinkIcon className="w-4 h-4" />
                       </motion.button>
                     )}
+                    <AddToPlaylistButton trackId={track.id} />
                     <Button
                       variant="ghost"
                       size="sm"

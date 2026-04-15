@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { motion } from "framer-motion";
 import {
@@ -202,16 +203,19 @@ export default function TrackPage() {
                 )}
               </div>
 
-              {/* Share button with burst animation */}
-              <motion.button
-                onClick={handleShare}
-                animate={shareAnimating ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
-                transition={{ duration: 0.4 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-pink-200 text-pink-600 hover:bg-pink-50 transition-colors text-sm font-medium flex-shrink-0"
-              >
-                <Share2 className="w-4 h-4" />
-                Share
-              </motion.button>
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <AddToPlaylistButton trackId={track.id} className="border border-purple-200 hover:bg-purple-50 rounded-full w-9 h-9" />
+                <motion.button
+                  onClick={handleShare}
+                  animate={shareAnimating ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-pink-200 text-pink-600 hover:bg-pink-50 transition-colors text-sm font-medium"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </motion.button>
+              </div>
             </div>
 
             {/* Genre */}

@@ -123,3 +123,11 @@
 ## Bug Fix: Ghost Account Prevention
 - [x] Delete 138 null-name ghost accounts from database
 - [x] Fix OAuth callback to only create user records when name AND email are present
+
+## Bug Fix: Add Tracks to Playlists
+- [x] Create reusable AddToPlaylistButton component (dropdown, shows user's playlists, check mark on add)
+- [x] Add AddToPlaylistButton to My Riffs track cards
+- [x] Add AddToPlaylistButton to Discover track cards
+- [x] Add AddToPlaylistButton to TrackPage (individual track detail)
+- [x] Add AddToPlaylistButton to CreatorProfile track cards
+- [x] Write Vitest tests for playlists.addTrack, removeTrack, getTracks, list (55 total tests passing)

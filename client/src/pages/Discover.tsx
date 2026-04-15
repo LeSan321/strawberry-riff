@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
 import { StrawberryBadge } from "@/components/StrawberryBadge";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -157,15 +158,16 @@ function TrackCard({ track, index }: {
               <span>{likeCount}</span>
             </a>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {track.duration && (
-              <span className="text-xs">{fmt(track.duration)}</span>
+              <span className="text-xs text-muted-foreground">{fmt(track.duration)}</span>
             )}
+            <AddToPlaylistButton trackId={track.id} />
             <motion.button
               onClick={handleShare}
               animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
               transition={{ duration: 0.4 }}
-              className={`flex items-center gap-1 transition-colors ${shareAnimating ? "text-pink-500" : "hover:text-pink-500"}`}
+              className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
               title="Copy track link"
             >
               <LinkIcon className="w-3.5 h-3.5" />
