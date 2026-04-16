@@ -138,3 +138,7 @@
 - [x] Wire playlist play to load full playlist as queue (playing any track in a playlist loads the rest)
 - [x] Auto-advance to next track when current track ends
 - [x] Shuffle randomizes queue order; toggling off restores original order
+
+## Phase 19: Friends Feed Queue
+- [x] Wire Friends feed track play buttons to load all feed tracks as a queue
+- [x] Playing any track in the Friends feed auto-advances through the rest of the feed

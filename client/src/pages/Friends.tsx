@@ -124,7 +124,7 @@ function UserRow({ user }: { user: UserCard }) {
   );
 }
 
-function FriendTrackRow({ track }: { track: Track }) {
+function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
 
@@ -139,14 +139,24 @@ function FriendTrackRow({ track }: { track: Track }) {
                 if (isCurrentTrack && isPlaying) {
                   pause();
                 } else {
-                  play({
-                    id: track.id,
-                    title: track.title,
-                    artist: track.artist,
-                    audioUrl: track.audioUrl,
-                    gradient: track.gradient,
-                    moodTags: track.moodTags,
-                  });
+                  play(
+                    {
+                      id: track.id,
+                      title: track.title,
+                      artist: track.artist,
+                      audioUrl: track.audioUrl,
+                      gradient: track.gradient,
+                      moodTags: track.moodTags,
+                    },
+                    queue.map((t) => ({
+                      id: t.id,
+                      title: t.title,
+                      artist: t.artist,
+                      audioUrl: t.audioUrl,
+                      gradient: t.gradient,
+                      moodTags: t.moodTags,
+                    }))
+                  );
                 }
               }}
             >
@@ -338,7 +348,7 @@ export default function Friends() {
             <div className="space-y-3">
               <AnimatePresence>
                 {friendTracks.map((track) => (
-                  <FriendTrackRow key={track.id} track={track} />
+                  <FriendTrackRow key={track.id} track={track} queue={friendTracks} />
                 ))}
               </AnimatePresence>
             </div>
