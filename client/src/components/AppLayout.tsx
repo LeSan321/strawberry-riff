@@ -272,6 +272,9 @@ function PersistentPlayer() {
             ) : (
               <Music className="w-5 h-5 text-white" />
             )}
+            {isPlaying && (
+              <div className="absolute inset-0 ring-2 ring-white/50 rounded-lg pointer-events-none animate-pulse" />
+            )}
           </div>
           <div className="flex-1 min-w-0 hidden sm:block max-w-[140px]">
             <p className="text-sm font-semibold text-gray-800 truncate">{currentTrack.title}</p>

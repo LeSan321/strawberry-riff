@@ -166,6 +166,9 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
               {track.coverArtUrl && (
                 <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
               )}
+              {isCurrentTrack && isPlaying && (
+                <div className="absolute inset-0 ring-2 ring-white/60 pointer-events-none animate-pulse" />
+              )}
               <motion.div
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}

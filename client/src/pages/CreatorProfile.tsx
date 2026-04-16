@@ -53,6 +53,7 @@ function TrackCard({
     duration?: number | null;
     moodTags: string[];
     gradient?: string | null;
+    coverArtUrl?: string | null;
     likes: number;
   };
   index: number;
@@ -76,6 +77,7 @@ function TrackCard({
         artist: track.artist ?? "Unknown",
         audioUrl: track.audioUrl,
         gradient,
+        coverArtUrl: track.coverArtUrl,
       });
     }
   };
@@ -101,10 +103,16 @@ function TrackCard({
       transition={{ delay: (index % 6) * 0.07 }}
       className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
     >
-      {/* Gradient art */}
+      {/* Cover art / gradient */}
       <div
-        className={`h-36 bg-gradient-to-br ${gradient} relative flex items-center justify-center`}
+        className={`h-36 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
       >
+        {track.coverArtUrl && (
+          <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {isCurrentlyPlaying && (
+          <div className="absolute inset-0 ring-4 ring-white/60 rounded-none pointer-events-none animate-pulse" />
+        )}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}

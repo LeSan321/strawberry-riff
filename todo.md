@@ -168,3 +168,8 @@
 - [x] Discover track cards: show cover art image over gradient when available
 - [x] Friends feed thumbnail: show cover art image over gradient when available
 - [x] MyRiffs Edit dialog: add cover art upload/replace field
+
+## Phase 24: Cover Art Final Polish
+- [x] CreatorProfile track cards: show cover art over gradient
+- [x] Playlists: verify cover art upload is wired to uploadCoverArt for playlists
+- [x] Now Playing glow: pulsing ring/glow on cover art thumbnail when track is active

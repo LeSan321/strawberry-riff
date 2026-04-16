@@ -145,6 +145,9 @@ export default function TrackPage() {
             {track?.coverArtUrl && (
               <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
             )}
+            {isCurrentlyPlaying && (
+              <div className="absolute inset-0 ring-8 ring-white/40 pointer-events-none animate-pulse" />
+            )}
             {/* Play button */}
             <motion.button
               whileHover={{ scale: 1.08 }}

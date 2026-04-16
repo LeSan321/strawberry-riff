@@ -95,6 +95,9 @@ function TrackCard({ track, index, queue }: {
         {track.coverArtUrl && (
           <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
         )}
+        {isCurrentlyPlaying && (
+          <div className="absolute inset-0 ring-4 ring-white/50 pointer-events-none animate-pulse" />
+        )}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
