@@ -7,6 +7,7 @@ export interface PlayerTrack {
   audioUrl: string;
   gradient?: string | null;
   moodTags?: string[];
+  coverArtUrl?: string | null;
 }
 
 export type RepeatMode = "off" | "one" | "all";

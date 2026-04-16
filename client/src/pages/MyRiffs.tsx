@@ -78,6 +78,7 @@ interface Track {
   likes: number;
   plays: number;
   gradient?: string | null;
+  coverArtUrl?: string | null;
   createdAt: Date;
 }
 
@@ -260,9 +261,9 @@ function TrackCard({ track }: { track: Track }) {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-0">
             <div className="flex items-stretch">
-              {/* Color bar + play button */}
+              {/* Cover art / color bar + play button */}
               <div
-                className={`w-20 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer`}
+                className={`w-20 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer relative overflow-hidden`}
                 onClick={() => {
                   if (isCurrentTrack && isPlaying) {
                     pause();
@@ -274,14 +275,18 @@ function TrackCard({ track }: { track: Track }) {
                       audioUrl: track.audioUrl,
                       gradient: track.gradient,
                       moodTags: track.moodTags,
+                      coverArtUrl: track.coverArtUrl,
                     });
                   }
                 }}
               >
+                {track.coverArtUrl && (
+                  <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+                )}
                 <motion.div
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center relative z-10"
                 >
                   {isCurrentTrack && isPlaying ? (
                     <Pause className="w-5 h-5 text-white" />

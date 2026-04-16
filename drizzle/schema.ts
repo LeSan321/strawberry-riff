@@ -61,6 +61,7 @@ export const tracks = mysqlTable("tracks", {
   likes: int("likes").default(0).notNull(),
   plays: int("plays").default(0).notNull(),
   gradient: varchar("gradient", { length: 100 }).default("from-pink-400 to-purple-500"),
+  coverArtUrl: text("coverArtUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -95,6 +96,7 @@ export const playlists = mysqlTable("playlists", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   gradient: varchar("gradient", { length: 100 }).default("from-purple-400 to-pink-400"),
+  coverArtUrl: text("coverArtUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

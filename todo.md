@@ -154,3 +154,11 @@
 - [x] Add vibe_presets table to schema and run migration
 - [x] Backend: savePreset, listPresets, deletePreset procedures (protected)
 - [x] UI: save current tag filter as a named vibe preset, load/delete presets from Discover
+
+## Phase 22: Cover Art & Mood Tag Images
+- [x] Add coverArtUrl field to playlists table and tracks table, run migration
+- [x] Backend: uploadCoverArt procedure for playlists, update track upload/edit to accept coverArtUrl
+- [x] Playlist cards: show cover art image, fallback to gradient; upload UI on hover/edit
+- [x] Track cards: show cover art image, fallback to gradient
+- [x] Player bar: show cover art thumbnail next to track title
+- [x] Upload page: cover art upload field alongside audio upload

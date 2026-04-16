@@ -173,7 +173,7 @@ export async function getInnerCircleTracks(followerUserId: number): Promise<Trac
 export async function updateTrack(
   id: number,
   userId: number,
-  data: Partial<Pick<Track, "title" | "artist" | "genre" | "description" | "moodTags" | "visibility" | "gradient">>
+  data: Partial<Pick<Track, "title" | "artist" | "genre" | "description" | "moodTags" | "visibility" | "gradient" | "coverArtUrl">>
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -347,7 +347,7 @@ export async function getPlaylistById(id: number): Promise<Playlist | undefined>
 export async function updatePlaylist(
   id: number,
   userId: number,
-  data: Partial<Pick<Playlist, "title" | "description" | "gradient">>
+  data: Partial<Pick<Playlist, "title" | "description" | "gradient" | "coverArtUrl">>
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;

@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  ImagePlus,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -83,11 +84,37 @@ export default function Upload() {
     moodTags: [] as string[],
     customMood: "",
     gradient: GRADIENTS[0],
+    coverArtUrl: "",
   });
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const getUploadUrl = trpc.tracks.getUploadUrl.useMutation();
   const createTrack = trpc.tracks.create.useMutation();
+  const uploadCoverArt = trpc.tracks.uploadCoverArt.useMutation();
   const utils = trpc.useUtils();
+
+  const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    setUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(",")[1];
+        const result = await uploadCoverArt.mutateAsync({ base64, mimeType: f.type, context: "track" });
+        setCoverPreview(result.url);
+        setForm((p) => ({ ...p, coverArtUrl: result.url }));
+        setUploadingCover(false);
+      };
+      reader.readAsDataURL(f);
+    } catch {
+      toast.error("Failed to upload cover art");
+      setUploadingCover(false);
+    }
+  };
 
   const handleFile = (f: File) => {
     if (!f.type.startsWith("audio/")) {
@@ -186,6 +213,7 @@ export default function Upload() {
         moodTags: form.moodTags,
         visibility: form.visibility,
         gradient: form.gradient,
+        coverArtUrl: form.coverArtUrl || undefined,
       });
 
       setUploadProgress(100);
@@ -244,8 +272,9 @@ export default function Upload() {
                 setUploadProgress(0);
                 setForm({
                   title: "", artist: "", genre: "", description: "",
-                  visibility: "private", moodTags: [], customMood: "", gradient: GRADIENTS[0],
+                  visibility: "private", moodTags: [], customMood: "", gradient: GRADIENTS[0], coverArtUrl: "",
                 });
+                setCoverPreview(null);
               }}
             >
               Upload Another
@@ -437,6 +466,46 @@ export default function Upload() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Cover Art */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ImagePlus className="w-5 h-5 text-purple-500" /> Cover Art
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br ${form.gradient} flex items-center justify-center flex-shrink-0 cursor-pointer relative group`}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {coverPreview ? (
+                    <img src={coverPreview} alt="cover" className="w-full h-full object-cover" />
+                  ) : (
+                    <Music className="w-8 h-8 text-white" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    {uploadingCover ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <ImagePlus className="w-5 h-5 text-white" />}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-gray-700">Upload a cover image</p>
+                  <p className="text-xs mt-0.5">JPG, PNG, or WebP — optional</p>
+                  <p className="text-xs mt-0.5">Shown on your track card and in the player</p>
+                  {coverPreview && (
+                    <button
+                      className="text-xs text-red-400 hover:text-red-600 mt-2"
+                      onClick={() => { setCoverPreview(null); setForm((p) => ({ ...p, coverArtUrl: "" })); }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverArtChange} />
+              </div>
             </CardContent>
           </Card>
 

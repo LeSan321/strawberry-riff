@@ -120,6 +120,16 @@ const tracksRouter = router({
       return { url, key };
     }),
 
+  uploadCoverArt: protectedProcedure
+    .input(z.object({ base64: z.string(), mimeType: z.string(), context: z.enum(["track", "playlist"]).default("track") }))
+    .mutation(async ({ ctx, input }) => {
+      const buffer = Buffer.from(input.base64, "base64");
+      const ext = input.mimeType.split("/")[1] || "jpg";
+      const key = `cover-art/${ctx.user.id}/${nanoid(12)}.${ext}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      return { url };
+    }),
+
   create: protectedProcedure
     .input(
       z.object({
@@ -133,6 +143,7 @@ const tracksRouter = router({
         moodTags: z.array(z.string()).optional(),
         visibility: z.enum(["private", "inner-circle", "public"]).default("private"),
         gradient: z.string().optional(),
+        coverArtUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -148,6 +159,7 @@ const tracksRouter = router({
         moodTags: input.moodTags ? JSON.stringify(input.moodTags) : null,
         visibility: input.visibility,
         gradient: input.gradient ?? "from-pink-400 to-purple-500",
+        coverArtUrl: input.coverArtUrl ?? null,
       });
       return getTrackById(id);
     }),
@@ -211,13 +223,15 @@ const tracksRouter = router({
         moodTags: z.array(z.string()).optional(),
         visibility: z.enum(["private", "inner-circle", "public"]).optional(),
         gradient: z.string().optional(),
+        coverArtUrl: z.string().url().optional().or(z.literal("")),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, moodTags, ...rest } = input;
+      const { id, moodTags, coverArtUrl, ...rest } = input;
       await updateTrack(id, ctx.user.id, {
         ...rest,
         moodTags: moodTags ? JSON.stringify(moodTags) : undefined,
+        coverArtUrl: coverArtUrl !== undefined ? (coverArtUrl || null) : undefined,
       });
       return getTrackById(id);
     }),
@@ -377,11 +391,15 @@ const playlistsRouter = router({
         title: z.string().min(1).max(200).optional(),
         description: z.string().max(500).optional(),
         gradient: z.string().optional(),
+        coverArtUrl: z.string().url().optional().or(z.literal("")),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      await updatePlaylist(id, ctx.user.id, data);
+      const { id, coverArtUrl, ...data } = input;
+      await updatePlaylist(id, ctx.user.id, {
+        ...data,
+        coverArtUrl: coverArtUrl !== undefined ? (coverArtUrl || null) : undefined,
+      });
       return getPlaylistById(id);
     }),
 

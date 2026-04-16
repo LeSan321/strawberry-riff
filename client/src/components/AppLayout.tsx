@@ -265,9 +265,13 @@ function PersistentPlayer() {
         <div className="flex items-center gap-3">
           {/* Track info */}
           <div
-            className={`w-10 h-10 rounded-lg bg-gradient-to-br ${currentTrack.gradient || "from-pink-400 to-purple-500"} flex-shrink-0 flex items-center justify-center`}
+            className={`w-10 h-10 rounded-lg bg-gradient-to-br ${currentTrack.gradient || "from-pink-400 to-purple-500"} flex-shrink-0 flex items-center justify-center overflow-hidden relative`}
           >
-            <Music className="w-5 h-5 text-white" />
+            {currentTrack.coverArtUrl ? (
+              <img src={currentTrack.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <Music className="w-5 h-5 text-white" />
+            )}
           </div>
           <div className="flex-1 min-w-0 hidden sm:block max-w-[140px]">
             <p className="text-sm font-semibold text-gray-800 truncate">{currentTrack.title}</p>

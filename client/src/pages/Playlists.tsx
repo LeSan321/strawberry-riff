@@ -15,8 +15,9 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  ImagePlus,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ interface Playlist {
   title: string;
   description?: string | null;
   gradient?: string | null;
+  coverArtUrl?: string | null;
   trackCount: number;
   createdAt: Date;
 }
@@ -137,7 +139,32 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
     title: playlist.title,
     description: playlist.description ?? "",
     gradient: playlist.gradient ?? GRADIENTS[0],
+    coverArtUrl: playlist.coverArtUrl ?? "",
   });
+  const [coverPreview, setCoverPreview] = useState<string | null>(playlist.coverArtUrl ?? null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const uploadCoverArtMutation = trpc.tracks.uploadCoverArt.useMutation();
+
+  const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(",")[1];
+        const result = await uploadCoverArtMutation.mutateAsync({ base64, mimeType: file.type, context: "playlist" });
+        setCoverPreview(result.url);
+        setEditForm((p) => ({ ...p, coverArtUrl: result.url }));
+        setUploadingCover(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Failed to upload cover art");
+      setUploadingCover(false);
+    }
+  };
 
   const tracksQuery = trpc.playlists.getTracks.useQuery(
     { playlistId: playlist.id },
@@ -176,12 +203,23 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="p-0">
             <div
-              className={`h-16 bg-gradient-to-r ${playlist.gradient || GRADIENTS[0]} flex items-center px-4 cursor-pointer`}
+              className={`h-16 bg-gradient-to-r ${playlist.gradient || GRADIENTS[0]} flex items-center px-4 cursor-pointer relative overflow-hidden`}
               onClick={() => setExpanded(!expanded)}
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
-                  <ListMusic className="w-5 h-5 text-white" />
+              {playlist.coverArtUrl && (
+                <img
+                  src={playlist.coverArtUrl}
+                  alt="cover"
+                  className="absolute inset-0 w-full h-full object-cover opacity-40"
+                />
+              )}
+              <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                  {playlist.coverArtUrl ? (
+                    <img src={playlist.coverArtUrl} alt="cover" className="w-full h-full object-cover" />
+                  ) : (
+                    <ListMusic className="w-5 h-5 text-white" />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-white truncate">{playlist.title}</p>
@@ -190,7 +228,7 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 relative z-10">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -314,7 +352,7 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
         </Card>
       </motion.div>
 
-      {/* Edit Dialog */}
+        {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -339,6 +377,37 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
               />
             </div>
             <div>
+              <Label>Cover Art</Label>
+              <div className="mt-2 flex items-center gap-3">
+                <div
+                  className={`w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br ${editForm.gradient || GRADIENTS[0]} flex items-center justify-center flex-shrink-0 cursor-pointer relative group`}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {coverPreview ? (
+                    <img src={coverPreview} alt="cover" className="w-full h-full object-cover" />
+                  ) : (
+                    <ListMusic className="w-6 h-6 text-white" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    {uploadingCover ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <ImagePlus className="w-4 h-4 text-white" />}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p>Click to upload a cover image</p>
+                  <p className="text-xs mt-0.5">JPG, PNG, or WebP</p>
+                  {coverPreview && (
+                    <button
+                      className="text-xs text-red-400 hover:text-red-600 mt-1"
+                      onClick={() => { setCoverPreview(null); setEditForm((p) => ({ ...p, coverArtUrl: "" })); }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverArtChange} />
+              </div>
+            </div>
+            <div>
               <Label>Color</Label>
               <div className="flex gap-2 mt-2">
                 {GRADIENTS.map((g) => (
@@ -357,7 +426,7 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button
               onClick={() => updateMutation.mutate({ id: playlist.id, ...editForm })}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || uploadingCover}
               className="bg-gradient-to-r from-pink-500 to-purple-600 text-white border-0"
             >
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
