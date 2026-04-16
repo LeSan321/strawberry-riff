@@ -148,3 +148,9 @@
 - [x] Build tag cloud filter panel at top of Discover (multi-select, instant update)
 - [x] Add shuffle button to randomize current results (filtered or unfiltered)
 - [x] No popularity signals — results in random order by default
+
+## Phase 21: Discover Play All & Saved Vibe Presets
+- [x] Add Play All button to Discover that queues the full current view (filtered or shuffled)
+- [x] Add vibe_presets table to schema and run migration
+- [x] Backend: savePreset, listPresets, deletePreset procedures (protected)
+- [x] UI: save current tag filter as a named vibe preset, load/delete presets from Discover

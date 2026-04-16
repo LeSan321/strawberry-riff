@@ -5,10 +5,11 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import { Play, Pause, Heart, Music, Search, Shuffle, X, Link as LinkIcon } from "lucide-react";
+import { Play, Pause, Heart, Music, Search, Shuffle, X, Link as LinkIcon, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -193,12 +194,23 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function Discover() {
   const { isAuthenticated } = useAuth();
+  const { play } = useAudioPlayer();
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [shuffled, setShuffled] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [savePresetOpen, setSavePresetOpen] = useState(false);
+  const [presetName, setPresetName] = useState("");
 
   const { data: tracks, isLoading } = trpc.tracks.publicFeed.useQuery({ limit: 100 });
+  const { data: presets, refetch: refetchPresets } = trpc.vibePresets.list.useQuery(undefined, { enabled: isAuthenticated });
+  const savePresetMutation = trpc.vibePresets.save.useMutation({
+    onSuccess: () => { refetchPresets(); setSavePresetOpen(false); setPresetName(""); toast.success("Vibe preset saved!"); },
+    onError: () => toast.error("Failed to save preset"),
+  });
+  const deletePresetMutation = trpc.vibePresets.delete.useMutation({
+    onSuccess: () => { refetchPresets(); toast.success("Preset removed"); },
+  });
 
   // Derive all tags actually in use from the fetched tracks
   const availableTags = useMemo(() => {
@@ -225,6 +237,12 @@ export default function Discover() {
     setShuffled(false);
   }, []);
 
+  const loadPreset = useCallback((tags: string[]) => {
+    setSelectedTags(tags);
+    setSearch("");
+    setShuffled(false);
+  }, []);
+
   const filtered = useMemo(() => {
     if (!tracks) return [];
     let result = tracks.filter((t) => {
@@ -239,6 +257,13 @@ export default function Discover() {
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks, search, selectedTags, shuffled, shuffleSeed]);
+
+  const handlePlayAll = useCallback(() => {
+    if (filtered.length === 0) return;
+    const queue = filtered.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, gradient: t.gradient, moodTags: t.moodTags }));
+    play(queue[0], queue);
+    toast.success(`Playing ${filtered.length} riff${filtered.length > 1 ? "s" : ""}`);
+  }, [filtered, play]);
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -331,6 +356,15 @@ export default function Discover() {
                   {tag}
                 </button>
               ))}
+              {selectedTags.length > 0 && isAuthenticated && (
+                <button
+                  onClick={() => setSavePresetOpen(true)}
+                  className="text-xs px-2 py-1.5 rounded-full text-purple-500 hover:text-purple-700 flex items-center gap-0.5 ml-1 border border-purple-200 hover:bg-purple-50"
+                  title="Save this vibe as a preset"
+                >
+                  <Bookmark className="w-3 h-3" /> Save vibe
+                </button>
+              )}
               {(selectedTags.length > 0 || search) && (
                 <button
                   onClick={clearFilters}
@@ -339,6 +373,35 @@ export default function Discover() {
                   <X className="w-3 h-3" /> Clear
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Saved vibe presets */}
+          {isAuthenticated && presets && presets.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 items-center mt-2.5 pt-2.5 border-t border-muted/40">
+              <span className="text-xs text-muted-foreground mr-1">Saved:</span>
+              {presets.map((preset) => (
+                <div key={preset.id} className="flex items-center gap-0.5 group">
+                  <button
+                    onClick={() => loadPreset(preset.tags)}
+                    className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                      JSON.stringify(selectedTags.slice().sort()) === JSON.stringify(preset.tags.slice().sort())
+                        ? "bg-purple-100 text-purple-700 border border-purple-300"
+                        : "bg-muted/40 text-muted-foreground hover:bg-purple-50 hover:text-purple-600"
+                    }`}
+                  >
+                    <BookmarkCheck className="w-3 h-3 inline mr-1" />
+                    {preset.name}
+                  </button>
+                  <button
+                    onClick={() => deletePresetMutation.mutate({ id: preset.id })}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-400 p-0.5"
+                    title="Delete preset"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </motion.div>
@@ -396,13 +459,24 @@ export default function Discover() {
           </motion.div>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-4">
-              {filtered.length} {filtered.length === 1 ? "riff" : "riffs"}
-              {selectedTags.length > 0 && (
-                <span> tagged {selectedTags.map((t) => `"${t}"`).join(" + ")}</span>
-              )}
-              {shuffled && <span className="ml-1 text-purple-500">· shuffled</span>}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                {filtered.length} {filtered.length === 1 ? "riff" : "riffs"}
+                {selectedTags.length > 0 && (
+                  <span> tagged {selectedTags.map((t) => `"${t}"`).join(" + ")}</span>
+                )}
+                {shuffled && <span className="ml-1 text-purple-500">· shuffled</span>}
+              </p>
+              <Button
+                onClick={handlePlayAll}
+                size="sm"
+                className="rounded-full gap-1.5 text-xs"
+                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                Play All
+              </Button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((track, i) => (
                 <TrackCard key={track.id} track={track} index={i} queue={filtered} />
@@ -410,6 +484,36 @@ export default function Discover() {
             </div>
           </>
         )}
+
+        {/* Save Preset Dialog */}
+        <Dialog open={savePresetOpen} onOpenChange={setSavePresetOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Save Vibe Preset</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Saving: {selectedTags.map((t) => `"${t}"`).join(" + ")}
+            </p>
+            <Input
+              placeholder="Name this vibe (e.g. Late Night Mood)"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && presetName.trim() && savePresetMutation.mutate({ name: presetName.trim(), tags: selectedTags })}
+              className="mt-1"
+              autoFocus
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSavePresetOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => savePresetMutation.mutate({ name: presetName.trim(), tags: selectedTags })}
+                disabled={!presetName.trim() || savePresetMutation.isPending}
+                style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+              >
+                {savePresetMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* CTA for guests */}
         {!isAuthenticated && tracks && tracks.length > 0 && (

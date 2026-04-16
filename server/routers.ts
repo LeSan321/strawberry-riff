@@ -33,6 +33,9 @@ import {
   updatePlaylist,
   updateTrack,
   upsertProfile,
+  getVibePresets,
+  createVibePreset,
+  deleteVibePreset,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -446,6 +449,38 @@ const creatorsRouter = router({
     }),
 });
 
+// ─── Vibe Presets ────────────────────────────────────────────────────────────
+const vibePresetsRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const presets = await getVibePresets(ctx.user.id);
+    return presets.map((p) => ({
+      ...p,
+      tags: JSON.parse(p.tags) as string[],
+    }));
+  }),
+
+  save: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        tags: z.array(z.string()).min(1).max(20),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const preset = await createVibePreset(ctx.user.id, input.name, input.tags);
+      if (!preset) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return { ...preset, tags: JSON.parse(preset.tags) as string[] };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const ok = await deleteVibePreset(input.id, ctx.user.id);
+      if (!ok) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -456,6 +491,7 @@ export const appRouter = router({
   playlists: playlistsRouter,
   creators: creatorsRouter,
   stripe: stripeRouter,
+  vibePresets: vibePresetsRouter,
 });
 
 export type AppRouter = typeof appRouter;

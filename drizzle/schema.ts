@@ -112,3 +112,15 @@ export const playlistTracks = mysqlTable("playlist_tracks", {
 });
 
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
+
+// ─── Vibe Presets ─────────────────────────────────────────────────────────────
+export const vibePresets = mysqlTable("vibe_presets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  tags: text("tags").notNull(), // JSON array of tag strings
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VibePreset = typeof vibePresets.$inferSelect;
+export type InsertVibePreset = typeof vibePresets.$inferInsert;

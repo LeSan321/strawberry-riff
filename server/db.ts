@@ -11,6 +11,7 @@ import {
   Profile,
   Track,
   User,
+  VibePreset,
   friends,
   playlistTracks,
   playlists,
@@ -18,6 +19,7 @@ import {
   trackLikes,
   tracks,
   users,
+  vibePresets,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -453,4 +455,40 @@ export async function getTrackWithCreator(trackId: number): Promise<{
     creatorAvatarUrl: result[0].creatorAvatarUrl ?? null,
     creatorBio: result[0].creatorBio ?? null,
   };
+}
+
+// ─── Vibe Presets ─────────────────────────────────────────────────────────────
+export async function getVibePresets(userId: number): Promise<VibePreset[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(vibePresets)
+    .where(eq(vibePresets.userId, userId))
+    .orderBy(desc(vibePresets.createdAt));
+}
+
+export async function createVibePreset(
+  userId: number,
+  name: string,
+  tags: string[]
+): Promise<VibePreset | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .insert(vibePresets)
+    .values({ userId, name, tags: JSON.stringify(tags) });
+  const id = (result as any)[0]?.insertId;
+  if (!id) return null;
+  const rows = await db.select().from(vibePresets).where(eq(vibePresets.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteVibePreset(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .delete(vibePresets)
+    .where(and(eq(vibePresets.id, id), eq(vibePresets.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
 }
