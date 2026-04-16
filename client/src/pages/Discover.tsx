@@ -33,6 +33,7 @@ interface DiscoverTrack {
   duration?: number | null;
   moodTags: string[];
   gradient?: string | null;
+  coverArtUrl?: string | null;
   creatorUsername?: string | null;
   creatorIsPremium?: boolean;
 }
@@ -62,8 +63,8 @@ function TrackCard({ track, index, queue }: {
       pause();
     } else {
       play(
-        { id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl, gradient: track.gradient, moodTags: track.moodTags },
-        queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, gradient: t.gradient, moodTags: t.moodTags }))
+        { id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl, gradient: track.gradient, moodTags: track.moodTags, coverArtUrl: track.coverArtUrl },
+        queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, gradient: t.gradient, moodTags: t.moodTags, coverArtUrl: t.coverArtUrl }))
       );
     }
   };
@@ -89,8 +90,11 @@ function TrackCard({ track, index, queue }: {
       transition={{ delay: (index % 6) * 0.07 }}
       className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
     >
-      {/* Gradient art */}
-      <div className={`h-40 bg-gradient-to-br ${gradient} relative flex items-center justify-center`}>
+      {/* Cover art / gradient */}
+      <div className={`h-40 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
+        {track.coverArtUrl && (
+          <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+        )}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}

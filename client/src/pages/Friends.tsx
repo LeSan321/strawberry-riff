@@ -40,6 +40,7 @@ interface Track {
   audioUrl: string;
   visibility: string;
   gradient?: string | null;
+  coverArtUrl?: string | null;
   moodTags: string[];
   likes: number;
   userId: number;
@@ -134,7 +135,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
         <CardContent className="p-0">
           <div className="flex items-stretch">
             <div
-              className={`w-16 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer`}
+              className={`w-16 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer relative overflow-hidden`}
               onClick={() => {
                 if (isCurrentTrack && isPlaying) {
                   pause();
@@ -147,6 +148,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
                       audioUrl: track.audioUrl,
                       gradient: track.gradient,
                       moodTags: track.moodTags,
+                      coverArtUrl: track.coverArtUrl,
                     },
                     queue.map((t) => ({
                       id: t.id,
@@ -155,11 +157,15 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
                       audioUrl: t.audioUrl,
                       gradient: t.gradient,
                       moodTags: t.moodTags,
+                      coverArtUrl: t.coverArtUrl,
                     }))
                   );
                 }
               }}
             >
+              {track.coverArtUrl && (
+                <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+              )}
               <motion.div
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}

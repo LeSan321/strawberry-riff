@@ -61,6 +61,7 @@ export default function TrackPage() {
         artist: track.artist ?? track.creatorUsername ?? "Unknown",
         audioUrl: track.audioUrl,
         gradient,
+        coverArtUrl: track.coverArtUrl,
       });
     }
   };
@@ -137,10 +138,13 @@ export default function TrackPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-3xl overflow-hidden shadow-sm"
         >
-          {/* Gradient art / player */}
+          {/* Cover art / gradient hero */}
           <div
-            className={`h-72 bg-gradient-to-br ${gradient} relative flex items-center justify-center`}
+            className={`h-72 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
           >
+            {track?.coverArtUrl && (
+              <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+            )}
             {/* Play button */}
             <motion.button
               whileHover={{ scale: 1.08 }}

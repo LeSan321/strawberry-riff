@@ -162,3 +162,9 @@
 - [x] Track cards: show cover art image, fallback to gradient
 - [x] Player bar: show cover art thumbnail next to track title
 - [x] Upload page: cover art upload field alongside audio upload
+
+## Phase 23: Cover Art Consistency
+- [x] TrackPage hero: show cover art image over gradient when available
+- [x] Discover track cards: show cover art image over gradient when available
+- [x] Friends feed thumbnail: show cover art image over gradient when available
+- [x] MyRiffs Edit dialog: add cover art upload/replace field

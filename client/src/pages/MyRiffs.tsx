@@ -20,8 +20,9 @@ import {
   Check,
   X,
   Link as LinkIcon,
+  ImagePlus,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +97,11 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     description: track.description ?? "",
     visibility: track.visibility,
     moodTags: track.moodTags.join(", "),
+    coverArtUrl: track.coverArtUrl ?? "",
   });
+  const [coverPreview, setCoverPreview] = useState<string | null>(track.coverArtUrl ?? null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const updateMutation = trpc.tracks.update.useMutation({
     onSuccess: () => {
@@ -106,6 +111,28 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     },
     onError: (e) => toast.error(e.message),
   });
+  const uploadCoverArt = trpc.tracks.uploadCoverArt.useMutation();
+
+  const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    setUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(",")[1];
+        const result = await uploadCoverArt.mutateAsync({ base64, mimeType: f.type, context: "track" });
+        setCoverPreview(result.url);
+        setForm((p) => ({ ...p, coverArtUrl: result.url }));
+        setUploadingCover(false);
+      };
+      reader.readAsDataURL(f);
+    } catch {
+      toast.error("Failed to upload cover art");
+      setUploadingCover(false);
+    }
+  };
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -119,6 +146,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      coverArtUrl: form.coverArtUrl || undefined,
     });
   };
 
@@ -128,6 +156,38 @@ function EditDialog({ track, onClose }: EditDialogProps) {
         <DialogTitle>Edit Track</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-2">
+        {/* Cover art */}
+        <div>
+          <Label>Cover Art</Label>
+          <div className="flex items-center gap-3 mt-1">
+            <div
+              className={`w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0 cursor-pointer relative group`}
+              onClick={() => coverInputRef.current?.click()}
+            >
+              {coverPreview ? (
+                <img src={coverPreview} alt="cover" className="w-full h-full object-cover" />
+              ) : (
+                <Music className="w-6 h-6 text-white" />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploadingCover ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <ImagePlus className="w-4 h-4 text-white" />}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <p>Click to {coverPreview ? "replace" : "upload"} cover art</p>
+              <p className="mt-0.5">JPG, PNG, or WebP</p>
+              {coverPreview && (
+                <button
+                  className="text-red-400 hover:text-red-600 mt-1"
+                  onClick={() => { setCoverPreview(null); setForm((p) => ({ ...p, coverArtUrl: "" })); }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverArtChange} />
+          </div>
+        </div>
         <div>
           <Label>Title</Label>
           <Input
