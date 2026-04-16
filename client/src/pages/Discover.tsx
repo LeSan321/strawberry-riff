@@ -5,11 +5,11 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import { Play, Pause, Heart, Music, Search, SlidersHorizontal, Link as LinkIcon } from "lucide-react";
+import { Play, Pause, Heart, Music, Search, Shuffle, X, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 
@@ -22,24 +22,24 @@ const CARD_GRADIENTS = [
   "from-rose-400 via-pink-400 to-fuchsia-500",
 ];
 
-const ALL_MOODS = [
-  "chill", "energetic", "melancholy", "euphoric", "defiant",
-  "hopeful", "introspective", "romantic", "experimental", "ambient",
-];
 
-function TrackCard({ track, index }: {
-  track: {
-    id: number;
-    title: string;
-    artist?: string | null;
-    audioUrl: string;
-    duration?: number | null;
-    moodTags: string[];
-    gradient?: string | null;
-    creatorUsername?: string | null;
-    creatorIsPremium?: boolean;
-  };
+
+interface DiscoverTrack {
+  id: number;
+  title: string;
+  artist?: string | null;
+  audioUrl: string;
+  duration?: number | null;
+  moodTags: string[];
+  gradient?: string | null;
+  creatorUsername?: string | null;
+  creatorIsPremium?: boolean;
+}
+
+function TrackCard({ track, index, queue }: {
+  track: DiscoverTrack;
   index: number;
+  queue: DiscoverTrack[];
 }) {
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
   const { isAuthenticated } = useAuth();
@@ -60,7 +60,10 @@ function TrackCard({ track, index }: {
     if (isCurrentlyPlaying) {
       pause();
     } else {
-      play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl });
+      play(
+        { id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl, gradient: track.gradient, moodTags: track.moodTags },
+        queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, gradient: t.gradient, moodTags: t.moodTags }))
+      );
     }
   };
 
@@ -179,23 +182,63 @@ function TrackCard({ track, index }: {
   );
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function Discover() {
   const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [shuffled, setShuffled] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
 
   const { data: tracks, isLoading } = trpc.tracks.publicFeed.useQuery({ limit: 100 });
 
+  // Derive all tags actually in use from the fetched tracks
+  const availableTags = useMemo(() => {
+    if (!tracks) return [];
+    const tagSet = new Set<string>();
+    tracks.forEach((t) => t.moodTags.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet).sort();
+  }, [tracks]);
+
+  const toggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }, []);
+
+  const handleShuffle = useCallback(() => {
+    setShuffled(true);
+    setShuffleSeed((s) => s + 1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setSelectedTags([]);
+    setShuffled(false);
+  }, []);
+
   const filtered = useMemo(() => {
     if (!tracks) return [];
-    return tracks.filter((t) => {
+    let result = tracks.filter((t) => {
       const matchSearch = !search ||
         t.title.toLowerCase().includes(search.toLowerCase()) ||
         (t.artist ?? "").toLowerCase().includes(search.toLowerCase());
-      const matchMood = !selectedMood || t.moodTags.includes(selectedMood);
-      return matchSearch && matchMood;
+      const matchTags = selectedTags.length === 0 ||
+        selectedTags.every((tag) => t.moodTags.includes(tag));
+      return matchSearch && matchTags;
     });
-  }, [tracks, search, selectedMood]);
+    if (shuffled) result = shuffleArray(result);
+    return result;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks, search, selectedTags, shuffled, shuffleSeed]);
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -244,35 +287,60 @@ export default function Discover() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white rounded-2xl p-4 shadow-sm mb-8 flex flex-col sm:flex-row gap-3"
+          className="bg-white rounded-2xl p-4 shadow-sm mb-8"
         >
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by title or artist..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 border-0 bg-muted/40 rounded-xl focus-visible:ring-pink-300"
-            />
+          {/* Search row */}
+          <div className="flex gap-3 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title or artist..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 border-0 bg-muted/40 rounded-xl focus-visible:ring-pink-300"
+              />
+            </div>
+            {/* Shuffle button */}
+            <Button
+              variant="outline"
+              onClick={handleShuffle}
+              className={`rounded-xl gap-2 border-pink-200 flex-shrink-0 ${
+                shuffled ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0" : "text-pink-600 hover:bg-pink-50"
+              }`}
+              title="Shuffle results"
+            >
+              <Shuffle className="w-4 h-4" />
+              <span className="hidden sm:inline">Shuffle</span>
+            </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <div className="flex flex-wrap gap-1.5">
-              {ALL_MOODS.slice(0, 6).map((mood) => (
+
+          {/* Mood tag cloud */}
+          {availableTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <span className="text-xs text-muted-foreground mr-1">Vibe:</span>
+              {availableTags.map((tag) => (
                 <button
-                  key={mood}
-                  onClick={() => setSelectedMood(selectedMood === mood ? null : mood)}
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
                   className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
-                    selectedMood === mood
+                    selectedTags.includes(tag)
                       ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-sm"
                       : "bg-muted/50 text-muted-foreground hover:bg-pink-50 hover:text-pink-600"
                   }`}
                 >
-                  {mood}
+                  {tag}
                 </button>
               ))}
+              {(selectedTags.length > 0 || search) && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs px-2 py-1.5 rounded-full text-gray-400 hover:text-gray-600 flex items-center gap-0.5 ml-1"
+                >
+                  <X className="w-3 h-3" /> Clear
+                </button>
+              )}
             </div>
-          </div>
+          )}
         </motion.div>
 
         {/* Track grid */}
@@ -319,7 +387,7 @@ export default function Discover() {
               <>
                 <h3 className="text-xl font-bold mb-2">No matches found</h3>
                 <p className="text-muted-foreground mb-4">Try a different search or mood filter</p>
-                <Button variant="outline" onClick={() => { setSearch(""); setSelectedMood(null); }}
+                <Button variant="outline" onClick={clearFilters}
                   className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50">
                   Clear filters
                 </Button>
@@ -329,11 +397,15 @@ export default function Discover() {
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4">
-              {filtered.length} {filtered.length === 1 ? "riff" : "riffs"} {selectedMood ? `tagged "${selectedMood}"` : "in the community"}
+              {filtered.length} {filtered.length === 1 ? "riff" : "riffs"}
+              {selectedTags.length > 0 && (
+                <span> tagged {selectedTags.map((t) => `"${t}"`).join(" + ")}</span>
+              )}
+              {shuffled && <span className="ml-1 text-purple-500">· shuffled</span>}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((track, i) => (
-                <TrackCard key={track.id} track={track} index={i} />
+                <TrackCard key={track.id} track={track} index={i} queue={filtered} />
               ))}
             </div>
           </>

@@ -142,3 +142,9 @@
 ## Phase 19: Friends Feed Queue
 - [x] Wire Friends feed track play buttons to load all feed tracks as a queue
 - [x] Playing any track in the Friends feed auto-advances through the rest of the feed
+
+## Phase 20: Discover Mood Tag Filter & Shuffle
+- [x] Add backend: filter discover tracks by selected mood tags, expose all available tags
+- [x] Build tag cloud filter panel at top of Discover (multi-select, instant update)
+- [x] Add shuffle button to randomize current results (filtered or unfiltered)
+- [x] No popularity signals — results in random order by default
