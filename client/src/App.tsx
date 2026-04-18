@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import AppLayout from "./components/AppLayout";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
+import { GeneratePage } from "./pages/Generate";
 import MyRiffs from "./pages/MyRiffs";
 import Friends from "./pages/Friends";
 import Playlists from "./pages/Playlists";
@@ -25,6 +26,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/discover" component={Discover} />
+        <Route path="/generate" component={GeneratePage} />
         <Route path="/upload" component={Upload} />
         <Route path="/my-riffs" component={MyRiffs} />
         <Route path="/friends" component={Friends} />

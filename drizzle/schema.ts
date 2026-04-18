@@ -126,3 +126,43 @@ export const vibePresets = mysqlTable("vibe_presets", {
 
 export type VibePreset = typeof vibePresets.$inferSelect;
 export type InsertVibePreset = typeof vibePresets.$inferInsert;
+
+// ─── Music Generations ────────────────────────────────────────────────────────
+export const musicGenerations = mysqlTable("music_generations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  prompt: text("prompt").notNull(), // ACE-Step prompt (tags/description)
+  lyrics: text("lyrics").notNull(), // Song lyrics with structure
+  duration: int("duration").notNull(), // Duration in seconds (60, 120, 240)
+  audioUrl: text("audioUrl").notNull(), // S3 URL to generated MP3
+  audioKey: text("audioKey").notNull(), // S3 key for reference
+  status: mysqlEnum("status", ["generating", "complete", "failed"])
+    .default("generating")
+    .notNull(),
+  aceStepTaskId: varchar("aceStepTaskId", { length: 100 }), // ACE-Step task ID for polling
+  metadata: text("metadata"), // JSON metadata from ACE-Step
+  errorMessage: text("errorMessage"), // Error details if generation failed
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MusicGeneration = typeof musicGenerations.$inferSelect;
+export type InsertMusicGeneration = typeof musicGenerations.$inferInsert;
+
+// ─── Music Generation History (for retakes/extends) ────────────────────────────
+export const musicGenerationHistory = mysqlTable("music_generation_history", {
+  id: int("id").autoincrement().primaryKey(),
+  generationId: int("generationId").notNull(),
+  operation: mysqlEnum("operation", ["generate", "retake", "extend"])
+    .default("generate")
+    .notNull(),
+  audioUrl: text("audioUrl"), // URL of this variation
+  audioKey: text("audioKey"), // S3 key for this variation
+  aceStepTaskId: varchar("aceStepTaskId", { length: 100 }),
+  metadata: text("metadata"), // JSON metadata
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MusicGenerationHistory = typeof musicGenerationHistory.$inferSelect;

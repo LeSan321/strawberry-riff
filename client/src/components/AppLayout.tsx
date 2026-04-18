@@ -44,6 +44,7 @@ import { toast } from "sonner";
 const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/discover", label: "Discover", icon: Compass },
+  { href: "/generate", label: "Generate", icon: Music },
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/playlists", label: "Playlists", icon: ListMusic },
