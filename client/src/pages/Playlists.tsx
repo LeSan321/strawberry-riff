@@ -148,12 +148,14 @@ function CreatePlaylistDialog({ onClose }: { onClose: () => void }) {
 
 function SortableTrackRow({
   track,
+  position,
   isCurrentTrack,
   isPlaying,
   onPlay,
   onRemove,
 }: {
   track: Track;
+  position: number;
   isCurrentTrack: boolean;
   isPlaying: boolean;
   onPlay: () => void;
@@ -167,6 +169,7 @@ function SortableTrackRow({
       style={style}
       className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 group"
     >
+      <span className="w-5 text-center text-xs text-muted-foreground flex-shrink-0 select-none">{position}</span>
       <button
         {...attributes}
         {...listeners}
@@ -387,10 +390,11 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                       <SortableContext items={displayTracks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
                         <div className="space-y-2">
-                          {displayTracks.map((track) => (
+                          {displayTracks.map((track, idx) => (
                             <SortableTrackRow
                               key={track.id}
                               track={track}
+                              position={idx + 1}
                               isCurrentTrack={currentTrack?.id === track.id}
                               isPlaying={isPlaying}
                               onPlay={() => {
