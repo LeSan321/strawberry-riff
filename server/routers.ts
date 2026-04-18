@@ -28,6 +28,7 @@ import {
   isFollowing,
   likeTrack,
   removeTrackFromPlaylist,
+  reorderPlaylistTracks,
   unfollowUser,
   unlikeTrack,
   updatePlaylist,
@@ -433,6 +434,20 @@ const playlistsRouter = router({
       const pl = await getPlaylistById(input.playlistId);
       if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       await removeTrackFromPlaylist(input.playlistId, input.trackId);
+      return { success: true };
+    }),
+
+  reorderTracks: protectedProcedure
+    .input(
+      z.object({
+        playlistId: z.number().int(),
+        trackIds: z.array(z.number().int()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const pl = await getPlaylistById(input.playlistId);
+      if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      await reorderPlaylistTracks(input.playlistId, input.trackIds);
       return { success: true };
     }),
 });

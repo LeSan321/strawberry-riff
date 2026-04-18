@@ -399,6 +399,20 @@ export async function getPlaylistTracks(playlistId: number): Promise<Track[]> {
   return db.select().from(tracks).where(inArray(tracks.id, trackIds));
 }
 
+export async function reorderPlaylistTracks(playlistId: number, trackIds: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Update each track's position in order
+  await Promise.all(
+    trackIds.map((trackId, index) =>
+      db
+        .update(playlistTracks)
+        .set({ position: index })
+        .where(and(eq(playlistTracks.playlistId, playlistId), eq(playlistTracks.trackId, trackId)))
+    )
+  );
+}
+
 // ─── Stripe / Premium ─────────────────────────────────────────────────────────
 export async function setUserPremium(
   userId: number,

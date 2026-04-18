@@ -182,3 +182,8 @@
 ## Phase 26: Generate Page - Re-generate Button
 - [x] Add Re-generate button to completed and failed generation cards
 - [x] Clicking it scrolls to and pre-fills the form with original title, prompt, lyrics, and duration
+
+## Phase 27: Playlist Drag-to-Reorder
+- [x] Install @dnd-kit/core and @dnd-kit/sortable
+- [x] Add drag handles to playlist track rows
+- [x] Optimistic reorder on drag end, persist new order to database via reorderTracks procedure

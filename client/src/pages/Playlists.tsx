@@ -17,7 +17,23 @@ import {
   X,
   ImagePlus,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,6 +74,7 @@ interface Track {
   title: string;
   artist?: string | null;
   audioUrl: string;
+  coverArtUrl?: string | null;
   gradient?: string | null;
   moodTags: string[];
 }
@@ -129,6 +146,65 @@ function CreatePlaylistDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function SortableTrackRow({
+  track,
+  isCurrentTrack,
+  isPlaying,
+  onPlay,
+  onRemove,
+}: {
+  track: Track;
+  isCurrentTrack: boolean;
+  isPlaying: boolean;
+  onPlay: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: track.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 group"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 touch-none"
+        tabIndex={-1}
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <button
+        className={`w-8 h-8 rounded-full bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
+        onClick={onPlay}
+      >
+        {track.coverArtUrl && (
+          <img src={track.coverArtUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        <span className="relative z-10">
+          {isCurrentTrack && isPlaying ? (
+            <Pause className="w-3.5 h-3.5 text-white" />
+          ) : (
+            <Play className="w-3.5 h-3.5 text-white ml-0.5" />
+          )}
+        </span>
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-800 truncate">{track.title}</p>
+        {track.artist && <p className="text-xs text-muted-foreground truncate">{track.artist}</p>}
+      </div>
+      <button
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+        onClick={onRemove}
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const utils = trpc.useUtils();
   const { play, pause, currentTrack, isPlaying } = useAudioPlayer();
@@ -196,6 +272,32 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const reorderMutation = trpc.playlists.reorderTracks.useMutation({
+    onError: (e) => toast.error("Failed to save order: " + e.message),
+  });
+
+  const [localTracks, setLocalTracks] = useState<Track[] | null>(null);
+  const displayTracks = localTracks ?? tracks;
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIndex = displayTracks.findIndex((t) => t.id === active.id);
+      const newIndex = displayTracks.findIndex((t) => t.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const reordered = arrayMove(displayTracks, oldIndex, newIndex);
+      setLocalTracks(reordered);
+      reorderMutation.mutate({
+        playlistId: playlist.id,
+        trackIds: reordered.map((t) => t.id),
+      });
+    },
+    [displayTracks, playlist.id, reorderMutation]
+  );
 
   return (
     <>
@@ -282,68 +384,31 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {tracks.map((track) => {
-                        const isCurrentTrack = currentTrack?.id === track.id;
-                        return (
-                          <div
-                            key={track.id}
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 group"
-                          >
-                            <button
-                              className={`w-8 h-8 rounded-full bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0`}
-                              onClick={() => {
-                                if (isCurrentTrack && isPlaying) {
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={displayTracks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-2">
+                          {displayTracks.map((track) => (
+                            <SortableTrackRow
+                              key={track.id}
+                              track={track}
+                              isCurrentTrack={currentTrack?.id === track.id}
+                              isPlaying={isPlaying}
+                              onPlay={() => {
+                                if (currentTrack?.id === track.id && isPlaying) {
                                   pause();
                                 } else {
                                   play(
-                                    {
-                                      id: track.id,
-                                      title: track.title,
-                                      artist: track.artist,
-                                      audioUrl: track.audioUrl,
-                                      gradient: track.gradient,
-                                      moodTags: track.moodTags,
-                                    },
-                                    tracks.map((t) => ({
-                                      id: t.id,
-                                      title: t.title,
-                                      artist: t.artist,
-                                      audioUrl: t.audioUrl,
-                                      gradient: t.gradient,
-                                      moodTags: t.moodTags,
-                                    }))
+                                    { id: track.id, title: track.title, artist: track.artist, audioUrl: track.audioUrl, gradient: track.gradient, moodTags: track.moodTags },
+                                    displayTracks.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, gradient: t.gradient, moodTags: t.moodTags }))
                                   );
                                 }
                               }}
-                            >
-                              {isCurrentTrack && isPlaying ? (
-                                <Pause className="w-3.5 h-3.5 text-white" />
-                              ) : (
-                                <Play className="w-3.5 h-3.5 text-white ml-0.5" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-800 truncate">{track.title}</p>
-                              {track.artist && (
-                                <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-                              )}
-                            </div>
-                            <button
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                              onClick={() =>
-                                removeTrackMutation.mutate({
-                                  playlistId: playlist.id,
-                                  trackId: track.id,
-                                })
-                              }
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              onRemove={() => removeTrackMutation.mutate({ playlistId: playlist.id, trackId: track.id })}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </CardContent>
               </motion.div>
