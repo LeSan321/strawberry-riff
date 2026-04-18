@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, CheckCircle2, AlertCircle, Upload, Clock, Sparkles } from "lucide-react";
+import { Music, Loader2, CheckCircle2, AlertCircle, Upload, Clock, Sparkles, RefreshCw } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -119,7 +119,13 @@ function PublishDialog({
 }
 
 // ─── Generation card ───────────────────────────────────────────────────────────
-function GenerationCard({ gen }: { gen: { id: number; title: string; duration: number; status: string; audioUrl: string | null; createdAt: Date } }) {
+function GenerationCard({
+  gen,
+  onRegenerate,
+}: {
+  gen: { id: number; title: string; prompt: string; lyrics: string; duration: number; status: string; audioUrl: string | null; createdAt: Date };
+  onRegenerate: (settings: { title: string; prompt: string; lyrics: string; duration: string }) => void;
+}) {
   const [publishOpen, setPublishOpen] = useState(false);
 
   const statusColor =
@@ -149,19 +155,41 @@ function GenerationCard({ gen }: { gen: { id: number; title: string; duration: n
       {gen.status === "complete" && gen.audioUrl && (
         <div className="mt-2 space-y-2">
           <audio src={gen.audioUrl} controls className="w-full h-8" />
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 text-xs"
+              onClick={() => setPublishOpen(true)}
+            >
+              <Upload className="mr-1.5 h-3 w-3" />
+              Publish
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="flex-1 text-xs"
+              onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics, duration: String(gen.duration) })}
+            >
+              <RefreshCw className="mr-1.5 h-3 w-3" />
+              Re-generate
+            </Button>
+          </div>
+        </div>
+      )}
+      {gen.status === "failed" && (
+        <div className="mt-2">
+          <p className="mb-1.5 text-xs text-destructive">Generation failed.</p>
           <Button
             size="sm"
             variant="outline"
             className="w-full text-xs"
-            onClick={() => setPublishOpen(true)}
+            onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics, duration: String(gen.duration) })}
           >
-            <Upload className="mr-1.5 h-3 w-3" />
-            Publish to My Riffs
+            <RefreshCw className="mr-1.5 h-3 w-3" />
+            Try Again
           </Button>
         </div>
-      )}
-      {gen.status === "failed" && (
-        <p className="mt-1 text-xs text-destructive">Generation failed. Please try again.</p>
       )}
       {publishOpen && (
         <PublishDialog
@@ -184,6 +212,7 @@ export function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
@@ -195,6 +224,21 @@ export function GeneratePage() {
     setPollingId(null);
     toast.success("Music generation complete! Ready to publish.");
   });
+
+  const handleRegenerate = useCallback(
+    (settings: { title: string; prompt: string; lyrics: string; duration: string }) => {
+      setTitle(settings.title);
+      setPrompt(settings.prompt);
+      setLyrics(settings.lyrics);
+      setDuration(settings.duration);
+      setError(null);
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      toast.info("Settings loaded — review and hit Generate when ready.");
+    },
+    []
+  );
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,7 +288,7 @@ export function GeneratePage() {
     <div className="container mx-auto py-8">
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Generation Form */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2" ref={formRef}>
           <Card className="p-6">
             <div className="mb-6 flex items-start gap-3">
               <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-2.5">
@@ -367,7 +411,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} />
                 ))}
               </div>
             ) : (

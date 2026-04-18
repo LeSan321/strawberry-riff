@@ -178,3 +178,7 @@
 - [x] Add 5-second status polling on Generate page so status updates automatically from "generating" to "complete"
 - [x] Add "Publish to My Riffs" button that appears when generation is complete
 - [x] Backend: publishGeneration procedure that creates a track record from a completed music generation
+
+## Phase 26: Generate Page - Re-generate Button
+- [x] Add Re-generate button to completed and failed generation cards
+- [x] Clicking it scrolls to and pre-fills the form with original title, prompt, lyrics, and duration
