@@ -46,6 +46,7 @@ export async function generateMusicWithACEStep(
     console.log(`[ACE-Step] Generating ${duration}s music: ${prompt.substring(0, 50)}...`);
 
     const result = await client.predict(
+      "/__call__",
       {
         audio_duration: duration,
         prompt: prompt,
@@ -54,8 +55,7 @@ export async function generateMusicWithACEStep(
         guidance_scale: 15.0,
         scheduler_type: "euler",
         cfg_type: "apg",
-      },
-      "/__call__"
+      }
     );
 
     // Parse result: typically [audio_url, metadata]

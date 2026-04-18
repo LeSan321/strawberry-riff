@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Music, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export function GeneratePage() {
   const { user } = useAuth();

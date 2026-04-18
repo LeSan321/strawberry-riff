@@ -534,6 +534,9 @@ const musicGenerationRouter = router({
         audioUrl: "", // Will be updated when generation completes
         audioKey: "",
         status: "generating",
+        metadata: null,
+        aceStepTaskId: null,
+        errorMessage: null,
       });
 
       if (!generationId) {
