@@ -173,3 +173,8 @@
 - [x] CreatorProfile track cards: show cover art over gradient
 - [x] Playlists: verify cover art upload is wired to uploadCoverArt for playlists
 - [x] Now Playing glow: pulsing ring/glow on cover art thumbnail when track is active
+
+## Phase 25: Generate Page - Polling & Publish to My Riffs
+- [x] Add 5-second status polling on Generate page so status updates automatically from "generating" to "complete"
+- [x] Add "Publish to My Riffs" button that appears when generation is complete
+- [x] Backend: publishGeneration procedure that creates a track record from a completed music generation

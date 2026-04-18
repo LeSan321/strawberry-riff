@@ -595,6 +595,38 @@ const musicGenerationRouter = router({
       }
       return getMusicGenerationHistory(input.generationId);
     }),
+
+  publish: protectedProcedure
+    .input(
+      z.object({
+        generationId: z.number().int(),
+        visibility: z.enum(["private", "inner-circle", "public"]).default("private"),
+        moodTags: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const generation = await getMusicGenerationById(input.generationId);
+      if (!generation) throw new TRPCError({ code: "NOT_FOUND" });
+      if (generation.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      if (generation.status !== "complete" || !generation.audioUrl) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Generation is not complete yet" });
+      }
+      const trackId = await createTrack({
+        userId: ctx.user.id,
+        title: generation.title,
+        artist: null,
+        genre: null,
+        description: `Generated with ACE-Step • ${generation.duration}s`,
+        audioUrl: generation.audioUrl,
+        audioKey: generation.audioKey,
+        duration: generation.duration,
+        moodTags: input.moodTags ? JSON.stringify(input.moodTags) : null,
+        visibility: input.visibility,
+        gradient: "from-purple-500 to-pink-500",
+        coverArtUrl: null,
+      });
+      return getTrackById(trackId);
+    }),
 });
 
 // ─── App Router ───────────────────────────────────────────────────────────────
