@@ -36,6 +36,12 @@ import {
   getVibePresets,
   createVibePreset,
   deleteVibePreset,
+  createMusicGeneration,
+  getMusicGenerationById,
+  getMusicGenerationsByUserId,
+  updateMusicGenerationStatus,
+  deleteMusicGeneration,
+  getMusicGenerationHistory,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -44,6 +50,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { generateMusicWithACEStep, validateMusicGenerationParams } from "./musicGeneration";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -499,6 +506,94 @@ const vibePresetsRouter = router({
     }),
 });
 
+// ─── Music Generation ─────────────────────────────────────────────────────────
+const musicGenerationRouter = router({
+  generate: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        prompt: z.string().min(1).max(1000),
+        lyrics: z.string().min(1),
+        duration: z.number().int().default(240),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate parameters
+      const validation = validateMusicGenerationParams(input.prompt, input.lyrics, input.duration);
+      if (!validation.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
+      }
+
+      // Create generation record
+      const generationId = await createMusicGeneration({
+        userId: ctx.user.id,
+        title: input.title,
+        prompt: input.prompt,
+        lyrics: input.lyrics,
+        duration: input.duration,
+        audioUrl: "", // Will be updated when generation completes
+        audioKey: "",
+        status: "generating",
+      });
+
+      if (!generationId) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
+      }
+
+      // Start generation in background
+      generateMusicWithACEStep(input.prompt, input.lyrics, input.duration)
+        .then(async (result) => {
+          // Upload to S3
+          const audioBuffer = Buffer.from(result.audioUrl);
+          const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.mp3`;
+          const { url } = await storagePut(audioKey, audioBuffer, "audio/mpeg");
+
+          // Update generation record
+          await updateMusicGenerationStatus(generationId, "complete", {
+            audioUrl: url,
+            audioKey: audioKey,
+            metadata: JSON.stringify(result.metadata || {}),
+          });
+        })
+        .catch(async (error) => {
+          console.error(`[Music Generation] Failed for ID ${generationId}:`, error);
+          await updateMusicGenerationStatus(generationId, "failed", {
+            errorMessage: error instanceof Error ? error.message : String(error),
+          });
+        });
+
+      return { id: generationId, status: "generating" };
+    }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.number().int() }))
+    .query(async ({ input }) => {
+      return getMusicGenerationById(input.id);
+    }),
+
+  myGenerations: protectedProcedure.query(async ({ ctx }) => {
+    return getMusicGenerationsByUserId(ctx.user.id);
+  }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const ok = await deleteMusicGeneration(input.id, ctx.user.id);
+      if (!ok) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+
+  getHistory: protectedProcedure
+    .input(z.object({ generationId: z.number().int() }))
+    .query(async ({ ctx, input }) => {
+      const generation = await getMusicGenerationById(input.generationId);
+      if (!generation || generation.userId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      return getMusicGenerationHistory(input.generationId);
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -510,6 +605,7 @@ export const appRouter = router({
   creators: creatorsRouter,
   stripe: stripeRouter,
   vibePresets: vibePresetsRouter,
+  musicGeneration: musicGenerationRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -6,6 +6,8 @@ import {
   InsertProfile,
   InsertTrack,
   InsertUser,
+  MusicGeneration,
+  MusicGenerationHistory,
   Playlist,
   PlaylistTrack,
   Profile,
@@ -13,6 +15,8 @@ import {
   User,
   VibePreset,
   friends,
+  musicGenerationHistory,
+  musicGenerations,
   playlistTracks,
   playlists,
   profiles,
@@ -491,4 +495,96 @@ export async function deleteVibePreset(id: number, userId: number): Promise<bool
     .delete(vibePresets)
     .where(and(eq(vibePresets.id, id), eq(vibePresets.userId, userId)));
   return (result as any)[0]?.affectedRows > 0;
+}
+
+
+// ─── Music Generations ────────────────────────────────────────────────────────
+export async function createMusicGeneration(
+  data: Omit<MusicGeneration, "id" | "createdAt" | "updatedAt" | "completedAt">
+): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(musicGenerations).values(data);
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function getMusicGenerationById(id: number): Promise<MusicGeneration | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(musicGenerations)
+    .where(eq(musicGenerations.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getMusicGenerationsByUserId(userId: number): Promise<MusicGeneration[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(musicGenerations)
+    .where(eq(musicGenerations.userId, userId))
+    .orderBy(desc(musicGenerations.createdAt));
+}
+
+export async function updateMusicGenerationStatus(
+  id: number,
+  status: "generating" | "complete" | "failed",
+  updates?: { audioUrl?: string; audioKey?: string; metadata?: string; errorMessage?: string }
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const completedAt = status === "complete" ? new Date() : undefined;
+  const result = await db
+    .update(musicGenerations)
+    .set({
+      status,
+      completedAt,
+      ...updates,
+    })
+    .where(eq(musicGenerations.id, id));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+export async function deleteMusicGeneration(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  // Delete history first
+  await db.delete(musicGenerationHistory).where(eq(musicGenerationHistory.generationId, id));
+  // Then delete the generation
+  const result = await db
+    .delete(musicGenerations)
+    .where(and(eq(musicGenerations.id, id), eq(musicGenerations.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+export async function addMusicGenerationHistory(
+  generationId: number,
+  operation: "generate" | "retake" | "extend",
+  audioUrl: string,
+  audioKey: string,
+  metadata?: string
+): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(musicGenerationHistory).values({
+    generationId,
+    operation,
+    audioUrl,
+    audioKey,
+    metadata,
+  });
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function getMusicGenerationHistory(generationId: number): Promise<MusicGenerationHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(musicGenerationHistory)
+    .where(eq(musicGenerationHistory.generationId, generationId))
+    .orderBy(desc(musicGenerationHistory.createdAt));
 }
