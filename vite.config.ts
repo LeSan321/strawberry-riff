@@ -150,7 +150,16 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const isProduction = process.env.NODE_ENV === "production";
+// Manus-specific plugins only run inside the Manus sandbox environment.
+// They must be excluded from production builds deployed to external hosts (e.g. Railway)
+// because they inject scripts that communicate with Manus infrastructure that doesn't
+// exist outside the sandbox, which can interfere with routing and page loading.
+const plugins = [
+  react(),
+  tailwindcss(),
+  ...(isProduction ? [] : [jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()]),
+];
 
 export default defineConfig({
   plugins,
