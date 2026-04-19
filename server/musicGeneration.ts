@@ -3,12 +3,13 @@
  * Handles text-to-music generation via Hugging Face ACE-Step API
  */
 
-import { Client } from "@gradio/client";
+import { Client, FileData } from "@gradio/client";
 
 interface ACEStepGenerationResult {
-  audioUrl: string;
+  audioUrl: string;       // Direct URL to the audio file on HuggingFace
+  audioData?: Buffer;     // Raw audio bytes if available via b64
+  mimeType: string;
   metadata?: Record<string, unknown>;
-  taskId?: string;
 }
 
 interface ACEStepPollResult {
@@ -45,28 +46,52 @@ export async function generateMusicWithACEStep(
 
     console.log(`[ACE-Step] Generating ${duration}s music: ${prompt.substring(0, 50)}...`);
 
-    const result = await client.predict(
-      "/__call__",
-      {
-        audio_duration: duration,
-        prompt: prompt,
-        lyrics: lyrics,
-        infer_step: 60,
-        guidance_scale: 15.0,
-        scheduler_type: "euler",
-        cfg_type: "apg",
-      }
-    );
+    const result = await client.predict("/__call__", {
+      audio_duration: duration,
+      prompt: prompt,
+      lyrics: lyrics,
+      infer_step: 60,
+      guidance_scale: 15.0,
+      scheduler_type: "euler",
+      cfg_type: "apg",
+    });
 
-    // Parse result: typically [audio_url, metadata]
-    const audioUrl = Array.isArray(result) ? result[0] : result;
-    const metadata = Array.isArray(result) && result.length > 1 ? result[1] : {};
+    // result.data is an array; the first element is a FileData object for the audio output
+    const resultData = result.data as unknown[];
+    const fileData = resultData[0] as FileData;
 
-    console.log(`[ACE-Step] Generation complete: ${audioUrl}`);
+    if (!fileData) {
+      throw new Error("No audio data returned from ACE-Step");
+    }
+
+    console.log(`[ACE-Step] Generation complete. FileData:`, JSON.stringify({
+      url: fileData.url,
+      path: fileData.path,
+      mime_type: fileData.mime_type,
+      size: fileData.size,
+    }));
+
+    // Determine the audio URL - prefer the direct URL, fall back to path
+    const audioUrl = fileData.url || fileData.path;
+    if (!audioUrl) {
+      throw new Error("ACE-Step returned FileData with no URL or path");
+    }
+
+    // If b64 data is available, decode it directly to avoid an extra HTTP fetch
+    let audioData: Buffer | undefined;
+    const b64 = (fileData as any).b64 as string | undefined;
+    if (b64) {
+      const base64Content = b64.includes(",") ? b64.split(",")[1] : b64;
+      audioData = Buffer.from(base64Content, "base64");
+    }
+
+    const mimeType = fileData.mime_type || "audio/wav";
 
     return {
-      audioUrl: typeof audioUrl === "string" ? audioUrl : String(audioUrl),
-      metadata: metadata as Record<string, unknown>,
+      audioUrl,
+      audioData,
+      mimeType,
+      metadata: resultData.length > 1 ? (resultData[1] as Record<string, unknown>) : {},
     };
   } catch (error) {
     console.error("[ACE-Step] Generation failed:", error);
@@ -115,4 +140,16 @@ export function validateMusicGenerationParams(
   }
 
   return { valid: true };
+}
+
+/**
+ * Fetch audio bytes from a URL (used when b64 data is not available in FileData)
+ */
+export async function fetchAudioBytes(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch audio from ${url}: ${response.status} ${response.statusText}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }

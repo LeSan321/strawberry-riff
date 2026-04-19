@@ -51,7 +51,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
-import { generateMusicWithACEStep, validateMusicGenerationParams } from "./musicGeneration";
+import { generateMusicWithACEStep, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -561,10 +561,11 @@ const musicGenerationRouter = router({
       // Start generation in background
       generateMusicWithACEStep(input.prompt, input.lyrics, input.duration)
         .then(async (result) => {
-          // Upload to S3
-          const audioBuffer = Buffer.from(result.audioUrl);
-          const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.mp3`;
-          const { url } = await storagePut(audioKey, audioBuffer, "audio/mpeg");
+          // Use pre-decoded bytes if available (b64), otherwise fetch from the HuggingFace URL
+          const audioBuffer = result.audioData ?? await fetchAudioBytes(result.audioUrl);
+          const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
+          const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
+          const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
 
           // Update generation record
           await updateMusicGenerationStatus(generationId, "complete", {

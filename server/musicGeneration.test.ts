@@ -5,9 +5,12 @@ import { TRPCError } from "@trpc/server";
 // Mock the music generation module
 vi.mock("./musicGeneration", () => ({
   generateMusicWithACEStep: vi.fn().mockResolvedValue({
-    audioUrl: "https://example.com/music.mp3",
+    audioUrl: "https://huggingface.co/test/audio.wav",
+    audioData: Buffer.from("fake-audio-bytes"),
+    mimeType: "audio/wav",
     metadata: { duration: 240, model: "ace-step" },
   }),
+  fetchAudioBytes: vi.fn().mockResolvedValue(Buffer.from("fake-audio-bytes")),
   validateMusicGenerationParams: vi.fn((prompt, lyrics, duration) => {
     if (!prompt || prompt.trim().length === 0) {
       return { valid: false, error: "Prompt is required" };
