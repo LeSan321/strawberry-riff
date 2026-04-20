@@ -123,7 +123,7 @@ function GenerationCard({
   gen,
   onRegenerate,
 }: {
-  gen: { id: number; title: string; prompt: string; lyrics: string; duration: number; status: string; audioUrl: string | null; createdAt: Date };
+  gen: { id: number; title: string; prompt: string; lyrics: string; duration: number; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string; duration: string }) => void;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
@@ -179,7 +179,13 @@ function GenerationCard({
       )}
       {gen.status === "failed" && (
         <div className="mt-2">
-          <p className="mb-1.5 text-xs text-destructive">Generation failed.</p>
+          <p className="mb-1.5 text-xs text-destructive">
+            {gen.errorMessage
+              ? gen.errorMessage.length > 120
+                ? gen.errorMessage.substring(0, 120) + "..."
+                : gen.errorMessage
+              : "Generation failed — the AI service may be busy. Please try again."}
+          </p>
           <Button
             size="sm"
             variant="outline"

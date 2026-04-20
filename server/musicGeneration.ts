@@ -85,7 +85,21 @@ export async function generateMusicWithACEStep(
       audioData = Buffer.from(base64Content, "base64");
     }
 
-    const mimeType = fileData.mime_type || "audio/wav";
+    // Detect MIME type from URL extension when mime_type is null (common with HuggingFace spaces)
+    let mimeType = fileData.mime_type;
+    if (!mimeType) {
+      const urlLower = audioUrl.toLowerCase();
+      if (urlLower.includes(".mp3")) {
+        mimeType = "audio/mpeg";
+      } else if (urlLower.includes(".ogg")) {
+        mimeType = "audio/ogg";
+      } else if (urlLower.includes(".flac")) {
+        mimeType = "audio/flac";
+      } else {
+        mimeType = "audio/wav"; // safe default
+      }
+    }
+    console.log(`[ACE-Step] Detected MIME type: ${mimeType} for URL: ${audioUrl.substring(0, 80)}...`);
 
     return {
       audioUrl,
