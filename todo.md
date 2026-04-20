@@ -216,3 +216,10 @@
 - [x] Update regenerate to pass refinement as system guidance, not append to prompt
 - [x] Verify prompt stays under 1000 chars even with multiple refinements
 - [x] All tests passing (82 tests), TypeScript clean
+
+## Phase 32: Fix MiniMax API Incompatibility
+- [x] Refactor promptTemplates to use brief prefixes instead of system parameter
+- [x] Update startMusicGeneration to remove system parameter, use prefixed prompt
+- [x] Update routers.ts to build prefixed prompts
+- [x] Update tests
+- [x] All tests passing (80 tests), TypeScript clean

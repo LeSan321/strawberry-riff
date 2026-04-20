@@ -53,7 +53,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
-import { getIntensityGuidance, getRefinementGuidance, buildSystemMessage, IntensityLevel, RefinementType } from "./promptTemplates";
+import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -545,13 +545,16 @@ const musicGenerationRouter = router({
         });
       }
 
-      // Validate parameters (prompt stays as-is, not concatenated with intensity)
-      const validation = validateMusicGenerationParams(input.prompt, input.lyrics);
+      // Build prompt with intensity prefix
+      const promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+
+      // Validate parameters
+      const validation = validateMusicGenerationParams(promptWithIntensity, input.lyrics);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
 
-      // Create generation record (store intensity in metadata for future reference)
+      // Create generation record (store original prompt, intensity is in prefixed version sent to API)
       const generationId = await createMusicGeneration({
         userId: ctx.user.id,
         title: input.title,
@@ -571,8 +574,8 @@ const musicGenerationRouter = router({
       }
 
       // Start generation in background (fire-and-forget)
-      // Pass intensity as system context, not appended to prompt
-      startMusicGeneration(input.prompt, input.lyrics, input.intensity as IntensityLevel)
+      // Use prompt with intensity prefix
+      startMusicGeneration(promptWithIntensity, input.lyrics)
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);
@@ -656,8 +659,15 @@ const musicGenerationRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Can only refine completed generations" });
       }
 
-      // Validate parameters (prompt stays as-is, refinement passed as system guidance)
-      const validation = validateMusicGenerationParams(original.prompt, original.lyrics);
+      // Build prompt with intensity and refinement prefixes
+      const promptWithRefinement = buildPromptWithRefinement(
+        original.prompt,
+        original.metadata ? JSON.parse(original.metadata).intensity || "balanced" : "balanced",
+        input.refinement as RefinementType
+      );
+
+      // Validate parameters
+      const validation = validateMusicGenerationParams(promptWithRefinement, original.lyrics);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
@@ -682,8 +692,8 @@ const musicGenerationRouter = router({
       }
 
       // Start generation in background (fire-and-forget)
-      // Pass refinement as system guidance, not appended to prompt
-      startMusicGeneration(original.prompt, original.lyrics, undefined, input.refinement)
+      // Use prompt with intensity and refinement prefixes
+      startMusicGeneration(promptWithRefinement, original.lyrics)
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);

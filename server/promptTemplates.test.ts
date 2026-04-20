@@ -1,76 +1,69 @@
 import { describe, it, expect } from "vitest";
 import {
-  getIntensityGuidance,
-  getRefinementGuidance,
-  buildSystemMessage,
+  buildPromptWithIntensity,
+  buildPromptWithRefinement,
   getIntensityLevels,
   getRefinementOptions,
 } from "./promptTemplates";
 
 describe("promptTemplates", () => {
-  describe("getIntensityGuidance", () => {
-    it("should return subtle intensity guidance", () => {
-      const guidance = getIntensityGuidance("subtle");
-      expect(guidance).toContain("Gentle");
-      expect(guidance).toContain("minimal");
+  describe("buildPromptWithIntensity", () => {
+    it("should prepend subtle prefix to prompt", () => {
+      const result = buildPromptWithIntensity("test prompt", "subtle");
+      expect(result).toBe("[subtle] test prompt");
     });
 
-    it("should return balanced intensity guidance", () => {
-      const guidance = getIntensityGuidance("balanced");
-      expect(guidance).toContain("Clear vocals");
-      expect(guidance).toContain("steady rhythm");
+    it("should prepend balanced prefix to prompt", () => {
+      const result = buildPromptWithIntensity("test prompt", "balanced");
+      expect(result).toBe("[balanced] test prompt");
     });
 
-    it("should return aggressive intensity guidance", () => {
-      const guidance = getIntensityGuidance("aggressive");
-      expect(guidance).toContain("Bold");
-      expect(guidance).toContain("energetic");
-    });
-  });
-
-  describe("getRefinementGuidance", () => {
-    it("should return more_aggressive refinement guidance", () => {
-      const guidance = getRefinementGuidance("more_aggressive");
-      expect(guidance).toContain("heavier drums");
-      expect(guidance).toContain("prominent bass");
+    it("should prepend aggressive prefix to prompt", () => {
+      const result = buildPromptWithIntensity("test prompt", "aggressive");
+      expect(result).toBe("[aggressive] test prompt");
     });
 
-    it("should return less_busy refinement guidance", () => {
-      const guidance = getRefinementGuidance("less_busy");
-      expect(guidance).toContain("Simplify");
-      expect(guidance).toContain("vocals");
-    });
-
-    it("should return different_vibe refinement guidance", () => {
-      const guidance = getRefinementGuidance("different_vibe");
-      expect(guidance).toContain("Completely different");
-      expect(guidance).toContain("fresh approach");
+    it("should keep prompt under 1000 chars with prefix", () => {
+      const longPrompt = "a".repeat(980);
+      const result = buildPromptWithIntensity(longPrompt, "subtle");
+      expect(result.length).toBeLessThan(1000);
     });
   });
 
-  describe("buildSystemMessage", () => {
-    it("should build system message with intensity only", () => {
-      const message = buildSystemMessage("subtle");
-      expect(message).toContain("You are a music generation AI");
-      expect(message).toContain("Intensity:");
-      expect(message).toContain("Gentle");
-      expect(message).not.toContain("Refinement:");
+  describe("buildPromptWithRefinement", () => {
+    it("should prepend both intensity and refinement prefixes", () => {
+      const result = buildPromptWithRefinement(
+        "test prompt",
+        "balanced",
+        "more_aggressive"
+      );
+      expect(result).toBe("[balanced] [more-aggressive] test prompt");
     });
 
-    it("should build system message with intensity and refinement", () => {
-      const message = buildSystemMessage("balanced", "more_aggressive");
-      expect(message).toContain("You are a music generation AI");
-      expect(message).toContain("Intensity:");
-      expect(message).toContain("Clear vocals");
-      expect(message).toContain("Refinement:");
-      expect(message).toContain("heavier drums");
+    it("should handle different refinement types", () => {
+      const result1 = buildPromptWithRefinement(
+        "test",
+        "subtle",
+        "less_busy"
+      );
+      expect(result1).toBe("[subtle] [less-busy] test");
+
+      const result2 = buildPromptWithRefinement(
+        "test",
+        "aggressive",
+        "different_vibe"
+      );
+      expect(result2).toBe("[aggressive] [different-vibe] test");
     });
 
-    it("should not concatenate guidance to user prompt", () => {
-      const message = buildSystemMessage("aggressive", "less_busy");
-      // System message should be separate, not part of user prompt
-      expect(message).toContain("You are a music generation AI");
-      expect(message.length).toBeLessThan(500); // Guidance should be concise
+    it("should keep prompt under 1000 chars even with multiple prefixes", () => {
+      const longPrompt = "a".repeat(970);
+      const result = buildPromptWithRefinement(
+        longPrompt,
+        "balanced",
+        "more_aggressive"
+      );
+      expect(result.length).toBeLessThan(1000);
     });
   });
 
