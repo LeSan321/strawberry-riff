@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -123,9 +123,11 @@ function PublishDialog({
 function GenerationCard({
   gen,
   onRegenerate,
+  onDelete,
 }: {
   gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
+  onDelete: (id: number) => void;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
 
@@ -139,8 +141,9 @@ function GenerationCard({
   return (
     <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium truncate">{gen.title}</p>
-        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${statusColor}`}>
+        <p className="font-medium truncate flex-1">{gen.title}</p>
+        <div className="flex items-center gap-1 shrink-0">
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusColor}`}>
           {gen.status === "generating" ? (
             <span className="flex items-center gap-1">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -148,6 +151,14 @@ function GenerationCard({
             </span>
           ) : gen.status}
         </span>
+        <button
+          onClick={() => onDelete(gen.id)}
+          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          title="Delete generation"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+        </div>
       </div>
       <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
         <Clock className="h-3 w-3" />
@@ -259,10 +270,31 @@ export function GeneratePage() {
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
+  const deleteMutation = trpc.musicGeneration.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.musicGeneration.myGenerations.cancel();
+      const prev = utils.musicGeneration.myGenerations.getData();
+      utils.musicGeneration.myGenerations.setData(undefined, (old) =>
+        old ? old.filter((g) => g.id !== id) : old
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.musicGeneration.myGenerations.setData(undefined, ctx.prev);
+      toast.error("Could not delete — please try again.");
+    },
+    onSettled: () => {
+      utils.musicGeneration.myGenerations.invalidate();
+    },
+  });
   const { data: myGenerations, isLoading: isLoadingGenerations } =
     trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   const { data: monthlyUsage } =
     trpc.musicGeneration.monthlyUsage.useQuery(undefined, { enabled: !!user });
+
+  const handleDelete = useCallback((id: number) => {
+    deleteMutation.mutate({ id });
+  }, [deleteMutation]);
 
   // Poll until the active generation completes
   useGenerationPolling(pollingId, () => {
@@ -454,7 +486,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} />
                 ))}
               </div>
             ) : (

@@ -196,3 +196,8 @@
 - [x] Update musicGeneration.test.ts: mock startMusicGeneration/pollMusicGeneration, add tests for monthly limit and premium bypass
 - [x] Update publish mutation description from ACE-Step to MiniMax Music 2.5
 - [x] All 68 tests passing
+
+## Phase 29: Generate Page Fixes
+- [x] Add billing credit to Replicate account (402 error)
+- [x] Add delete button to generation cards
+- [x] Sanitize error messages — show user-friendly text, not raw API errors

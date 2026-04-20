@@ -583,10 +583,19 @@ const musicGenerationRouter = router({
           });
         })
         .catch(async (error: unknown) => {
-          const msg = error instanceof Error ? error.message : String(error);
-          console.error(`[Music Generation] Failed for ID ${generationId}:`, msg);
+          const raw = error instanceof Error ? error.message : String(error);
+          console.error(`[Music Generation] Failed for ID ${generationId}:`, raw);
+          // Sanitize: never expose raw API errors (keys, credits, internal details) to users
+          let userMessage = "Generation failed — the AI service encountered an issue. Please try again.";
+          if (raw.toLowerCase().includes("insufficient credit") || raw.includes("402")) {
+            userMessage = "Generation temporarily unavailable. Please try again shortly.";
+          } else if (raw.toLowerCase().includes("timeout") || raw.toLowerCase().includes("timed out")) {
+            userMessage = "Generation timed out — the AI service took too long. Please try again.";
+          } else if (raw.toLowerCase().includes("rate limit") || raw.includes("429")) {
+            userMessage = "Too many requests — please wait a moment and try again.";
+          }
           await updateMusicGenerationStatus(generationId, "failed", {
-            errorMessage: msg,
+            errorMessage: userMessage,
           });
         });
 
