@@ -1,63 +1,76 @@
 import { describe, it, expect } from "vitest";
 import {
-  buildPromptFromIntensity,
-  applyRefinement,
+  getIntensityGuidance,
+  getRefinementGuidance,
+  buildSystemMessage,
   getIntensityLevels,
   getRefinementOptions,
 } from "./promptTemplates";
 
 describe("promptTemplates", () => {
-  describe("buildPromptFromIntensity", () => {
-    it("should return just the template when no base prompt provided", () => {
-      const result = buildPromptFromIntensity("subtle");
-      expect(result).toContain("Gentle");
-      expect(result).toContain("minimal");
+  describe("getIntensityGuidance", () => {
+    it("should return subtle intensity guidance", () => {
+      const guidance = getIntensityGuidance("subtle");
+      expect(guidance).toContain("Gentle");
+      expect(guidance).toContain("minimal");
     });
 
-    it("should combine base prompt with subtle intensity", () => {
-      const result = buildPromptFromIntensity("subtle", "jazz piano");
-      expect(result).toContain("jazz piano");
-      expect(result).toContain("Gentle");
-      expect(result).toContain("minimal");
+    it("should return balanced intensity guidance", () => {
+      const guidance = getIntensityGuidance("balanced");
+      expect(guidance).toContain("Clear vocals");
+      expect(guidance).toContain("steady rhythm");
     });
 
-    it("should combine base prompt with balanced intensity", () => {
-      const result = buildPromptFromIntensity("balanced", "rock guitar");
-      expect(result).toContain("rock guitar");
-      expect(result).toContain("Clear vocals");
-      expect(result).toContain("steady rhythm");
-    });
-
-    it("should combine base prompt with aggressive intensity", () => {
-      const result = buildPromptFromIntensity("aggressive", "electronic drums");
-      expect(result).toContain("electronic drums");
-      expect(result).toContain("Bold");
-      expect(result).toContain("energetic");
+    it("should return aggressive intensity guidance", () => {
+      const guidance = getIntensityGuidance("aggressive");
+      expect(guidance).toContain("Bold");
+      expect(guidance).toContain("energetic");
     });
   });
 
-  describe("applyRefinement", () => {
-    const basePrompt = "acoustic folk guitar, 90 BPM, melancholic";
-
-    it("should apply more_aggressive refinement", () => {
-      const result = applyRefinement(basePrompt, "more_aggressive");
-      expect(result).toContain(basePrompt);
-      expect(result).toContain("heavier drums");
-      expect(result).toContain("prominent bass");
+  describe("getRefinementGuidance", () => {
+    it("should return more_aggressive refinement guidance", () => {
+      const guidance = getRefinementGuidance("more_aggressive");
+      expect(guidance).toContain("heavier drums");
+      expect(guidance).toContain("prominent bass");
     });
 
-    it("should apply less_busy refinement", () => {
-      const result = applyRefinement(basePrompt, "less_busy");
-      expect(result).toContain(basePrompt);
-      expect(result).toContain("Simplify");
-      expect(result).toContain("vocals");
+    it("should return less_busy refinement guidance", () => {
+      const guidance = getRefinementGuidance("less_busy");
+      expect(guidance).toContain("Simplify");
+      expect(guidance).toContain("vocals");
     });
 
-    it("should apply different_vibe refinement", () => {
-      const result = applyRefinement(basePrompt, "different_vibe");
-      expect(result).toContain(basePrompt);
-      expect(result).toContain("Completely different");
-      expect(result).toContain("fresh approach");
+    it("should return different_vibe refinement guidance", () => {
+      const guidance = getRefinementGuidance("different_vibe");
+      expect(guidance).toContain("Completely different");
+      expect(guidance).toContain("fresh approach");
+    });
+  });
+
+  describe("buildSystemMessage", () => {
+    it("should build system message with intensity only", () => {
+      const message = buildSystemMessage("subtle");
+      expect(message).toContain("You are a music generation AI");
+      expect(message).toContain("Intensity:");
+      expect(message).toContain("Gentle");
+      expect(message).not.toContain("Refinement:");
+    });
+
+    it("should build system message with intensity and refinement", () => {
+      const message = buildSystemMessage("balanced", "more_aggressive");
+      expect(message).toContain("You are a music generation AI");
+      expect(message).toContain("Intensity:");
+      expect(message).toContain("Clear vocals");
+      expect(message).toContain("Refinement:");
+      expect(message).toContain("heavier drums");
+    });
+
+    it("should not concatenate guidance to user prompt", () => {
+      const message = buildSystemMessage("aggressive", "less_busy");
+      // System message should be separate, not part of user prompt
+      expect(message).toContain("You are a music generation AI");
+      expect(message.length).toBeLessThan(500); // Guidance should be concise
     });
   });
 

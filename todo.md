@@ -209,3 +209,10 @@
 - [x] Add refinement buttons to generation cards
 - [x] Write tests for prompt template logic
 - [x] All tests passing (80 tests), TypeScript clean
+
+## Phase 31: Fix Prompt Length Overflow Issue
+- [x] Refactor intensity/refinement to use system message pattern instead of concatenation
+- [x] Update MiniMax generation to use system message for guidance
+- [x] Update regenerate to pass refinement as system guidance, not append to prompt
+- [x] Verify prompt stays under 1000 chars even with multiple refinements
+- [x] All tests passing (82 tests), TypeScript clean

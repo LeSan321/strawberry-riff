@@ -18,16 +18,31 @@ export interface MiniMaxGenerationResult {
 /**
  * Start a MiniMax Music 2.5 generation via Replicate.
  * Returns the Replicate prediction ID for async polling.
+ * @param prompt - User's music style prompt (kept under 1000 chars)
+ * @param lyrics - Song lyrics with optional [Verse], [Chorus] tags
+ * @param intensity - Optional intensity level (passed as system guidance, not concatenated)
+ * @param refinement - Optional refinement type (passed as system guidance, not concatenated)
  */
 export async function startMusicGeneration(
   prompt: string,
-  lyrics: string
+  lyrics: string,
+  intensity?: string,
+  refinement?: string
 ): Promise<string> {
   if (!REPLICATE_API_TOKEN) {
     throw new Error("REPLICATE_API_TOKEN is not configured");
   }
 
   console.log(`[MiniMax] Starting generation: ${prompt.substring(0, 60)}...`);
+
+  // Build system message with intensity and optional refinement guidance
+  let systemMessage = "You are a music generation AI. ";
+  if (intensity) {
+    systemMessage += `Generate music with this intensity level: ${intensity}. `;
+  }
+  if (refinement) {
+    systemMessage += `Apply this refinement: ${refinement}. `;
+  }
 
   const response = await fetch(
     "https://api.replicate.com/v1/models/minimax/music-2.5/predictions",
@@ -42,6 +57,7 @@ export async function startMusicGeneration(
         input: {
           prompt,
           lyrics,
+          system: systemMessage,
           sample_rate: 44100,
           bitrate: 256000,
           audio_format: "mp3",

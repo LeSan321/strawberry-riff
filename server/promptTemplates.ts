@@ -1,13 +1,14 @@
 /**
  * Prompt template system for MiniMax Music 2.5
- * Provides intensity levels and refinement modifiers to guide generation
+ * Provides intensity levels and refinement modifiers as SEPARATE guidance,
+ * not concatenated to the prompt (to avoid exceeding 1000 char limit).
  */
 
 export type IntensityLevel = "subtle" | "balanced" | "aggressive";
 export type RefinementType = "more_aggressive" | "less_busy" | "different_vibe";
 
-// Intensity level base prompts
-const INTENSITY_TEMPLATES: Record<IntensityLevel, string> = {
+// Intensity level guidance (used as system context, not appended to prompt)
+const INTENSITY_GUIDANCE: Record<IntensityLevel, string> = {
   subtle:
     "Gentle and minimal arrangement, focus on vocals and melody, sparse instrumentation, intimate feel",
   balanced:
@@ -16,8 +17,8 @@ const INTENSITY_TEMPLATES: Record<IntensityLevel, string> = {
     "Bold and prominent arrangement, energetic drums and bass, powerful vocals, dynamic instrumentation",
 };
 
-// Refinement modifiers that can be appended to a prompt
-const REFINEMENT_MODIFIERS: Record<RefinementType, string> = {
+// Refinement guidance (used as system context, not appended to prompt)
+const REFINEMENT_GUIDANCE: Record<RefinementType, string> = {
   more_aggressive:
     "Increase intensity with heavier drums, prominent bass, and bolder arrangement",
   less_busy:
@@ -27,30 +28,36 @@ const REFINEMENT_MODIFIERS: Record<RefinementType, string> = {
 };
 
 /**
- * Build a prompt from intensity level and optional base prompt
- * If basePrompt is provided, it's combined with the intensity template
+ * Get intensity guidance for system message
+ * This is passed separately, not concatenated to the user prompt
  */
-export function buildPromptFromIntensity(
-  intensity: IntensityLevel,
-  basePrompt?: string
-): string {
-  const template = INTENSITY_TEMPLATES[intensity];
-  if (!basePrompt) return template;
-
-  // Combine base prompt with intensity guidance
-  return `${basePrompt}. ${template}`;
+export function getIntensityGuidance(intensity: IntensityLevel): string {
+  return INTENSITY_GUIDANCE[intensity];
 }
 
 /**
- * Apply a refinement modifier to an existing prompt
- * Used when user clicks "More Aggressive", "Less Busy", etc.
+ * Get refinement guidance for system message
+ * This is passed separately, not concatenated to the user prompt
  */
-export function applyRefinement(
-  originalPrompt: string,
-  refinement: RefinementType
+export function getRefinementGuidance(refinement: RefinementType): string {
+  return REFINEMENT_GUIDANCE[refinement];
+}
+
+/**
+ * Build a system message that combines intensity and optional refinement
+ * This is sent as context to the AI, not as part of the user prompt
+ */
+export function buildSystemMessage(
+  intensity: IntensityLevel,
+  refinement?: RefinementType
 ): string {
-  const modifier = REFINEMENT_MODIFIERS[refinement];
-  return `${originalPrompt}. ${modifier}`;
+  let message = `You are a music generation AI. Generate music with the following guidance:\n\nIntensity: ${getIntensityGuidance(intensity)}`;
+
+  if (refinement) {
+    message += `\n\nRefinement: ${getRefinementGuidance(refinement)}`;
+  }
+
+  return message;
 }
 
 /**
