@@ -201,3 +201,11 @@
 - [x] Add billing credit to Replicate account (402 error)
 - [x] Add delete button to generation cards
 - [x] Sanitize error messages — show user-friendly text, not raw API errors
+
+## Phase 30: Prompt Templates & Refinement Controls
+- [x] Add intensity levels (Subtle, Balanced, Aggressive) to server
+- [x] Add refinement modifiers (More Aggressive, Less Busy, Different Vibe) to server
+- [x] Update Generate.tsx with intensity selector dropdown
+- [x] Add refinement buttons to generation cards
+- [x] Write tests for prompt template logic
+- [x] All tests passing (80 tests), TypeScript clean

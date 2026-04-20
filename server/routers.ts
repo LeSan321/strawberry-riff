@@ -53,6 +53,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
+import { buildPromptFromIntensity, applyRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -530,6 +531,7 @@ const musicGenerationRouter = router({
         title: z.string().min(1).max(200),
         prompt: z.string().min(1).max(1000),
         lyrics: z.string().min(1),
+        intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -543,8 +545,11 @@ const musicGenerationRouter = router({
         });
       }
 
+      // Build final prompt from intensity level and base prompt
+      const finalPrompt = buildPromptFromIntensity(input.intensity as IntensityLevel, input.prompt);
+
       // Validate parameters
-      const validation = validateMusicGenerationParams(input.prompt, input.lyrics);
+      const validation = validateMusicGenerationParams(finalPrompt, input.lyrics);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
@@ -553,7 +558,7 @@ const musicGenerationRouter = router({
       const generationId = await createMusicGeneration({
         userId: ctx.user.id,
         title: input.title,
-        prompt: input.prompt,
+        prompt: finalPrompt,
         lyrics: input.lyrics,
         duration: 0,
         audioUrl: "",
@@ -569,7 +574,7 @@ const musicGenerationRouter = router({
       }
 
       // Start generation in background (fire-and-forget)
-      startMusicGeneration(input.prompt, input.lyrics)
+      startMusicGeneration(finalPrompt, input.lyrics)
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);
@@ -625,6 +630,93 @@ const musicGenerationRouter = router({
       const ok = await deleteMusicGeneration(input.id, ctx.user.id);
       if (!ok) throw new TRPCError({ code: "NOT_FOUND" });
       return { success: true };
+    }),
+
+  regenerate: protectedProcedure
+    .input(
+      z.object({
+        generationId: z.number().int(),
+        refinement: z.enum(["more_aggressive", "less_busy", "different_vibe"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check monthly generation limit
+      const used = await countGenerationsThisMonth(ctx.user.id);
+      const limit = ctx.user.isPremium ? Infinity : 5;
+      if (used >= limit) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Monthly generation limit reached. Upgrade to Premium for unlimited generations.",
+        });
+      }
+
+      // Get the original generation
+      const original = await getMusicGenerationById(input.generationId);
+      if (!original) throw new TRPCError({ code: "NOT_FOUND" });
+      if (original.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      if (original.status !== "complete") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Can only refine completed generations" });
+      }
+
+      // Apply refinement to original prompt
+      const refinedPrompt = applyRefinement(original.prompt, input.refinement as RefinementType);
+
+      // Validate parameters
+      const validation = validateMusicGenerationParams(refinedPrompt, original.lyrics);
+      if (!validation.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
+      }
+
+      // Create new generation record
+      const generationId = await createMusicGeneration({
+        userId: ctx.user.id,
+        title: original.title,
+        prompt: refinedPrompt,
+        lyrics: original.lyrics,
+        duration: 0,
+        audioUrl: "",
+        audioKey: "",
+        status: "generating",
+        metadata: null,
+        aceStepTaskId: null,
+        errorMessage: null,
+      });
+
+      if (!generationId) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
+      }
+
+      // Start generation in background (fire-and-forget)
+      startMusicGeneration(refinedPrompt, original.lyrics)
+        .then(async (predictionId) => {
+          const result = await pollMusicGeneration(predictionId);
+          const audioBuffer = await fetchAudioBytes(result.audioUrl);
+          const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
+          const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
+          const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
+          await updateMusicGenerationStatus(generationId, "complete", {
+            audioUrl: url,
+            audioKey: audioKey,
+            metadata: JSON.stringify({ predictionId }),
+          });
+        })
+        .catch(async (error: unknown) => {
+          const raw = error instanceof Error ? error.message : String(error);
+          console.error(`[Music Generation] Failed for ID ${generationId}:`, raw);
+          let userMessage = "Generation failed — the AI service encountered an issue. Please try again.";
+          if (raw.toLowerCase().includes("insufficient credit") || raw.includes("402")) {
+            userMessage = "Generation temporarily unavailable. Please try again shortly.";
+          } else if (raw.toLowerCase().includes("timeout") || raw.toLowerCase().includes("timed out")) {
+            userMessage = "Generation timed out — the AI service took too long. Please try again.";
+          } else if (raw.toLowerCase().includes("rate limit") || raw.includes("429")) {
+            userMessage = "Too many requests — please wait a moment and try again.";
+          }
+          await updateMusicGenerationStatus(generationId, "failed", {
+            errorMessage: userMessage,
+          });
+        });
+
+      return { id: generationId, status: "generating" };
     }),
 
   getHistory: protectedProcedure

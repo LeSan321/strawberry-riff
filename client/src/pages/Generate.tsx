@@ -124,10 +124,12 @@ function GenerationCard({
   gen,
   onRegenerate,
   onDelete,
+  onRefine,
 }: {
   gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
   onDelete: (id: number) => void;
+  onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
 
@@ -185,6 +187,35 @@ function GenerationCard({
             >
               <RefreshCw className="mr-1.5 h-3 w-3" />
               Re-generate
+            </Button>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={() => onRefine(gen.id, "more_aggressive")}
+              title="Make the arrangement bolder and more energetic"
+            >
+              ⚡ More
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={() => onRefine(gen.id, "less_busy")}
+              title="Simplify the arrangement, focus on vocals"
+            >
+              🎯 Less
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={() => onRefine(gen.id, "different_vibe")}
+              title="Try a completely different style"
+            >
+              🔄 Vibe
             </Button>
           </div>
         </div>
@@ -263,6 +294,7 @@ export function GeneratePage() {
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
+  const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
@@ -270,6 +302,21 @@ export function GeneratePage() {
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
+  const regenerateMutation = trpc.musicGeneration.regenerate.useMutation({
+    onMutate: async ({ generationId }) => {
+      await utils.musicGeneration.myGenerations.cancel();
+      const prev = utils.musicGeneration.myGenerations.getData();
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.musicGeneration.myGenerations.setData(undefined, ctx.prev);
+      toast.error("Could not regenerate — please try again.");
+    },
+    onSettled: () => {
+      utils.musicGeneration.myGenerations.invalidate();
+      utils.musicGeneration.monthlyUsage.invalidate();
+    },
+  });
   const deleteMutation = trpc.musicGeneration.delete.useMutation({
     onMutate: async ({ id }) => {
       await utils.musicGeneration.myGenerations.cancel();
@@ -295,6 +342,14 @@ export function GeneratePage() {
   const handleDelete = useCallback((id: number) => {
     deleteMutation.mutate({ id });
   }, [deleteMutation]);
+
+  const handleRefine = useCallback(
+    (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => {
+      regenerateMutation.mutate({ generationId, refinement });
+      toast.info(`Regenerating with ${refinement.replace(/_/g, " ")} — this usually takes 1–3 minutes.`);
+    },
+    [regenerateMutation]
+  );
 
   // Poll until the active generation completes
   useGenerationPolling(pollingId, () => {
@@ -330,6 +385,7 @@ export function GeneratePage() {
         title: title.trim(),
         prompt: prompt.trim(),
         lyrics: lyrics.trim(),
+        intensity,
       });
       setPollingId(result.id);
       await utils.musicGeneration.myGenerations.invalidate();
@@ -337,6 +393,7 @@ export function GeneratePage() {
       setTitle("");
       setPrompt("");
       setLyrics("");
+      setIntensity("balanced");
       toast.info("Generation started — this usually takes 1–3 minutes.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -418,6 +475,22 @@ export function GeneratePage() {
                 <p className="mt-1 text-xs text-muted-foreground">{prompt.length}/1000 characters — describe genre, instruments, mood, and tempo</p>
               </div>
 
+              {/* Intensity Level */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">Intensity Level</label>
+                <Select value={intensity} onValueChange={(v) => setIntensity(v as typeof intensity)} disabled={isGenerating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="subtle">Subtle — Gentle, minimal, intimate</SelectItem>
+                    <SelectItem value="balanced">Balanced — Clear, steady, well-structured</SelectItem>
+                    <SelectItem value="aggressive">Aggressive — Bold, energetic, dynamic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
+              </div>
+
               {/* Lyrics */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Lyrics</label>
@@ -486,7 +559,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} />
                 ))}
               </div>
             ) : (
