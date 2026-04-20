@@ -43,6 +43,7 @@ import {
   updateMusicGenerationStatus,
   deleteMusicGeneration,
   getMusicGenerationHistory,
+  countGenerationsThisMonth,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -51,7 +52,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
-import { generateMusicWithACEStep, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
+import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -529,12 +530,21 @@ const musicGenerationRouter = router({
         title: z.string().min(1).max(200),
         prompt: z.string().min(1).max(1000),
         lyrics: z.string().min(1),
-        duration: z.number().int().default(240),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check monthly generation limit
+      const used = await countGenerationsThisMonth(ctx.user.id);
+      const limit = ctx.user.isPremium ? Infinity : 5;
+      if (used >= limit) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Monthly generation limit reached. Upgrade to Premium for unlimited generations.",
+        });
+      }
+
       // Validate parameters
-      const validation = validateMusicGenerationParams(input.prompt, input.lyrics, input.duration);
+      const validation = validateMusicGenerationParams(input.prompt, input.lyrics);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
@@ -545,8 +555,8 @@ const musicGenerationRouter = router({
         title: input.title,
         prompt: input.prompt,
         lyrics: input.lyrics,
-        duration: input.duration,
-        audioUrl: "", // Will be updated when generation completes
+        duration: 0,
+        audioUrl: "",
         audioKey: "",
         status: "generating",
         metadata: null,
@@ -558,31 +568,37 @@ const musicGenerationRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
       }
 
-      // Start generation in background
-      generateMusicWithACEStep(input.prompt, input.lyrics, input.duration)
-        .then(async (result) => {
-          // Use pre-decoded bytes if available (b64), otherwise fetch from the HuggingFace URL
-          const audioBuffer = result.audioData ?? await fetchAudioBytes(result.audioUrl);
+      // Start generation in background (fire-and-forget)
+      startMusicGeneration(input.prompt, input.lyrics)
+        .then(async (predictionId) => {
+          const result = await pollMusicGeneration(predictionId);
+          const audioBuffer = await fetchAudioBytes(result.audioUrl);
           const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
           const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
           const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
-
-          // Update generation record
           await updateMusicGenerationStatus(generationId, "complete", {
             audioUrl: url,
             audioKey: audioKey,
-            metadata: JSON.stringify(result.metadata || {}),
+            metadata: JSON.stringify({ predictionId }),
           });
         })
-        .catch(async (error) => {
-          console.error(`[Music Generation] Failed for ID ${generationId}:`, error);
+        .catch(async (error: unknown) => {
+          const msg = error instanceof Error ? error.message : String(error);
+          console.error(`[Music Generation] Failed for ID ${generationId}:`, msg);
           await updateMusicGenerationStatus(generationId, "failed", {
-            errorMessage: error instanceof Error ? error.message : String(error),
+            errorMessage: msg,
           });
         });
 
       return { id: generationId, status: "generating" };
     }),
+
+  monthlyUsage: protectedProcedure.query(async ({ ctx }) => {
+    const used = await countGenerationsThisMonth(ctx.user.id);
+    const isPremium = ctx.user.isPremium ?? false;
+    const limit = isPremium ? null : 5;
+    return { used, limit, isPremium };
+  }),
 
   getById: publicProcedure
     .input(z.object({ id: z.number().int() }))
@@ -632,7 +648,7 @@ const musicGenerationRouter = router({
         title: generation.title,
         artist: null,
         genre: null,
-        description: `Generated with ACE-Step • ${generation.duration}s`,
+        description: `Generated with MiniMax Music 2.5 • AI`,
         audioUrl: generation.audioUrl,
         audioKey: generation.audioKey,
         duration: generation.duration,

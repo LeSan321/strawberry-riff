@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   Friend,
@@ -601,4 +601,22 @@ export async function getMusicGenerationHistory(generationId: number): Promise<M
     .from(musicGenerationHistory)
     .where(eq(musicGenerationHistory.generationId, generationId))
     .orderBy(desc(musicGenerationHistory.createdAt));
+}
+
+export async function countGenerationsThisMonth(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(musicGenerations)
+    .where(
+      and(
+        eq(musicGenerations.userId, userId),
+        gte(musicGenerations.createdAt, startOfMonth)
+      )
+    );
+  return Number(rows[0]?.count ?? 0);
 }

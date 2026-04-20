@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, CheckCircle2, AlertCircle, Upload, Clock, Sparkles, RefreshCw } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ function useGenerationPolling(
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = null;
         await utils.musicGeneration.myGenerations.invalidate();
+        await utils.musicGeneration.monthlyUsage.invalidate();
         onComplete();
       }
     };
@@ -123,8 +124,8 @@ function GenerationCard({
   gen,
   onRegenerate,
 }: {
-  gen: { id: number; title: string; prompt: string; lyrics: string; duration: number; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
-  onRegenerate: (settings: { title: string; prompt: string; lyrics: string; duration: string }) => void;
+  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
+  onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
 
@@ -150,7 +151,7 @@ function GenerationCard({
       </div>
       <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
         <Clock className="h-3 w-3" />
-        {gen.duration}s • {new Date(gen.createdAt).toLocaleDateString()}
+        {new Date(gen.createdAt).toLocaleDateString()}
       </p>
       {gen.status === "complete" && gen.audioUrl && (
         <div className="mt-2 space-y-2">
@@ -169,7 +170,7 @@ function GenerationCard({
               size="sm"
               variant="ghost"
               className="flex-1 text-xs"
-              onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics, duration: String(gen.duration) })}
+              onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics })}
             >
               <RefreshCw className="mr-1.5 h-3 w-3" />
               Re-generate
@@ -190,7 +191,7 @@ function GenerationCard({
             size="sm"
             variant="outline"
             className="w-full text-xs"
-            onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics, duration: String(gen.duration) })}
+            onClick={() => onRegenerate({ title: gen.title, prompt: gen.prompt, lyrics: gen.lyrics })}
           >
             <RefreshCw className="mr-1.5 h-3 w-3" />
             Try Again
@@ -208,13 +209,49 @@ function GenerationCard({
   );
 }
 
+// ─── Monthly usage banner ──────────────────────────────────────────────────────
+function MonthlyUsageBanner({ used, limit, isPremium }: { used: number; limit: number | null; isPremium: boolean }) {
+  if (isPremium) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-300/30 p-3 text-sm text-yellow-700">
+        <Crown className="h-4 w-4 shrink-0" />
+        <span>Premium — unlimited AI generations</span>
+      </div>
+    );
+  }
+
+  const remaining = (limit ?? 5) - used;
+  const pct = Math.min((used / (limit ?? 5)) * 100, 100);
+  const isNearLimit = remaining <= 1;
+  const isAtLimit = remaining <= 0;
+
+  return (
+    <div className={`rounded-lg border p-3 text-sm ${isAtLimit ? "bg-destructive/10 border-destructive/30 text-destructive" : isNearLimit ? "bg-yellow-500/10 border-yellow-300/30 text-yellow-700" : "bg-muted/50 border-border text-muted-foreground"}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="flex items-center gap-1.5">
+          <Zap className="h-3.5 w-3.5" />
+          {isAtLimit
+            ? "Monthly limit reached — upgrade to Premium for unlimited generations"
+            : `${used} of ${limit} free generations used this month`}
+        </span>
+        {!isAtLimit && <span className="font-medium">{remaining} left</span>}
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-current/20 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-current transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export function GeneratePage() {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
-  const [duration, setDuration] = useState("240");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
@@ -224,6 +261,8 @@ export function GeneratePage() {
   const generateMutation = trpc.musicGeneration.generate.useMutation();
   const { data: myGenerations, isLoading: isLoadingGenerations } =
     trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
+  const { data: monthlyUsage } =
+    trpc.musicGeneration.monthlyUsage.useQuery(undefined, { enabled: !!user });
 
   // Poll until the active generation completes
   useGenerationPolling(pollingId, () => {
@@ -232,11 +271,10 @@ export function GeneratePage() {
   });
 
   const handleRegenerate = useCallback(
-    (settings: { title: string; prompt: string; lyrics: string; duration: string }) => {
+    (settings: { title: string; prompt: string; lyrics: string }) => {
       setTitle(settings.title);
       setPrompt(settings.prompt);
       setLyrics(settings.lyrics);
-      setDuration(settings.duration);
       setError(null);
       setTimeout(() => {
         formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -260,14 +298,13 @@ export function GeneratePage() {
         title: title.trim(),
         prompt: prompt.trim(),
         lyrics: lyrics.trim(),
-        duration: parseInt(duration),
       });
       setPollingId(result.id);
       await utils.musicGeneration.myGenerations.invalidate();
+      await utils.musicGeneration.monthlyUsage.invalidate();
       setTitle("");
       setPrompt("");
       setLyrics("");
-      setDuration("240");
       toast.info("Generation started — this usually takes 1–3 minutes.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -276,6 +313,8 @@ export function GeneratePage() {
     }
   };
 
+  const isAtLimit = monthlyUsage && !monthlyUsage.isPremium && monthlyUsage.limit !== null && monthlyUsage.used >= monthlyUsage.limit;
+
   if (!user) {
     return (
       <div className="container mx-auto py-8">
@@ -283,7 +322,7 @@ export function GeneratePage() {
           <Music className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h2 className="mb-2 text-2xl font-bold">Sign in to Generate Music</h2>
           <p className="text-muted-foreground">
-            Create beautiful AI-generated music with ACE-Step
+            Create full-length AI-generated songs with MiniMax Music 2.5
           </p>
         </Card>
       </div>
@@ -303,17 +342,28 @@ export function GeneratePage() {
               <div>
                 <h1 className="text-3xl font-bold">Generate Music</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Create AI-generated music using ACE-Step. Provide a prompt, lyrics, and duration.
+                  Create full-length AI songs with vocals using MiniMax Music 2.5.
                 </p>
               </div>
             </div>
+
+            {/* Monthly usage */}
+            {monthlyUsage && (
+              <div className="mb-6">
+                <MonthlyUsageBanner
+                  used={monthlyUsage.used}
+                  limit={monthlyUsage.limit}
+                  isPremium={monthlyUsage.isPremium}
+                />
+              </div>
+            )}
 
             <form onSubmit={handleGenerate} className="space-y-6">
               {/* Title */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Title</label>
                 <Input
-                  placeholder="e.g., Jazz Noir Session"
+                  placeholder="e.g., Midnight Blues"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={isGenerating}
@@ -324,46 +374,31 @@ export function GeneratePage() {
 
               {/* Prompt */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Music Prompt</label>
+                <label className="mb-2 block text-sm font-medium">Music Style Prompt</label>
                 <Textarea
-                  placeholder="e.g., jazz, noir, 95 BPM, piano, drums, smoky atmosphere, intimate, melancholic"
+                  placeholder="e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   disabled={isGenerating}
                   maxLength={1000}
                   rows={4}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">{prompt.length}/1000 characters</p>
+                <p className="mt-1 text-xs text-muted-foreground">{prompt.length}/1000 characters — describe genre, instruments, mood, and tempo</p>
               </div>
 
               {/* Lyrics */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Lyrics</label>
                 <Textarea
-                  placeholder={`[verse]\nSing your heart out\n\n[chorus]\nThis is the chorus\n\n[verse]\nSecond verse here\n\n[chorus]\nRepeat the chorus`}
+                  placeholder={`[Verse]\nSing your heart out\nUnder the midnight sky\n\n[Chorus]\nThis is the chorus\nWhere the music flies\n\n[Verse]\nSecond verse here\nAnother line to rhyme\n\n[Chorus]\nThis is the chorus\nWhere the music flies`}
                   value={lyrics}
                   onChange={(e) => setLyrics(e.target.value)}
                   disabled={isGenerating}
-                  rows={8}
+                  rows={10}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Use [verse], [chorus], [bridge] tags to structure your lyrics
+                  Use [Verse], [Chorus], [Bridge], [Outro] tags to structure your lyrics
                 </p>
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="mb-2 block text-sm font-medium">Duration</label>
-                <Select value={duration} onValueChange={setDuration} disabled={isGenerating}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="60">1 minute</SelectItem>
-                    <SelectItem value="120">2 minutes</SelectItem>
-                    <SelectItem value="240">4 minutes</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Error */}
@@ -386,13 +421,15 @@ export function GeneratePage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={isGenerating || !!pollingId || !title.trim() || !prompt.trim() || !lyrics.trim()}
+                disabled={isGenerating || !!pollingId || !title.trim() || !prompt.trim() || !lyrics.trim() || !!isAtLimit}
                 className="w-full"
               >
                 {isGenerating ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Starting generation...</>
                 ) : pollingId ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generation in progress...</>
+                ) : isAtLimit ? (
+                  <><Crown className="mr-2 h-4 w-4" />Upgrade to Premium to Generate More</>
                 ) : (
                   <><Music className="mr-2 h-4 w-4" />Generate Music</>
                 )}

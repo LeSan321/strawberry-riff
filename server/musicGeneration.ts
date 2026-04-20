@@ -1,143 +1,174 @@
 /**
- * ACE-Step Music Generation Wrapper
- * Handles text-to-music generation via Hugging Face ACE-Step API
+ * MiniMax Music 2.5 — Music Generation via Replicate API
+ *
+ * Replaces ACE-Step. Uses the minimax/music-2.5 model which supports:
+ * - Full-length songs with vocals and lyrics
+ * - Rich instrumentation from text prompts
+ * - Structured lyrics with [Verse], [Chorus], [Bridge] tags
+ * - High-quality audio up to 44100 Hz / 256kbps MP3
  */
 
-import { Client, FileData } from "@gradio/client";
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-interface ACEStepGenerationResult {
-  audioUrl: string;       // Direct URL to the audio file on HuggingFace
-  audioData?: Buffer;     // Raw audio bytes if available via b64
-  mimeType: string;
-  metadata?: Record<string, unknown>;
-}
-
-interface ACEStepPollResult {
-  status: "generating" | "complete" | "failed";
-  progress?: number;
-  audioUrl?: string;
-  metadata?: Record<string, unknown>;
-  error?: string;
-}
-
-let aceStepClient: Client | null = null;
-
-async function getACEStepClient(forceReconnect = false): Promise<Client> {
-  if (!aceStepClient || forceReconnect) {
-    aceStepClient = null; // clear stale connection before reconnecting
-    aceStepClient = await Client.connect("ACE-Step/ACE-Step");
-  }
-  return aceStepClient;
+export interface MiniMaxGenerationResult {
+  audioUrl: string;  // Temporary Replicate output URL
+  mimeType: string;  // "audio/mpeg"
 }
 
 /**
- * Generate music using ACE-Step
- * @param prompt Tags/description (e.g., "jazz, noir, 95 BPM, piano, drums")
- * @param lyrics Song lyrics with structure ([verse], [chorus], etc.)
- * @param duration Duration in seconds (60, 120, 240)
- * @returns Generation result with audio URL
+ * Start a MiniMax Music 2.5 generation via Replicate.
+ * Returns the Replicate prediction ID for async polling.
  */
-export async function generateMusicWithACEStep(
+export async function startMusicGeneration(
   prompt: string,
-  lyrics: string,
-  duration: number = 240
-): Promise<ACEStepGenerationResult> {
-  // Retry up to 2 times on transient errors (rate limits, stale connections)
-  for (let attempt = 1; attempt <= 2; attempt++) {
-  try {
-    const client = await getACEStepClient(attempt > 1);
-
-    console.log(`[ACE-Step] Generating ${duration}s music (attempt ${attempt}): ${prompt.substring(0, 50)}...`);
-
-    const result = await client.predict("/__call__", {
-      audio_duration: duration,
-      prompt: prompt,
-      lyrics: lyrics,
-      infer_step: 60,
-      guidance_scale: 15.0,
-      scheduler_type: "euler",
-      cfg_type: "apg",
-    });
-
-    // result.data is an array; the first element is a FileData object for the audio output
-    const resultData = result.data as unknown[];
-    const fileData = resultData[0] as FileData;
-
-    if (!fileData) {
-      throw new Error("No audio data returned from ACE-Step");
-    }
-
-    console.log(`[ACE-Step] Generation complete. FileData:`, JSON.stringify({
-      url: fileData.url,
-      path: fileData.path,
-      mime_type: fileData.mime_type,
-      size: fileData.size,
-    }));
-
-    // Determine the audio URL - prefer the direct URL, fall back to path
-    const audioUrl = fileData.url || fileData.path;
-    if (!audioUrl) {
-      throw new Error("ACE-Step returned FileData with no URL or path");
-    }
-
-    // If b64 data is available, decode it directly to avoid an extra HTTP fetch
-    let audioData: Buffer | undefined;
-    const b64 = (fileData as any).b64 as string | undefined;
-    if (b64) {
-      const base64Content = b64.includes(",") ? b64.split(",")[1] : b64;
-      audioData = Buffer.from(base64Content, "base64");
-    }
-
-    // Detect MIME type from URL extension when mime_type is null (common with HuggingFace spaces)
-    let mimeType = fileData.mime_type;
-    if (!mimeType) {
-      const urlLower = audioUrl.toLowerCase();
-      if (urlLower.includes(".mp3")) {
-        mimeType = "audio/mpeg";
-      } else if (urlLower.includes(".ogg")) {
-        mimeType = "audio/ogg";
-      } else if (urlLower.includes(".flac")) {
-        mimeType = "audio/flac";
-      } else {
-        mimeType = "audio/wav"; // safe default
-      }
-    }
-    console.log(`[ACE-Step] Detected MIME type: ${mimeType} for URL: ${audioUrl.substring(0, 80)}...`);
-
-    return {
-      audioUrl,
-      audioData,
-      mimeType,
-      metadata: resultData.length > 1 ? (resultData[1] as Record<string, unknown>) : {},
-    };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(`[ACE-Step] Attempt ${attempt} failed:`, msg);
-    if (attempt === 2) {
-      throw new Error(`Music generation failed: ${msg}`);
-    }
-    // Wait 3 seconds before retrying
-    await new Promise(res => setTimeout(res, 3000));
+  lyrics: string
+): Promise<string> {
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("REPLICATE_API_TOKEN is not configured");
   }
-  } // end retry loop
-  // Should never reach here, but TypeScript needs a return
-  throw new Error("Music generation failed: unexpected exit from retry loop");
+
+  console.log(`[MiniMax] Starting generation: ${prompt.substring(0, 60)}...`);
+
+  const response = await fetch(
+    "https://api.replicate.com/v1/models/minimax/music-2.5/predictions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+        "Content-Type": "application/json",
+        Prefer: "wait=5",
+      },
+      body: JSON.stringify({
+        input: {
+          prompt,
+          lyrics,
+          sample_rate: 44100,
+          bitrate: 256000,
+          audio_format: "mp3",
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Replicate API error ${response.status}: ${errorText}`);
+  }
+
+  const prediction = (await response.json()) as {
+    id: string;
+    status: string;
+    error?: string;
+    output?: string | string[];
+  };
+
+  if (prediction.error) {
+    throw new Error(`Replicate prediction error: ${prediction.error}`);
+  }
+
+  // If the prediction already completed within the wait window, return a special marker
+  if (prediction.status === "succeeded" && prediction.output) {
+    const outputUrl = Array.isArray(prediction.output)
+      ? prediction.output[0]
+      : prediction.output;
+    // Encode the result URL as the "ID" so the caller can detect immediate completion
+    return `done:${outputUrl}`;
+  }
+
+  console.log(`[MiniMax] Prediction started: ${prediction.id} (status: ${prediction.status})`);
+  return prediction.id;
 }
 
 /**
- * Poll ACE-Step for generation status
- * Note: ACE-Step HF Space doesn't support task polling via API
- * This is a placeholder for future commercial API support
+ * Poll a Replicate prediction until it completes or fails.
+ * Returns the output audio URL when complete.
  */
-export async function pollACEStepStatus(taskId: string): Promise<ACEStepPollResult> {
-  // For now, return a placeholder
-  // In production, this would call the ACE-Step API to check task status
-  console.log(`[ACE-Step] Polling task ${taskId}`);
+export async function pollMusicGeneration(
+  predictionId: string
+): Promise<MiniMaxGenerationResult> {
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("REPLICATE_API_TOKEN is not configured");
+  }
 
-  return {
-    status: "complete",
-    progress: 100,
-  };
+  // Handle immediate completions from startMusicGeneration
+  if (predictionId.startsWith("done:")) {
+    return {
+      audioUrl: predictionId.slice(5),
+      mimeType: "audio/mpeg",
+    };
+  }
+
+  const maxAttempts = 120; // 10 minutes max (5s intervals)
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    await new Promise((res) => setTimeout(res, 5000));
+    attempts++;
+
+    const response = await fetch(
+      `https://api.replicate.com/v1/predictions/${predictionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to poll prediction ${predictionId}: ${response.status}`
+      );
+    }
+
+    const prediction = (await response.json()) as {
+      id: string;
+      status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
+      output?: string | string[];
+      error?: string;
+    };
+
+    console.log(`[MiniMax] Poll ${attempts}/${maxAttempts}: ${prediction.status}`);
+
+    if (prediction.status === "succeeded") {
+      const outputUrl = Array.isArray(prediction.output)
+        ? prediction.output[0]
+        : prediction.output;
+
+      if (!outputUrl) {
+        throw new Error("Replicate returned success but no output URL");
+      }
+
+      return {
+        audioUrl: outputUrl,
+        mimeType: "audio/mpeg",
+      };
+    }
+
+    if (
+      prediction.status === "failed" ||
+      prediction.status === "canceled"
+    ) {
+      throw new Error(
+        `Generation ${prediction.status}: ${prediction.error || "Unknown error"}`
+      );
+    }
+  }
+
+  throw new Error("Generation timed out after 10 minutes");
+}
+
+/**
+ * Fetch audio bytes from a URL (downloads from Replicate before uploading to S3)
+ */
+export async function fetchAudioBytes(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch audio from ${url}: ${response.status} ${response.statusText}`
+    );
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /**
@@ -145,36 +176,19 @@ export async function pollACEStepStatus(taskId: string): Promise<ACEStepPollResu
  */
 export function validateMusicGenerationParams(
   prompt: string,
-  lyrics: string,
-  duration: number
+  lyrics: string
 ): { valid: boolean; error?: string } {
   if (!prompt || prompt.trim().length === 0) {
-    return { valid: false, error: "Prompt is required" };
+    return { valid: false, error: "Music style prompt is required" };
   }
-
   if (!lyrics || lyrics.trim().length === 0) {
     return { valid: false, error: "Lyrics are required" };
   }
-
-  if (![60, 120, 240].includes(duration)) {
-    return { valid: false, error: "Duration must be 60, 120, or 240 seconds" };
-  }
-
   if (prompt.length > 1000) {
     return { valid: false, error: "Prompt is too long (max 1000 characters)" };
   }
-
-  return { valid: true };
-}
-
-/**
- * Fetch audio bytes from a URL (used when b64 data is not available in FileData)
- */
-export async function fetchAudioBytes(url: string): Promise<Buffer> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch audio from ${url}: ${response.status} ${response.statusText}`);
+  if (lyrics.length > 5000) {
+    return { valid: false, error: "Lyrics are too long (max 5000 characters)" };
   }
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  return { valid: true };
 }

@@ -187,3 +187,12 @@
 - [x] Install @dnd-kit/core and @dnd-kit/sortable
 - [x] Add drag handles to playlist track rows
 - [x] Optimistic reorder on drag end, persist new order to database via reorderTracks procedure
+
+## Phase 28: MiniMax Music 2.5 Migration
+- [x] Rewrite server/musicGeneration.ts to use MiniMax Music 2.5 via Replicate API (startMusicGeneration + pollMusicGeneration + fetchAudioBytes + validateMusicGenerationParams)
+- [x] Add countGenerationsThisMonth helper to server/db.ts
+- [x] Fix server/routers.ts: update imports, remove duration param, add monthly limit check (5 free/month, unlimited for premium), add monthlyUsage procedure
+- [x] Update Generate.tsx: remove duration selector, add MonthlyUsageBanner with progress bar, update prompts for MiniMax style
+- [x] Update musicGeneration.test.ts: mock startMusicGeneration/pollMusicGeneration, add tests for monthly limit and premium bypass
+- [x] Update publish mutation description from ACE-Step to MiniMax Music 2.5
+- [x] All 68 tests passing
