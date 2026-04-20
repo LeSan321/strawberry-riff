@@ -22,8 +22,9 @@ interface ACEStepPollResult {
 
 let aceStepClient: Client | null = null;
 
-async function getACEStepClient(): Promise<Client> {
-  if (!aceStepClient) {
+async function getACEStepClient(forceReconnect = false): Promise<Client> {
+  if (!aceStepClient || forceReconnect) {
+    aceStepClient = null; // clear stale connection before reconnecting
     aceStepClient = await Client.connect("ACE-Step/ACE-Step");
   }
   return aceStepClient;
@@ -41,10 +42,12 @@ export async function generateMusicWithACEStep(
   lyrics: string,
   duration: number = 240
 ): Promise<ACEStepGenerationResult> {
+  // Retry up to 2 times on transient errors (rate limits, stale connections)
+  for (let attempt = 1; attempt <= 2; attempt++) {
   try {
-    const client = await getACEStepClient();
+    const client = await getACEStepClient(attempt > 1);
 
-    console.log(`[ACE-Step] Generating ${duration}s music: ${prompt.substring(0, 50)}...`);
+    console.log(`[ACE-Step] Generating ${duration}s music (attempt ${attempt}): ${prompt.substring(0, 50)}...`);
 
     const result = await client.predict("/__call__", {
       audio_duration: duration,
@@ -108,9 +111,17 @@ export async function generateMusicWithACEStep(
       metadata: resultData.length > 1 ? (resultData[1] as Record<string, unknown>) : {},
     };
   } catch (error) {
-    console.error("[ACE-Step] Generation failed:", error);
-    throw new Error(`Music generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[ACE-Step] Attempt ${attempt} failed:`, msg);
+    if (attempt === 2) {
+      throw new Error(`Music generation failed: ${msg}`);
+    }
+    // Wait 3 seconds before retrying
+    await new Promise(res => setTimeout(res, 3000));
   }
+  } // end retry loop
+  // Should never reach here, but TypeScript needs a return
+  throw new Error("Music generation failed: unexpected exit from retry loop");
 }
 
 /**
