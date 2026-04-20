@@ -574,6 +574,23 @@ export async function deleteMusicGeneration(id: number, userId: number): Promise
   return (result as any)[0]?.affectedRows > 0;
 }
 
+export async function toggleMusicGenerationFavorite(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const generation = await db
+    .select({ isFavorited: musicGenerations.isFavorited })
+    .from(musicGenerations)
+    .where(and(eq(musicGenerations.id, id), eq(musicGenerations.userId, userId)))
+    .limit(1);
+  if (!generation[0]) return false;
+  const newStatus = !generation[0].isFavorited;
+  const result = await db
+    .update(musicGenerations)
+    .set({ isFavorited: newStatus })
+    .where(and(eq(musicGenerations.id, id), eq(musicGenerations.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
 export async function addMusicGenerationHistory(
   generationId: number,
   operation: "generate" | "retake" | "extend",

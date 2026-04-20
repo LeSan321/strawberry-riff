@@ -143,6 +143,7 @@ export const musicGenerations = mysqlTable("music_generations", {
   aceStepTaskId: varchar("aceStepTaskId", { length: 100 }), // ACE-Step task ID for polling
   metadata: text("metadata"), // JSON metadata from ACE-Step
   errorMessage: text("errorMessage"), // Error details if generation failed
+  isFavorited: boolean("isFavorited").default(false).notNull(), // User marked as favorite
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

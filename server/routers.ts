@@ -44,6 +44,7 @@ import {
   deleteMusicGeneration,
   getMusicGenerationHistory,
   countGenerationsThisMonth,
+  toggleMusicGenerationFavorite,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -567,6 +568,7 @@ const musicGenerationRouter = router({
         metadata: null,
         aceStepTaskId: null,
         errorMessage: null,
+        isFavorited: false,
       });
 
       if (!generationId) {
@@ -685,6 +687,7 @@ const musicGenerationRouter = router({
         metadata: null,
         aceStepTaskId: null,
         errorMessage: null,
+        isFavorited: false,
       });
 
       if (!generationId) {
@@ -765,6 +768,18 @@ const musicGenerationRouter = router({
         coverArtUrl: null,
       });
       return getTrackById(trackId);
+    }),
+
+  toggleFavorite: protectedProcedure
+    .input(z.object({ generationId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const generation = await getMusicGenerationById(input.generationId);
+      if (!generation) throw new TRPCError({ code: "NOT_FOUND" });
+      if (generation.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      const ok = await toggleMusicGenerationFavorite(input.generationId, ctx.user.id);
+      if (!ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const updated = await getMusicGenerationById(input.generationId);
+      return { isFavorited: updated?.isFavorited ?? false };
     }),
 });
 

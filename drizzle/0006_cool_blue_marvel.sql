@@ -1,0 +1,1 @@
+ALTER TABLE `music_generations` ADD `isFavorited` boolean DEFAULT false NOT NULL;

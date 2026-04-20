@@ -223,3 +223,11 @@
 - [x] Update routers.ts to build prefixed prompts
 - [x] Update tests
 - [x] All tests passing (80 tests), TypeScript clean
+
+## Phase 33: Favorite Button & Delete Confirmation
+- [x] Add isFavorited column to musicGenerations table in schema
+- [x] Create toggleFavorite mutation in routers.ts
+- [x] Add strawberry favorite button to GenerationCard (faded outline → full red)
+- [x] Add delete confirmation modal with "Are you sure?" dialog
+- [x] Write tests for toggleFavorite and delete confirmation
+- [x] All tests passing (84 tests), TypeScript clean

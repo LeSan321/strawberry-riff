@@ -125,13 +125,16 @@ function GenerationCard({
   onRegenerate,
   onDelete,
   onRefine,
+  onToggleFavorite,
 }: {
-  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date };
+  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
   onDelete: (id: number) => void;
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
+  onToggleFavorite: (id: number) => void;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const statusColor =
     gen.status === "complete"
@@ -154,7 +157,16 @@ function GenerationCard({
           ) : gen.status}
         </span>
         <button
-          onClick={() => onDelete(gen.id)}
+          onClick={() => onToggleFavorite(gen.id)}
+          className="p-1 rounded hover:bg-pink-500/10 transition-colors"
+          title="Mark as favorite"
+        >
+          <span className={`text-lg transition-all ${gen.isFavorited ? "drop-shadow-md" : "opacity-50"}`}>
+            🍓
+          </span>
+        </button>
+        <button
+          onClick={() => setDeleteConfirmOpen(true)}
           className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
           title="Delete generation"
         >
@@ -246,6 +258,30 @@ function GenerationCard({
           onClose={() => setPublishOpen(false)}
           generationId={gen.id}
         />
+      )}
+      {deleteConfirmOpen && (
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete this generation?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onDelete(gen.id);
+                  setDeleteConfirmOpen(false);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
@@ -350,6 +386,29 @@ export function GeneratePage() {
     },
     [regenerateMutation]
   );
+
+  const toggleFavoriteMutation = trpc.musicGeneration.toggleFavorite.useMutation({
+    onMutate: async ({ generationId }) => {
+      await utils.musicGeneration.myGenerations.cancel();
+      const prev = utils.musicGeneration.myGenerations.getData();
+      utils.musicGeneration.myGenerations.setData(undefined, (old) =>
+        old
+          ? old.map((g) =>
+              g.id === generationId ? { ...g, isFavorited: !g.isFavorited } : g
+            )
+          : old
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.musicGeneration.myGenerations.setData(undefined, ctx.prev);
+      toast.error("Could not update favorite — please try again.");
+    },
+  });
+
+  const handleToggleFavorite = useCallback((id: number) => {
+    toggleFavoriteMutation.mutate({ generationId: id });
+  }, [toggleFavoriteMutation]);
 
   // Poll until the active generation completes
   useGenerationPolling(pollingId, () => {
@@ -559,7 +618,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} />
                 ))}
               </div>
             ) : (
