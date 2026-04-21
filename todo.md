@@ -231,3 +231,9 @@
 - [x] Add delete confirmation modal with "Are you sure?" dialog
 - [x] Write tests for toggleFavorite and delete confirmation
 - [x] All tests passing (84 tests), TypeScript clean
+
+## Phase 34: Fix Deployment Failure (Credit Interruption)
+- [x] Identified missing isFavorited column on Railway database
+- [x] Applied migration to add isFavorited column
+- [x] Verified toggleFavorite mutation is registered
+- [x] Ready to redeploy to Railway
