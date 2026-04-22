@@ -19,9 +19,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2 } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { getRandomFusion } from "@shared/fusionLibrary";
 
 // ─── Status polling hook ───────────────────────────────────────────────────────
 function useGenerationPolling(
@@ -430,6 +431,17 @@ export function GeneratePage() {
     []
   );
 
+  const handleSurpriseMe = useCallback(() => {
+    const fusion = getRandomFusion();
+    setPrompt(fusion.promptCore);
+    setIntensity("balanced");
+    setError(null);
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    toast.success(`🎲 ${fusion.name} — ready to generate!`);
+  }, []);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -548,6 +560,24 @@ export function GeneratePage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
+              </div>
+
+              {/* Surprise Me Button */}
+              <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">
+                <p className="mb-3 text-sm font-medium text-purple-900">Not sure what to create?</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-purple-300 text-purple-700 hover:bg-purple-500/10"
+                  onClick={handleSurpriseMe}
+                  disabled={isGenerating || !!pollingId}
+                >
+                  <Dices className="mr-2 h-4 w-4" />
+                  Surprise Me 🎲 — Random Fusion
+                </Button>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Pick a random fusion from our library. Sets intensity to Balanced.
+                </p>
               </div>
 
               {/* Lyrics */}

@@ -237,3 +237,19 @@
 - [x] Applied migration to add isFavorited column
 - [x] Verified toggleFavorite mutation is registered
 - [x] Ready to redeploy to Railway
+
+## Future Feature: Visual Brief Generator
+- [ ] After a song is generated (status = complete), auto-generate a "Visual Brief" document using the Music + Visual Stickiness Master Formula (Chapter 9 of Music Prompt Bible)
+- [ ] Visual Brief should include: camera direction cues (rises/falls with melody), lighting sync notes (pulse on beat, spotlight on hook), avatar emotion notes (facial expressions matching vocal charge), venue-specific atmosphere notes, and Zeigarnik tension/release moment notes
+- [ ] Display Visual Brief as a collapsible panel below the audio player on completed generation cards
+- [ ] Add "Copy Visual Brief" button so users can paste it directly into Runway Gen-4.5 or the Cinématique builder
+- [ ] Future: Feed Layer 2/3/4 cues from the Visual Brief into Unreal Engine Niagara particles, Lumen lighting, and MetaHuman animations for real-time reactive venues
+- [ ] Future: "Enable Music + Visual Stickiness Formula" toggle in Generate UI that auto-builds combined prompt for music gen and passes visual cues to Runway/Cinématique builder
+- [ ] Future: 5-layer condensed stickiness form for casual users (Melodic Shape, Rhythmic Energy, Hook Design, Cognitive Tension, Vocal & Mix Clarity)
+
+## Future Feature: Fusion Recipe Library UI
+
+- [ ] Add "Fusion Recipes" inspiration drawer/panel to Generate page — browsable list of all 47 fusions from Chapter 10, organized by tier (Safe/Medium/Experimental/Global/Wildcard), with one-click "Use This" button that pre-fills the prompt field
+- [x] Add "Surprise Me 🎲" button to Generate page — randomly picks a fusion from the 47-fusion library, pre-fills the prompt field with the fusion's prompt core, and sets intensity to Balanced. Wired to Generate.tsx with handleSurpriseMe callback and purple dashed UI box. 24 vitest tests passing for fusion library (getRandomFusion, generateRandomWildcard, findFusionByName, tier distribution, prompt length validation, etc.). 108 total tests passing.
+- [ ] Add "Smart Refinement" toggle to Generate page — off by default; when enabled, appends the General Safety Net negative prompt from Chapter 11 to the generation request
+- [ ] Add advanced negative prompt field for power users — free-text input + clickable chip suggestions (muddy mix, harsh clipping, generic production, etc.) visible when Smart Refinement is toggled on
