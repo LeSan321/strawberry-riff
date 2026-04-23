@@ -167,3 +167,24 @@ export const musicGenerationHistory = mysqlTable("music_generation_history", {
 });
 
 export type MusicGenerationHistory = typeof musicGenerationHistory.$inferSelect;
+
+// ─── Lyrics Drafts ────────────────────────────────────────────────────────────
+export const lyricsDrafts = mysqlTable("lyrics_drafts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 200 }).notNull().default("Untitled"),
+  fusion: varchar("fusion", { length: 200 }),       // Selected fusion name
+  mood: varchar("mood", { length: 200 }),            // Mood/emotional feeling
+  topic: varchar("topic", { length: 500 }),          // Theme/topic
+  perspective: varchar("perspective", { length: 100 }), // Narrative perspective
+  hookSeed: varchar("hookSeed", { length: 500 }),    // Hook seed phrase
+  structure: varchar("structure", { length: 200 }), // Song structure tags
+  writingTeam: varchar("writingTeam", { length: 100 }), // Writing team member
+  generatedLyrics: text("generatedLyrics"),          // Full AI-generated lyrics
+  stickinessAnalysis: text("stickinessAnalysis"),    // AI stickiness notes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LyricsDraft = typeof lyricsDrafts.$inferSelect;
+export type InsertLyricsDraft = typeof lyricsDrafts.$inferInsert;

@@ -13,8 +13,11 @@ import {
   Profile,
   Track,
   User,
+  InsertLyricsDraft,
+  LyricsDraft,
   VibePreset,
   friends,
+  lyricsDrafts,
   musicGenerationHistory,
   musicGenerations,
   playlistTracks,
@@ -636,4 +639,42 @@ export async function countGenerationsThisMonth(userId: number): Promise<number>
       )
     );
   return Number(rows[0]?.count ?? 0);
+}
+
+// ─── Lyrics Drafts ────────────────────────────────────────────────────────────
+export async function createLyricsDraft(data: InsertLyricsDraft): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(lyricsDrafts).values(data);
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function getLyricsDraftsByUserId(userId: number): Promise<LyricsDraft[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(lyricsDrafts)
+    .where(eq(lyricsDrafts.userId, userId))
+    .orderBy(desc(lyricsDrafts.createdAt));
+}
+
+export async function getLyricsDraftById(id: number): Promise<LyricsDraft | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(lyricsDrafts)
+    .where(eq(lyricsDrafts.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteLyricsDraft(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .delete(lyricsDrafts)
+    .where(and(eq(lyricsDrafts.id, id), eq(lyricsDrafts.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
 }

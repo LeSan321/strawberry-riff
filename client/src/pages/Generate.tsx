@@ -337,6 +337,18 @@ export function GeneratePage() {
   const [pollingId, setPollingId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Pre-fill lyrics from Lyrics Generator page (via sessionStorage)
+  useEffect(() => {
+    const prefill = sessionStorage.getItem("prefill_lyrics");
+    if (prefill) {
+      setLyrics(prefill);
+      sessionStorage.removeItem("prefill_lyrics");
+      toast.success("Lyrics loaded from Lyrics Generator!");
+      // Scroll to form
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, []);
+
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
   const regenerateMutation = trpc.musicGeneration.regenerate.useMutation({

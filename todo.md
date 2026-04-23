@@ -253,3 +253,22 @@
 - [x] Add "Surprise Me 🎲" button to Generate page — randomly picks a fusion from the 47-fusion library, pre-fills the prompt field with the fusion's prompt core, and sets intensity to Balanced. Wired to Generate.tsx with handleSurpriseMe callback and purple dashed UI box. 24 vitest tests passing for fusion library (getRandomFusion, generateRandomWildcard, findFusionByName, tier distribution, prompt length validation, etc.). 108 total tests passing.
 - [ ] Add "Smart Refinement" toggle to Generate page — off by default; when enabled, appends the General Safety Net negative prompt from Chapter 11 to the generation request
 - [ ] Add advanced negative prompt field for power users — free-text input + clickable chip suggestions (muddy mix, harsh clipping, generic production, etc.) visible when Smart Refinement is toggled on
+
+## Phase 35: AI Lyrics Generator (Writer's Bible Integration)
+- [x] Create server/lyricsGenerator.ts — Writer's Bible system prompt + 5-Layer Writer's Formula builder
+- [x] Add `lyrics.generate` tRPC procedure (protectedProcedure, invokeLLM with system prompt)
+- [x] Add `lyrics.saveDraft`, `lyrics.myDrafts`, `lyrics.getDraft`, `lyrics.deleteDraft`, `lyrics.getOptions` procedures
+- [x] Add `lyricsDrafts` table to schema (userId, title, fusion, mood, topic, perspective, hookSeed, structure, writingTeam, generatedLyrics, stickinessAnalysis, createdAt)
+- [x] Run migration for lyricsDrafts table
+- [x] Build LyricsGenerator.tsx page with 5-Layer Writer's Formula form (Fusion, Mood/Feeling, Topic/Theme, Perspective, Hook Seed)
+- [x] Add Writing Team selector (Hook Master, Story Weaver, Poet Visionary, Tone Shifter, Polish Editor)
+- [x] Add Structure selector (8 templates: Standard Pop, Verse-Chorus-Bridge, AABA, Electronic/Dance, Folk/Narrative, Jazz/Soul, Ballad, Through-Composed)
+- [x] Add "Generate Lyrics" button with loading state and displayed result
+- [x] Add "Use in Generate" button — pre-fills lyrics field on Generate page via sessionStorage
+- [x] Add "Save Draft" button — saves to lyricsDrafts table with title dialog
+- [x] Add Saved Drafts panel showing previous lyrics with load/delete and preview
+- [x] Add Stickiness Analysis panel below generated lyrics
+- [x] Add Writer's Tips sidebar card
+- [x] Register /lyrics route in App.tsx and add Lyrics nav link to AppLayout
+- [x] Write Vitest tests for lyricsGenerator helper (128 total tests passing)
+- [x] All tests passing

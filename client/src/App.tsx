@@ -19,6 +19,7 @@ import CreatorProfile from "./pages/CreatorProfile";
 import PremiumSuccess from "./pages/PremiumSuccess";
 import TrackPage from "./pages/TrackPage";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
+import { LyricsGeneratorPage } from "./pages/LyricsGenerator";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/creator/:username" component={CreatorProfile} />
         <Route path="/premium/success" component={PremiumSuccess} />
         <Route path="/track/:id" component={TrackPage} />
+        <Route path="/lyrics" component={LyricsGeneratorPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

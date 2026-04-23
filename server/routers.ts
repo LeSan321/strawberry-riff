@@ -55,6 +55,8 @@ import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
+import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
+import { createLyricsDraft, getLyricsDraftsByUserId, getLyricsDraftById, deleteLyricsDraft } from "./db";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -783,6 +785,116 @@ const musicGenerationRouter = router({
     }),
 });
 
+// ─── Lyrics Generator ────────────────────────────────────────────────────────
+const lyricsRouter = router({
+  generate: protectedProcedure
+    .input(
+      z.object({
+        fusion: z.string().min(1).max(200),
+        topic: z.string().min(1).max(500),
+        mood: z.string().min(1).max(200),
+        emotionalFeeling: z.string().max(200).optional(),
+        structure: z.string().min(1).max(200),
+        flowStyle: z.string().max(200).optional(),
+        writingTeam: z.enum(Object.keys(WRITING_TEAM) as [WritingTeamMember, ...WritingTeamMember[]]).optional(),
+        craftNotes: z.string().max(500).optional(),
+        perspective: z.string().max(100).optional(),
+        hookSeed: z.string().max(500).optional(),
+        constraints: z.string().max(500).optional(),
+        saveDraft: z.boolean().default(false),
+        draftTitle: z.string().max(200).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { saveDraft, draftTitle, ...generationInput } = input;
+
+      const result = await generateLyrics(generationInput);
+
+      let draftId: number | null = null;
+      if (saveDraft) {
+        draftId = await createLyricsDraft({
+          userId: ctx.user.id,
+          title: draftTitle || input.topic.slice(0, 60) || "Untitled",
+          fusion: input.fusion,
+          mood: input.mood,
+          topic: input.topic,
+          perspective: input.perspective ?? null,
+          hookSeed: input.hookSeed ?? null,
+          structure: input.structure,
+          writingTeam: input.writingTeam ?? null,
+          generatedLyrics: result.lyrics,
+          stickinessAnalysis: result.stickinessAnalysis,
+        });
+      }
+
+      return {
+        lyrics: result.lyrics,
+        stickinessAnalysis: result.stickinessAnalysis,
+        fullResponse: result.fullResponse,
+        draftId,
+      };
+    }),
+
+  saveDraft: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        fusion: z.string().max(200).optional(),
+        mood: z.string().max(200).optional(),
+        topic: z.string().max(500).optional(),
+        perspective: z.string().max(100).optional(),
+        hookSeed: z.string().max(500).optional(),
+        structure: z.string().max(200).optional(),
+        writingTeam: z.string().max(100).optional(),
+        generatedLyrics: z.string(),
+        stickinessAnalysis: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const id = await createLyricsDraft({
+        userId: ctx.user.id,
+        title: input.title,
+        fusion: input.fusion ?? null,
+        mood: input.mood ?? null,
+        topic: input.topic ?? null,
+        perspective: input.perspective ?? null,
+        hookSeed: input.hookSeed ?? null,
+        structure: input.structure ?? null,
+        writingTeam: input.writingTeam ?? null,
+        generatedLyrics: input.generatedLyrics,
+        stickinessAnalysis: input.stickinessAnalysis ?? null,
+      });
+      if (!id) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to save draft" });
+      return { id };
+    }),
+
+  myDrafts: protectedProcedure.query(async ({ ctx }) => {
+    return getLyricsDraftsByUserId(ctx.user.id);
+  }),
+
+  getDraft: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .query(async ({ ctx, input }) => {
+      const draft = await getLyricsDraftById(input.id);
+      if (!draft) throw new TRPCError({ code: "NOT_FOUND" });
+      if (draft.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      return draft;
+    }),
+
+  deleteDraft: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const ok = await deleteLyricsDraft(input.id, ctx.user.id);
+      if (!ok) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+
+  getOptions: publicProcedure.query(() => ({
+    writingTeam: Object.keys(WRITING_TEAM) as WritingTeamMember[],
+    structures: Object.keys(STRUCTURE_TEMPLATES) as string[],
+  })),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -795,6 +907,7 @@ export const appRouter = router({
   stripe: stripeRouter,
   vibePresets: vibePresetsRouter,
   musicGeneration: musicGenerationRouter,
+  lyrics: lyricsRouter,
 });
 
 export type AppRouter = typeof appRouter;
