@@ -4,8 +4,11 @@ import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getUserById, getUserByStripeCustomerId, setUserPremium } from "../db";
 
 // ─── Stripe client ────────────────────────────────────────────────────────────
-// Live mode price ID — also readable from STRIPE_PRICE_ID env var
-const PRICE_ID = process.env.STRIPE_PRICE_ID ?? "price_1THDluPtUHhlXfc6LpkndC3K";
+// Live mode price ID — must be set via STRIPE_PRICE_ID env var
+const PRICE_ID = process.env.STRIPE_PRICE_ID;
+if (!PRICE_ID) {
+  throw new Error("STRIPE_PRICE_ID environment variable is not set. Please configure it in your environment.");
+}
 
 function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY ?? "";
