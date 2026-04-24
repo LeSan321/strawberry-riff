@@ -144,6 +144,7 @@ export const musicGenerations = mysqlTable("music_generations", {
   metadata: text("metadata"), // JSON metadata from ACE-Step
   errorMessage: text("errorMessage"), // Error details if generation failed
   isFavorited: boolean("isFavorited").default(false).notNull(), // User marked as favorite
+  referenceAudioUrl: text("referenceAudioUrl"), // Optional style reference audio URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

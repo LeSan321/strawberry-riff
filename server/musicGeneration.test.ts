@@ -3,11 +3,11 @@ import { appRouter } from "./routers";
 import { TRPCError } from "@trpc/server";
 import * as dbModule from "./db";
 
-// Mock the music generation module (MiniMax Music 2.5 via Replicate)
+// Mock the music generation module (MiniMax Music 2.6 direct API)
 vi.mock("./musicGeneration", () => ({
-  startMusicGeneration: vi.fn().mockResolvedValue("pred_test123"),
-  pollMusicGeneration: vi.fn().mockResolvedValue({
-    audioUrl: "https://replicate.delivery/test/audio.mp3",
+    startMusicGeneration: vi.fn().mockResolvedValue("task_test123"),
+    pollMusicGeneration: vi.fn().mockResolvedValue({
+      audioUrl: "https://cdn.minimax.io/test/audio.mp3",
     mimeType: "audio/mpeg",
   }),
   fetchAudioBytes: vi.fn().mockResolvedValue(Buffer.from("fake-audio-bytes")),
@@ -95,6 +95,28 @@ describe("Music Generation Router", () => {
         title: "Test Song",
         prompt: "jazz, noir, 95 BPM",
         lyrics: "[Verse]\nTest lyrics\n[Chorus]\nChorus lyrics",
+      });
+
+      expect(result).toEqual({ id: 1, status: "generating" });
+    });
+
+    it("should accept referenceAudioUrl for style reference", async () => {
+      const result = await caller.musicGeneration.generate({
+        title: "Reference Test",
+        prompt: "jazz, noir, 95 BPM",
+        lyrics: "[Verse]\nTest lyrics\n[Chorus]\nChorus lyrics",
+        referenceAudioUrl: "https://s3.example.com/ref-song.mp3",
+      });
+
+      expect(result).toEqual({ id: 1, status: "generating" });
+    });
+
+    it("should work without referenceAudioUrl (optional field)", async () => {
+      const result = await caller.musicGeneration.generate({
+        title: "No Reference Test",
+        prompt: "pop, upbeat",
+        lyrics: "[Verse]\nTest lyrics",
+        // referenceAudioUrl intentionally omitted
       });
 
       expect(result).toEqual({ id: 1, status: "generating" });

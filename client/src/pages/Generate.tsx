@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
@@ -336,6 +336,11 @@ export function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  // Reference audio state
+  const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
+  const [referenceAudioName, setReferenceAudioName] = useState<string | null>(null);
+  const [isUploadingRef, setIsUploadingRef] = useState(false);
+  const refAudioInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill lyrics from Lyrics Generator page (via sessionStorage)
   useEffect(() => {
@@ -454,6 +459,44 @@ export function GeneratePage() {
     toast.success(`🎲 ${fusion.name} — ready to generate!`);
   }, []);
 
+  const uploadAudioMutation = trpc.tracks.getUploadUrl.useMutation();
+
+  const handleReferenceAudioSelect = useCallback(async (file: File) => {
+    if (!file.type.startsWith("audio/")) {
+      toast.error("Please select an audio file (MP3, WAV, etc.)");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Reference audio must be under 50MB");
+      return;
+    }
+    setIsUploadingRef(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadAudioMutation.mutateAsync({
+        base64,
+        mimeType: file.type,
+        fileName: file.name,
+      });
+      setReferenceAudioUrl(res.url);
+      setReferenceAudioName(file.name);
+      toast.success("Reference audio uploaded — style will guide your generation!");
+    } catch (err) {
+      toast.error("Failed to upload reference audio — please try again");
+      console.error(err);
+    } finally {
+      setIsUploadingRef(false);
+    }
+  }, [uploadAudioMutation]);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -469,6 +512,7 @@ export function GeneratePage() {
         prompt: prompt.trim(),
         lyrics: lyrics.trim(),
         intensity,
+        referenceAudioUrl: referenceAudioUrl ?? undefined,
       });
       setPollingId(result.id);
       await utils.musicGeneration.myGenerations.invalidate();
@@ -514,7 +558,7 @@ export function GeneratePage() {
               <div>
                 <h1 className="text-3xl font-bold">Generate Music</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Create full-length AI songs with vocals using MiniMax Music 2.5.
+                  Create full-length AI songs with vocals using MiniMax Music 2.6.
                 </p>
               </div>
             </div>
@@ -572,6 +616,60 @@ export function GeneratePage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
+              </div>
+
+              {/* Reference Audio Panel */}
+              <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mic2 className="h-4 w-4 text-pink-600" />
+                  <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Upload a song you love and MiniMax will match its vibe, energy, and style when generating your track.
+                </p>
+                {referenceAudioUrl ? (
+                  <div className="flex items-center gap-2 rounded-md bg-pink-500/10 border border-pink-200 px-3 py-2">
+                    <FileAudio className="h-4 w-4 text-pink-600 shrink-0" />
+                    <span className="text-xs text-pink-800 truncate flex-1">{referenceAudioName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setReferenceAudioUrl(null); setReferenceAudioName(null); }}
+                      className="text-pink-500 hover:text-pink-700 transition-colors"
+                      title="Remove reference audio"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-pink-300 text-pink-700 hover:bg-pink-500/10"
+                    onClick={() => refAudioInputRef.current?.click()}
+                    disabled={isUploadingRef || isGenerating}
+                  >
+                    {isUploadingRef ? (
+                      <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
+                    ) : (
+                      <><Upload className="mr-2 h-3.5 w-3.5" />Upload Reference Song</>  
+                    )}
+                  </Button>
+                )}
+                <input
+                  ref={refAudioInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleReferenceAudioSelect(file);
+                    e.target.value = "";
+                  }}
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds
+                </p>
               </div>
 
               {/* Surprise Me Button */}

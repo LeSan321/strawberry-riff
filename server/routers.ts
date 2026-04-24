@@ -535,6 +535,7 @@ const musicGenerationRouter = router({
         prompt: z.string().min(1).max(1000),
         lyrics: z.string().min(1),
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
+        referenceAudioUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -571,6 +572,7 @@ const musicGenerationRouter = router({
         aceStepTaskId: null,
         errorMessage: null,
         isFavorited: false,
+        referenceAudioUrl: input.referenceAudioUrl ?? null,
       });
 
       if (!generationId) {
@@ -578,8 +580,12 @@ const musicGenerationRouter = router({
       }
 
       // Start generation in background (fire-and-forget)
-      // Use prompt with intensity prefix
-      startMusicGeneration(promptWithIntensity, input.lyrics)
+      // Use prompt with intensity prefix, pass reference audio if provided
+      startMusicGeneration({
+        prompt: promptWithIntensity,
+        lyrics: input.lyrics,
+        referenceAudioUrl: input.referenceAudioUrl,
+      })
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);
@@ -690,6 +696,7 @@ const musicGenerationRouter = router({
         aceStepTaskId: null,
         errorMessage: null,
         isFavorited: false,
+        referenceAudioUrl: original.referenceAudioUrl ?? null,
       });
 
       if (!generationId) {

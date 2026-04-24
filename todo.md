@@ -272,3 +272,14 @@
 - [x] Register /lyrics route in App.tsx and add Lyrics nav link to AppLayout
 - [x] Write Vitest tests for lyricsGenerator helper (128 total tests passing)
 - [x] All tests passing
+
+## Phase 36: Style Reference Audio (MiniMax 2.6 Direct API)
+- [x] Migrated server/musicGeneration.ts from Replicate to MiniMax Music 2.6 direct API
+- [x] Added MINIMAX_API_KEY secret and tested connection
+- [x] Added referenceAudioUrl column to music_generations table and ran migration
+- [x] Updated musicGeneration.generate tRPC procedure to accept optional referenceAudioUrl
+- [x] Built Style Reference Audio upload panel on Generate page (pink dashed card, file picker, filename preview, remove button)
+- [x] Wired upload through tracks.getUploadUrl mutation to S3
+- [x] Updated Generate page header to reflect MiniMax Music 2.6
+- [x] Updated musicGeneration.test.ts with reference audio tests (130 tests passing)
+- [x] All tests passing

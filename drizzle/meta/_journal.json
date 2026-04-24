@@ -57,6 +57,13 @@
       "when": 1776988317300,
       "tag": "0007_lovely_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1777064151136,
+      "tag": "0008_whole_warstar",
+      "breakpoints": true
     }
   ]
 }
