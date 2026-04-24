@@ -283,3 +283,35 @@
 - [x] Updated Generate page header to reflect MiniMax Music 2.6
 - [x] Updated musicGeneration.test.ts with reference audio tests (130 tests passing)
 - [x] All tests passing
+
+## Phase 37: Voice Reference Audio
+- [x] Add voiceReferenceUrl parameter to MiniMax startMusicGeneration (refer_voice for vocal style)
+- [x] Add voiceReferenceUrl column to music_generations table and run migration
+- [x] Update musicGeneration.generate tRPC procedure to accept optional voiceReferenceUrl
+- [x] Build Voice Reference Audio upload panel on Generate page (teal/cyan color scheme, separate from Style Reference)
+- [x] Wire upload through tracks.getUploadUrl mutation to S3
+- [x] Write Vitest tests for voice reference parameter
+- [x] All tests passing
+
+## Phase 38: Studio Mode (Four Cinematic Themes)
+- [x] Generate four cinematic studio header images (Forest Studio, Cozy Den, Producer's Workshop, Rock Room)
+- [x] Upload all four header images to CDN via manus-upload-file --webdev
+- [x] Add studioTheme column to users table and run migration
+- [x] Add studio.getPreferences and studio.setTheme tRPC procedures
+- [x] Build Studio.tsx — three-panel layout (slim left sidebar / large central canvas / contextual right panel)
+- [x] Wire all four header images as selectable theme options in Studio header (Theme Picker Modal)
+- [x] Add Studio sidebar with tool navigation (Generate, Lyrics, Fusions, Writer's Bible)
+- [x] Embed GeneratePage and LyricsGeneratorPage as tabbed tools in Studio central canvas
+- [x] Add right context panel (Pro Tips, Recent Generations, Quick Fusions, Premium upsell)
+- [x] Add /studio route to App.tsx (full-screen, outside AppLayout)
+- [x] Add "Enter Studio" button to Home page hero and AppLayout nav (desktop + mobile)
+- [x] Storage proxy registered for /manus-storage/* paths
+- [x] All 130 tests passing
+
+## Phase 39: Fusion Recipes Drawer
+- [x] Build FusionRecipesDrawer component — slide-in drawer with all 47 fusions organized by tier
+- [x] Add tier tabs (Safe Harbor, Medium Blend, Experimental, Global Fusion, Wildcard)
+- [x] Each fusion card shows name, why-it-works, prompt preview, and "Use This" button
+- [x] Add "Browse Fusions" button to Generate page form (alongside Surprise Me)
+- [x] Wire "Use This" to close drawer and set prompt field (direct callback or sessionStorage for cross-page)
+- [x] FusionRecipesDrawer also accessible from Studio sidebar

@@ -64,6 +64,13 @@
       "when": 1777064151136,
       "tag": "0008_whole_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1777069387239,
+      "tag": "0009_thick_tiger_shark",
+      "breakpoints": true
     }
   ]
 }

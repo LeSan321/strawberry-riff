@@ -20,11 +20,16 @@ import PremiumSuccess from "./pages/PremiumSuccess";
 import TrackPage from "./pages/TrackPage";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { LyricsGeneratorPage } from "./pages/LyricsGenerator";
+import Studio from "./pages/Studio";
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
+    <Switch>
+      {/* Studio is full-screen — outside AppLayout */}
+      <Route path="/studio" component={Studio} />
+      <Route>
+        <AppLayout>
+          <Switch>
         <Route path="/" component={Home} />
         <Route path="/discover" component={Discover} />
         <Route path="/generate" component={GeneratePage} />
@@ -41,8 +46,10 @@ function Router() {
         <Route path="/lyrics" component={LyricsGeneratorPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+        </Switch>
+      </AppLayout>
+    </Route>
+    </Switch>
   );
 }
 

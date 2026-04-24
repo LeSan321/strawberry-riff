@@ -28,6 +28,7 @@ import {
   isFollowing,
   likeTrack,
   removeTrackFromPlaylist,
+  updateStudioTheme,
   reorderPlaylistTracks,
   unfollowUser,
   unlikeTrack,
@@ -536,6 +537,7 @@ const musicGenerationRouter = router({
         lyrics: z.string().min(1),
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
         referenceAudioUrl: z.string().url().optional(),
+        voiceReferenceUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -573,6 +575,7 @@ const musicGenerationRouter = router({
         errorMessage: null,
         isFavorited: false,
         referenceAudioUrl: input.referenceAudioUrl ?? null,
+        voiceReferenceUrl: input.voiceReferenceUrl ?? null,
       });
 
       if (!generationId) {
@@ -585,6 +588,7 @@ const musicGenerationRouter = router({
         prompt: promptWithIntensity,
         lyrics: input.lyrics,
         referenceAudioUrl: input.referenceAudioUrl,
+        voiceReferenceUrl: input.voiceReferenceUrl,
       })
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
@@ -697,6 +701,7 @@ const musicGenerationRouter = router({
         errorMessage: null,
         isFavorited: false,
         referenceAudioUrl: original.referenceAudioUrl ?? null,
+        voiceReferenceUrl: original.voiceReferenceUrl ?? null,
       });
 
       if (!generationId) {
@@ -705,7 +710,12 @@ const musicGenerationRouter = router({
 
       // Start generation in background (fire-and-forget)
       // Use prompt with intensity and refinement prefixes
-      startMusicGeneration(promptWithRefinement, original.lyrics)
+      startMusicGeneration({
+        prompt: promptWithRefinement,
+        lyrics: original.lyrics,
+        referenceAudioUrl: original.referenceAudioUrl ?? undefined,
+        voiceReferenceUrl: original.voiceReferenceUrl ?? undefined,
+      })
         .then(async (predictionId) => {
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);
@@ -902,6 +912,21 @@ const lyricsRouter = router({
   })),
 });
 
+// ─── Studio Router ───────────────────────────────────────────────────────────────
+const studioRouter = router({
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    return { studioTheme: user?.studioTheme ?? "forest-studio" };
+  }),
+
+  setTheme: protectedProcedure
+    .input(z.object({ theme: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      await updateStudioTheme(ctx.user.id, input.theme);
+      return { success: true };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -915,6 +940,7 @@ export const appRouter = router({
   vibePresets: vibePresetsRouter,
   musicGeneration: musicGenerationRouter,
   lyrics: lyricsRouter,
+  studio: studioRouter,
 });
 
 export type AppRouter = typeof appRouter;

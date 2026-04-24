@@ -20,6 +20,7 @@ export const users = mysqlTable("users", {
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 64 }),
   isPremium: boolean("isPremium").default(false).notNull(),
   premiumSince: timestamp("premiumSince"),
+  studioTheme: varchar("studioTheme", { length: 64 }).default("forest-studio").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -145,6 +146,7 @@ export const musicGenerations = mysqlTable("music_generations", {
   errorMessage: text("errorMessage"), // Error details if generation failed
   isFavorited: boolean("isFavorited").default(false).notNull(), // User marked as favorite
   referenceAudioUrl: text("referenceAudioUrl"), // Optional style reference audio URL
+  voiceReferenceUrl: text("voiceReferenceUrl"), // Optional voice reference audio URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

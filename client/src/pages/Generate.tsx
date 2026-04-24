@@ -19,7 +19,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers } from "lucide-react";
+import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
@@ -336,11 +337,17 @@ export function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const [fusionsOpen, setFusionsOpen] = useState(false);
   // Reference audio state
   const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
   const [referenceAudioName, setReferenceAudioName] = useState<string | null>(null);
   const [isUploadingRef, setIsUploadingRef] = useState(false);
   const refAudioInputRef = useRef<HTMLInputElement>(null);
+  // Voice reference state
+  const [voiceReferenceUrl, setVoiceReferenceUrl] = useState<string | null>(null);
+  const [voiceReferenceName, setVoiceReferenceName] = useState<string | null>(null);
+  const [isUploadingVoiceRef, setIsUploadingVoiceRef] = useState(false);
+  const voiceRefAudioInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill lyrics from Lyrics Generator page (via sessionStorage)
   useEffect(() => {
@@ -349,7 +356,16 @@ export function GeneratePage() {
       setLyrics(prefill);
       sessionStorage.removeItem("prefill_lyrics");
       toast.success("Lyrics loaded from Lyrics Generator!");
-      // Scroll to form
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+    // Pre-fill prompt from Fusion Recipes Drawer (via sessionStorage)
+    const fusionPrompt = sessionStorage.getItem("fusionPrompt");
+    const fusionName = sessionStorage.getItem("fusionName");
+    if (fusionPrompt) {
+      setPrompt(fusionPrompt);
+      sessionStorage.removeItem("fusionPrompt");
+      sessionStorage.removeItem("fusionName");
+      toast.success(`Fusion recipe "${fusionName || "Fusion"}" loaded!`);
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   }, []);
@@ -497,6 +513,42 @@ export function GeneratePage() {
     }
   }, [uploadAudioMutation]);
 
+  const handleVoiceReferenceSelect = useCallback(async (file: File) => {
+    if (!file.type.startsWith("audio/")) {
+      toast.error("Please select an audio file (MP3, WAV, etc.)");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Voice reference must be under 50MB");
+      return;
+    }
+    setIsUploadingVoiceRef(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await uploadAudioMutation.mutateAsync({
+        base64,
+        mimeType: file.type,
+        fileName: file.name,
+      });
+      setVoiceReferenceUrl(res.url);
+      setVoiceReferenceName(file.name);
+      toast.success("Voice reference uploaded — MiniMax will match the vocal style!");
+    } catch (err) {
+      toast.error("Failed to upload voice reference — please try again");
+      console.error(err);
+    } finally {
+      setIsUploadingVoiceRef(false);
+    }
+  }, [uploadAudioMutation]);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -513,6 +565,7 @@ export function GeneratePage() {
         lyrics: lyrics.trim(),
         intensity,
         referenceAudioUrl: referenceAudioUrl ?? undefined,
+        voiceReferenceUrl: voiceReferenceUrl ?? undefined,
       });
       setPollingId(result.id);
       await utils.musicGeneration.myGenerations.invalidate();
@@ -672,23 +725,94 @@ export function GeneratePage() {
                 </p>
               </div>
 
-              {/* Surprise Me Button */}
-              <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">
-                <p className="mb-3 text-sm font-medium text-purple-900">Not sure what to create?</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-purple-300 text-purple-700 hover:bg-purple-500/10"
-                  onClick={handleSurpriseMe}
-                  disabled={isGenerating || !!pollingId}
-                >
-                  <Dices className="mr-2 h-4 w-4" />
-                  Surprise Me 🎲 — Random Fusion
-                </Button>
+              {/* Voice Reference Audio Panel */}
+              <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mic2 className="h-4 w-4 text-teal-600" />
+                  <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Upload a vocal sample and MiniMax will generate your song sung in that voice style — your voice, a character, or any singer.
+                </p>
+                {voiceReferenceUrl ? (
+                  <div className="flex items-center gap-2 rounded-md bg-teal-500/10 border border-teal-200 px-3 py-2">
+                    <FileAudio className="h-4 w-4 text-teal-600 shrink-0" />
+                    <span className="text-xs text-teal-800 truncate flex-1">{voiceReferenceName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setVoiceReferenceUrl(null); setVoiceReferenceName(null); }}
+                      className="text-teal-500 hover:text-teal-700 transition-colors"
+                      title="Remove voice reference"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-teal-300 text-teal-700 hover:bg-teal-500/10"
+                    onClick={() => voiceRefAudioInputRef.current?.click()}
+                    disabled={isUploadingVoiceRef || isGenerating}
+                  >
+                    {isUploadingVoiceRef ? (
+                      <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
+                    ) : (
+                      <><Upload className="mr-2 h-3.5 w-3.5" />Upload Voice Sample</>
+                    )}
+                  </Button>
+                )}
+                <input
+                  ref={voiceRefAudioInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleVoiceReferenceSelect(file);
+                    e.target.value = "";
+                  }}
+                />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Pick a random fusion from our library. Sets intensity to Balanced.
+                  Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds of clear vocals
                 </p>
               </div>
+
+              {/* Surprise Me + Fusion Recipes Buttons */}
+              <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">
+                <p className="mb-3 text-sm font-medium text-purple-900">Not sure what to create?</p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-500/10"
+                    onClick={handleSurpriseMe}
+                    disabled={isGenerating || !!pollingId}
+                  >
+                    <Dices className="mr-2 h-4 w-4" />
+                    Surprise Me 🎲
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-500/10"
+                    onClick={() => setFusionsOpen(true)}
+                    disabled={isGenerating || !!pollingId}
+                  >
+                    <Layers className="mr-2 h-4 w-4" />
+                    Browse Fusions
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Random fusion or browse all 47 recipes by tier.
+                </p>
+              </div>
+              <FusionRecipesDrawer
+                open={fusionsOpen}
+                onClose={() => setFusionsOpen(false)}
+                onUsePrompt={(p) => { setPrompt(p); setFusionsOpen(false); }}
+              />
 
               {/* Lyrics */}
               <div>

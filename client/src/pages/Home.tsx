@@ -317,6 +317,16 @@ export default function Home() {
                   Discover
                 </Button>
               </Link>
+              <Link href="/studio">
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 text-base font-semibold shadow-lg shadow-purple-500/30 border-0 text-white flex items-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Enter Studio
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>

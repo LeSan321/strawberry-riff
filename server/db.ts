@@ -99,6 +99,12 @@ export async function getUserById(id: number): Promise<User | undefined> {
   return result[0];
 }
 
+export async function updateStudioTheme(userId: number, theme: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ studioTheme: theme }).where(eq(users.id, userId));
+}
+
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 export async function getProfileByUserId(userId: number): Promise<Profile | undefined> {
   const db = await getDb();

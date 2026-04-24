@@ -24,6 +24,7 @@ import {
   Compass,
   Pen,
   Shuffle,
+  Sparkles,
   Repeat,
   Repeat1,
 } from "lucide-react";
@@ -53,6 +54,8 @@ const navItems = [
   { href: "/about", label: "About", icon: Info },
   { href: "/pricing", label: "Pricing", icon: DollarSign },
 ];
+
+const studioNavItem = { href: "/studio", label: "Studio", icon: Sparkles };
 
 function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -122,6 +125,21 @@ function AppHeader() {
                 </Link>
               );
             })}
+            {/* Studio CTA */}
+            <Link href="/studio">
+              <motion.div
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ml-1 ${
+                  location === "/studio"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
+                    : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-sm"
+                }`}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Studio</span>
+              </motion.div>
+            </Link>
           </nav>
 
           {/* Auth + Mobile Menu */}
@@ -221,6 +239,20 @@ function AppHeader() {
                   </Link>
                 );
               })}
+              {/* Studio CTA in mobile nav */}
+              <Link href="/studio">
+                <div
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mx-1 mt-1 text-sm font-semibold cursor-pointer ${
+                    location === "/studio"
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                      : "bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-700"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Enter Studio
+                </div>
+              </Link>
             </motion.nav>
           )}
         </AnimatePresence>
