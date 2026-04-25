@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Pen,
+  Pencil,
+  Check,
   Loader2,
   Sparkles,
   Copy,
@@ -207,6 +209,10 @@ export function LyricsGeneratorPage() {
   const [stickinessAnalysis, setStickinessAnalysis] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Edit mode
+  const [isEditingLyrics, setIsEditingLyrics] = useState(false);
+  const [editBuffer, setEditBuffer] = useState("");
+
   // Save draft dialog
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
@@ -286,9 +292,33 @@ export function LyricsGeneratorPage() {
   const handleCopyToGenerate = useCallback(() => {
     if (!generatedLyrics) return;
     sessionStorage.setItem("prefill_lyrics", generatedLyrics);
+    // Also carry over the music style prompt (fusion) and title (from hookSeed or topic)
+    if (fusion.trim()) {
+      sessionStorage.setItem("prefill_prompt", fusion.trim());
+    }
+    const titleGuess = hookSeed.trim() || topic.trim().slice(0, 60);
+    if (titleGuess) {
+      sessionStorage.setItem("prefill_title", titleGuess);
+    }
     navigate("/generate");
-    toast.success("Lyrics loaded into Generate page!");
-  }, [generatedLyrics, navigate]);
+    toast.success("Lyrics, style prompt, and title loaded into Generate!");
+  }, [generatedLyrics, fusion, hookSeed, topic, navigate]);
+
+  const handleStartEdit = useCallback(() => {
+    setEditBuffer(generatedLyrics);
+    setIsEditingLyrics(true);
+  }, [generatedLyrics]);
+
+  const handleSaveEdit = useCallback(() => {
+    setGeneratedLyrics(editBuffer);
+    setIsEditingLyrics(false);
+    toast.success("Lyrics updated!");
+  }, [editBuffer]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditBuffer("");
+    setIsEditingLyrics(false);
+  }, []);
 
   const handleSaveDraft = useCallback(() => {
     if (!generatedLyrics) return;
@@ -598,34 +628,57 @@ export function LyricsGeneratorPage() {
                   <h2 className="font-semibold">Generated Lyrics</h2>
                 </div>
                 {generatedLyrics && (
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="sm" variant="outline" onClick={handleCopyLyrics}>
-                          <Copy className="h-3.5 w-3.5 mr-1.5" />
-                          Copy
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isEditingLyrics ? (
+                      <>
+                        <Button size="sm" variant="default" onClick={handleSaveEdit}>
+                          <Check className="h-3.5 w-3.5 mr-1.5" />
+                          Save
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Copy lyrics to clipboard</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="sm" variant="outline" onClick={handleCopyToGenerate}>
-                          <Music className="h-3.5 w-3.5 mr-1.5" />
-                          Use in Generate
+                        <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                          Cancel
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Load these lyrics into the Generate page</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="sm" variant="outline" onClick={handleSaveDraft}>
-                          <Save className="h-3.5 w-3.5 mr-1.5" />
-                          Save Draft
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Save to your drafts library</TooltipContent>
-                    </Tooltip>
+                      </>
+                    ) : (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={handleStartEdit}>
+                              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                              Edit
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit lyrics directly</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={handleCopyLyrics}>
+                              <Copy className="h-3.5 w-3.5 mr-1.5" />
+                              Copy
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy lyrics to clipboard</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={handleCopyToGenerate}>
+                              <Music className="h-3.5 w-3.5 mr-1.5" />
+                              Use in Generate
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Load these lyrics into the Generate page</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={handleSaveDraft}>
+                              <Save className="h-3.5 w-3.5 mr-1.5" />
+                              Save Draft
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Save to your drafts library</TooltipContent>
+                        </Tooltip>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -637,9 +690,18 @@ export function LyricsGeneratorPage() {
                 </div>
               ) : (
                 <>
-                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-muted/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
-                    {generatedLyrics}
-                  </pre>
+                  {isEditingLyrics ? (
+                    <Textarea
+                      value={editBuffer}
+                      onChange={(e) => setEditBuffer(e.target.value)}
+                      className="font-mono text-sm leading-relaxed min-h-[400px] max-h-[600px] resize-y"
+                      autoFocus
+                    />
+                  ) : (
+                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-muted/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                      {generatedLyrics}
+                    </pre>
+                  )}
 
                   {stickinessAnalysis && (
                     <div className="mt-4 rounded-lg border border-pink-200/50 bg-pink-500/5 p-4">

@@ -129,12 +129,14 @@ function GenerationCard({
   onDelete,
   onRefine,
   onToggleFavorite,
+  isPremium,
 }: {
   gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean; visualBrief?: string | null };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
   onDelete: (id: number) => void;
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
   onToggleFavorite: (id: number) => void;
+  isPremium?: boolean;
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -233,7 +235,7 @@ function GenerationCard({
               🔄 Vibe
             </Button>
           </div>
-          {gen.visualBrief && (
+          {gen.visualBrief && isPremium && (
             <VisualBriefPanel
               visualBriefJson={gen.visualBrief}
               className="mt-2"
@@ -359,10 +361,22 @@ export function GeneratePage() {
   // Pre-fill lyrics from Lyrics Generator page (via sessionStorage)
   useEffect(() => {
     const prefill = sessionStorage.getItem("prefill_lyrics");
+    const prefillPrompt = sessionStorage.getItem("prefill_prompt");
+    const prefillTitle = sessionStorage.getItem("prefill_title");
     if (prefill) {
       setLyrics(prefill);
       sessionStorage.removeItem("prefill_lyrics");
-      toast.success("Lyrics loaded from Lyrics Generator!");
+    }
+    if (prefillPrompt) {
+      setPrompt(prefillPrompt);
+      sessionStorage.removeItem("prefill_prompt");
+    }
+    if (prefillTitle) {
+      setTitle(prefillTitle);
+      sessionStorage.removeItem("prefill_title");
+    }
+    if (prefill || prefillPrompt) {
+      toast.success("Lyrics and style loaded from Lyrics Generator!");
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
     // Pre-fill prompt from Fusion Recipes Drawer (via sessionStorage)
@@ -678,8 +692,8 @@ export function GeneratePage() {
                 <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
               </div>
 
-              {/* Reference Audio Panel */}
-              <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
+              {/* Reference Audio Panel — Premium only */}
+              {monthlyUsage?.isPremium && <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Mic2 className="h-4 w-4 text-pink-600" />
                   <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
@@ -730,10 +744,10 @@ export function GeneratePage() {
                 <p className="mt-2 text-xs text-muted-foreground">
                   Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds
                 </p>
-              </div>
+              </div>}
 
-              {/* Voice Reference Audio Panel */}
-              <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
+              {/* Voice Reference Audio Panel — Premium only */}
+              {monthlyUsage?.isPremium && <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Mic2 className="h-4 w-4 text-teal-600" />
                   <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>
@@ -784,7 +798,7 @@ export function GeneratePage() {
                 <p className="mt-2 text-xs text-muted-foreground">
                   Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds of clear vocals
                 </p>
-              </div>
+              </div>}
 
               {/* Surprise Me + Fusion Recipes Buttons */}
               <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">
@@ -889,7 +903,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={monthlyUsage?.isPremium} />
                 ))}
               </div>
             ) : (

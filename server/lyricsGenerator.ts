@@ -157,6 +157,35 @@ export function buildLyricsPrompt(input: LyricsGenerationInput): string {
   return parts.join(" ");
 }
 
+// ─── Strip AI conversational preamble ────────────────────────────────────────
+/**
+ * Remove any conversational intro the LLM prepends before the actual lyrics,
+ * e.g. "Here are your hip-hop lyrics with a funky beat:\n\n[Verse 1]..."
+ * Strategy: if the text contains a section marker like [Verse], [Chorus] etc.
+ * strip everything before the first such marker.
+ * If no section markers exist, strip leading prose lines that look like
+ * AI commentary (ending with colon, or starting with known preamble phrases).
+ */
+export function stripAIPreamble(text: string): string {
+  const sectionMarkerRe = /\[(Verse|Chorus|Bridge|Intro|Outro|Pre-Chorus|Hook|Drop|Build|Refrain|Coda|Vamp|Interlude|Tag)/i;
+  const markerIndex = text.search(sectionMarkerRe);
+  if (markerIndex > 0) {
+    return text.slice(markerIndex).trim();
+  }
+  // No section markers — strip leading prose lines
+  const lines = text.split("\n");
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) { startIdx = i + 1; continue; }
+    const isProse = /[:]$/.test(line) ||
+      /^(here are|here'?s|below (are|is)|sure[,!]|of course|certainly|i'?ve (written|created|crafted)|these are|the following|absolutely|great choice|let me)/i.test(line);
+    if (isProse) { startIdx = i + 1; continue; }
+    break;
+  }
+  return lines.slice(startIdx).join("\n").trim();
+}
+
 // ─── Main generation function ─────────────────────────────────────────────────
 export async function generateLyrics(input: LyricsGenerationInput): Promise<{
   lyrics: string;
@@ -189,9 +218,12 @@ export async function generateLyrics(input: LyricsGenerationInput): Promise<{
   const lyricsMatch = fullResponse.match(
     /^([\s\S]+?)(?:\n\n\*{0,2}Stickiness Analysis|\n\n---)/i
   );
-  const lyrics = lyricsMatch
+  const rawLyrics = lyricsMatch
     ? lyricsMatch[1].trim()
     : fullResponse.trim();
+
+  // Strip any AI conversational preamble before the actual lyrics
+  const lyrics = stripAIPreamble(rawLyrics);
 
   return { lyrics, stickinessAnalysis, fullResponse };
 }

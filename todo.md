@@ -355,3 +355,16 @@
 - [x] Added VisualBriefPanel to GenerationCard in Generate page (auto-shows when visualBrief is present)
 - [x] 8 Vitest tests for visualBriefGenerator (all passing)
 - [x] 138 total tests passing (up from 130)
+
+## Phase 44: UX Polish — Lyrics Editor, Preamble Strip, Premium Gating
+- [x] Added stripAIPreamble() to lyricsGenerator.ts — strips conversational preamble by finding first section marker [Verse/Chorus/Bridge etc.] or prose leading lines
+- [x] Applied stripAIPreamble to lyrics extraction in generateLyrics() — all downstream uses (display, save draft, carryover) get clean lyrics
+- [x] Added inline Edit mode to LyricsGenerator output panel — Pencil button toggles to Textarea with Save/Cancel controls
+- [x] handleCopyToGenerate now also sets prefill_prompt (fusion) and prefill_title (hookSeed or topic) in sessionStorage
+- [x] Generate.tsx useEffect reads prefill_prompt and prefill_title on mount alongside prefill_lyrics
+- [x] Style Reference Audio panel hidden for free users (monthlyUsage?.isPremium guard)
+- [x] Voice Reference Audio panel hidden for free users (monthlyUsage?.isPremium guard)
+- [x] Surprise Me and Browse Fusions buttons remain visible for all users
+- [x] VisualBriefPanel gated behind isPremium in GenerationCard — hidden on Generate page for free users
+- [x] isPremium passed from monthlyUsage to GenerationCard at call site
+- [x] 138 tests passing (all passing)
