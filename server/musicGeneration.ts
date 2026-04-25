@@ -30,12 +30,20 @@ export interface MusicGenerationOptions {
 }
 
 interface MiniMaxMusicResponse {
+  // Legacy fields (old API format)
   task_id?: string;
   audio_file?: { url: string };
   base_resp?: { status_code: number; status_msg: string };
   status?: string;
   file?: { file_id: string; download_url?: string };
   extra_info?: { audio_length?: number; audio_sample_rate?: number; audio_size?: number };
+  // New API format (v2): audio URL and status wrapped in data object
+  data?: {
+    audio?: string;   // Direct audio URL string
+    status?: number;  // 0=Preparing, 1=Running, 2=Success, 3=Fail
+    task_id?: string;
+  };
+  trace_id?: string;
 }
 
 /**
@@ -109,12 +117,22 @@ export async function startMusicGeneration(
     throw new Error(`MiniMax API error: ${data.base_resp.status_msg} (code: ${data.base_resp.status_code})`);
   }
 
-  if (!data.task_id) {
-    throw new Error("MiniMax API did not return a task_id");
+  // New API format: audio may be synchronously available in data.audio
+  // status 2 = Success in the new numeric format
+  if (data.data?.audio && data.data.status === 2) {
+    console.log(`[MiniMax 2.6] Synchronous generation complete (new API format)`);
+    // Return a special sentinel task_id that signals immediate completion
+    return `SYNC:${data.data.audio}`;
   }
 
-  console.log(`[MiniMax 2.6] Task started: ${data.task_id}`);
-  return data.task_id;
+  // Async format: get task_id for polling
+  const taskId = data.task_id || data.data?.task_id;
+  if (!taskId) {
+    throw new Error(`MiniMax API did not return a task_id. Response: ${JSON.stringify(data).substring(0, 200)}`);
+  }
+
+  console.log(`[MiniMax 2.6] Task started (async): ${taskId}`);
+  return taskId;
 }
 
 /**
@@ -130,6 +148,13 @@ export async function pollMusicGeneration(
 
   const maxAttempts = 120; // 10 minutes max (5s intervals)
   let attempts = 0;
+
+  // Handle synchronous completion (new API format) — audio URL embedded in task_id sentinel
+  if (taskId.startsWith("SYNC:")) {
+    const audioUrl = taskId.slice(5);
+    console.log(`[MiniMax 2.6] Using synchronous audio URL: ${audioUrl.substring(0, 60)}...`);
+    return { audioUrl, mimeType: "audio/mpeg" };
+  }
 
   while (attempts < maxAttempts) {
     await new Promise((res) => setTimeout(res, 5000));
@@ -148,33 +173,40 @@ export async function pollMusicGeneration(
       throw new Error(`Failed to poll task ${taskId}: ${response.status}`);
     }
 
-    const data = (await response.json()) as MiniMaxMusicResponse & {
-      status?: "Preparing" | "Running" | "Success" | "Fail";
-    };
+    const data = (await response.json()) as MiniMaxMusicResponse;
 
-    console.log(`[MiniMax 2.6] Poll ${attempts}/${maxAttempts}: ${data.status}`);
+    // New API format: status is numeric inside data object
+    const numericStatus = data.data?.status;
+    const legacyStatus = data.status;
+    const statusLabel = numericStatus !== undefined
+      ? ["Preparing", "Running", "Success", "Fail"][numericStatus] ?? `Unknown(${numericStatus})`
+      : legacyStatus;
+
+    console.log(`[MiniMax 2.6] Poll ${attempts}/${maxAttempts}: ${statusLabel}`);
 
     if (data.base_resp && data.base_resp.status_code !== 0) {
       throw new Error(`MiniMax poll error: ${data.base_resp.status_msg}`);
     }
 
-    if (data.status === "Success") {
-      const audioUrl = data.audio_file?.url;
+    // Check success: new format (numericStatus === 2) or legacy string ("Success")
+    const isSuccess = numericStatus === 2 || legacyStatus === "Success";
+    if (isSuccess) {
+      // New format: audio URL at data.data.audio; legacy: data.audio_file.url
+      const audioUrl = data.data?.audio || data.audio_file?.url;
       if (!audioUrl) {
-        throw new Error("MiniMax returned success but no audio URL");
+        throw new Error(`MiniMax returned success but no audio URL. Response: ${JSON.stringify(data).substring(0, 200)}`);
       }
       console.log(`[MiniMax 2.6] Generation complete: ${audioUrl.substring(0, 60)}...`);
-      return {
-        audioUrl,
-        mimeType: "audio/mpeg",
-      };
+      return { audioUrl, mimeType: "audio/mpeg" };
     }
 
-    if (data.status === "Fail") {
+    // Check failure: new format (numericStatus === 3) or legacy string ("Fail")
+    const isFailed = numericStatus === 3 || legacyStatus === "Fail";
+    if (isFailed) {
       throw new Error(`MiniMax generation failed for task ${taskId}`);
     }
 
-    // Preparing or Running — keep polling
+    // Preparing (0) or Running (1) — keep polling
   }
 
   throw new Error("Generation timed out after 10 minutes");

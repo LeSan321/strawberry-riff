@@ -328,3 +328,11 @@
 - [x] Studio: injected dark CSS variables so all shadcn Cards/Inputs render in dark mode
 - [x] Studio: central canvas pb-16 on mobile to clear bottom toolbar
 - [x] All 130 tests passing
+
+## Phase 41: Fix Song Generation Failure
+- [x] Identified root cause: MiniMax API v2 changed response format — audio URL now at data.audio (synchronous), status is numeric (2=Success), no task_id returned
+- [x] Fixed MiniMaxMusicResponse type to include new data wrapper with audio string and numeric status
+- [x] Fixed startMusicGeneration to detect synchronous completion and return SYNC:<url> sentinel
+- [x] Fixed pollMusicGeneration to handle SYNC: sentinel (skip polling) and new numeric status codes
+- [x] Updated musicGeneration.test.ts mock to use SYNC: format
+- [x] All 130 tests passing

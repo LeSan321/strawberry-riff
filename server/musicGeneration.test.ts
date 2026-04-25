@@ -4,10 +4,11 @@ import { TRPCError } from "@trpc/server";
 import * as dbModule from "./db";
 
 // Mock the music generation module (MiniMax Music 2.6 direct API)
+// New API format: startMusicGeneration returns SYNC:<audioUrl> for synchronous completions
 vi.mock("./musicGeneration", () => ({
-    startMusicGeneration: vi.fn().mockResolvedValue("task_test123"),
-    pollMusicGeneration: vi.fn().mockResolvedValue({
-      audioUrl: "https://cdn.minimax.io/test/audio.mp3",
+  startMusicGeneration: vi.fn().mockResolvedValue("SYNC:https://cdn.minimax.io/test/audio.mp3"),
+  pollMusicGeneration: vi.fn().mockResolvedValue({
+    audioUrl: "https://cdn.minimax.io/test/audio.mp3",
     mimeType: "audio/mpeg",
   }),
   fetchAudioBytes: vi.fn().mockResolvedValue(Buffer.from("fake-audio-bytes")),
