@@ -147,6 +147,7 @@ export const musicGenerations = mysqlTable("music_generations", {
   isFavorited: boolean("isFavorited").default(false).notNull(), // User marked as favorite
   referenceAudioUrl: text("referenceAudioUrl"), // Optional style reference audio URL
   voiceReferenceUrl: text("voiceReferenceUrl"), // Optional voice reference audio URL
+  visualBrief: text("visualBrief"), // JSON: auto-generated visual brief (camera, lighting, color, emotion, scene)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

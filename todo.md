@@ -336,3 +336,22 @@
 - [x] Fixed pollMusicGeneration to handle SYNC: sentinel (skip polling) and new numeric status codes
 - [x] Updated musicGeneration.test.ts mock to use SYNC: format
 - [x] All 130 tests passing
+
+## Phase 42: Fix Persistent Generation Failure (Still Failing After Phase 41)
+- [x] Root cause: MINIMAX_API_KEY was never set in Railway environment (only in Manus secrets)
+- [x] User added MINIMAX_API_KEY to Railway environment variables
+- [x] Key updated in Manus secrets system as well
+- [x] Confirmed full pipeline works: MiniMax generates, audio downloads, S3 upload succeeds
+- [x] All 130 tests passing
+
+## Phase 43: Visual Brief Generator
+- [x] Added visualBrief column (TEXT, nullable) to music_generations table and ran migration
+- [x] Built server/visualBriefGenerator.ts — LLM helper using Chapter 9 Music+Visual Stickiness Formula with JSON schema response_format
+- [x] Wired auto-generation into both background tasks (generate + refine) after audio upload (non-blocking)
+- [x] Extended updateMusicGenerationStatus to accept visualBrief field
+- [x] Added visualBrief: null to both createMusicGeneration insert calls
+- [x] Built VisualBriefPanel.tsx — collapsible dark panel with Camera, Lighting, Color Palette, Emotion Arc, Scene, Director's Note, Pacing badge
+- [x] Added Copy Brief button (formats all sections for Runway/Kling/Sora export)
+- [x] Added VisualBriefPanel to GenerationCard in Generate page (auto-shows when visualBrief is present)
+- [x] 8 Vitest tests for visualBriefGenerator (all passing)
+- [x] 138 total tests passing (up from 130)

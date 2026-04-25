@@ -555,7 +555,7 @@ export async function getMusicGenerationsByUserId(userId: number): Promise<Music
 export async function updateMusicGenerationStatus(
   id: number,
   status: "generating" | "complete" | "failed",
-  updates?: { audioUrl?: string; audioKey?: string; metadata?: string; errorMessage?: string }
+  updates?: { audioUrl?: string; audioKey?: string; metadata?: string; errorMessage?: string; visualBrief?: string }
 ): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;

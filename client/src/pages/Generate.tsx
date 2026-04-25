@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
+import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
@@ -129,7 +130,7 @@ function GenerationCard({
   onRefine,
   onToggleFavorite,
 }: {
-  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean };
+  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean; visualBrief?: string | null };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
   onDelete: (id: number) => void;
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
@@ -232,6 +233,12 @@ function GenerationCard({
               🔄 Vibe
             </Button>
           </div>
+          {gen.visualBrief && (
+            <VisualBriefPanel
+              visualBriefJson={gen.visualBrief}
+              className="mt-2"
+            />
+          )}
         </div>
       )}
       {gen.status === "failed" && (

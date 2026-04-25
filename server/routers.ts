@@ -57,6 +57,7 @@ import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
+import { generateVisualBrief } from "./visualBriefGenerator";
 import { createLyricsDraft, getLyricsDraftsByUserId, getLyricsDraftById, deleteLyricsDraft } from "./db";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -576,10 +577,10 @@ const musicGenerationRouter = router({
         isFavorited: false,
         referenceAudioUrl: input.referenceAudioUrl ?? null,
         voiceReferenceUrl: input.voiceReferenceUrl ?? null,
+        visualBrief: null,
       });
-
       if (!generationId) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });;
       }
 
       // Start generation in background (fire-and-forget)
@@ -596,10 +597,24 @@ const musicGenerationRouter = router({
           const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
           const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
           const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
+          // Generate visual brief in parallel (non-blocking — failure doesn't affect audio delivery)
+          let visualBriefJson: string | null = null;
+          try {
+            const brief = await generateVisualBrief({
+              prompt: input.prompt,
+              lyrics: input.lyrics,
+              title: input.title,
+            });
+            visualBriefJson = JSON.stringify(brief);
+            console.log(`[Visual Brief] Generated for ID ${generationId}`);
+          } catch (briefErr) {
+            console.warn(`[Visual Brief] Failed for ID ${generationId}:`, briefErr instanceof Error ? briefErr.message : String(briefErr));
+          }
           await updateMusicGenerationStatus(generationId, "complete", {
             audioUrl: url,
             audioKey: audioKey,
             metadata: JSON.stringify({ predictionId }),
+            ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
           });
         })
         .catch(async (error: unknown) => {
@@ -699,11 +714,11 @@ const musicGenerationRouter = router({
         metadata: null,
         aceStepTaskId: null,
         errorMessage: null,
-        isFavorited: false,
+         isFavorited: false,
         referenceAudioUrl: original.referenceAudioUrl ?? null,
         voiceReferenceUrl: original.voiceReferenceUrl ?? null,
+        visualBrief: null,
       });
-
       if (!generationId) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
       }
@@ -722,10 +737,24 @@ const musicGenerationRouter = router({
           const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
           const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
           const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
+          // Generate visual brief (non-blocking — failure doesn't affect audio delivery)
+          let visualBriefJson: string | null = null;
+          try {
+            const brief = await generateVisualBrief({
+              prompt: original.prompt,
+              lyrics: original.lyrics,
+              title: original.title,
+            });
+            visualBriefJson = JSON.stringify(brief);
+            console.log(`[Visual Brief] Generated for refined ID ${generationId}`);
+          } catch (briefErr) {
+            console.warn(`[Visual Brief] Failed for refined ID ${generationId}:`, briefErr instanceof Error ? briefErr.message : String(briefErr));
+          }
           await updateMusicGenerationStatus(generationId, "complete", {
             audioUrl: url,
             audioKey: audioKey,
             metadata: JSON.stringify({ predictionId }),
+            ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
           });
         })
         .catch(async (error: unknown) => {

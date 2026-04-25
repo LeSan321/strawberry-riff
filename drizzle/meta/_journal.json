@@ -71,6 +71,13 @@
       "when": 1777069387239,
       "tag": "0009_thick_tiger_shark",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1777140086250,
+      "tag": "0010_vengeful_katie_power",
+      "breakpoints": true
     }
   ]
 }
