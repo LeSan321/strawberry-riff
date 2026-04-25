@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -8,8 +8,6 @@ import {
   Music,
   Pen,
   Layers,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
   Clock,
   Star,
@@ -36,56 +34,72 @@ const STUDIO_THEMES = [
     name: "Forest Studio",
     description: "Floor-to-ceiling glass walls open to an ancient forest",
     image: "/manus-storage/studio-header-forest-studio_81baaef0.jpg",
-    accent: "from-emerald-500 to-teal-600",
+    // Raspberry accent breaks the green wash
+    accent: "from-emerald-600 to-teal-700",
     accentLight: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    headerGradient: "from-emerald-900/70 via-teal-900/50 to-transparent",
-    sidebarBg: "bg-emerald-950/95",
-    canvasBg: "bg-gradient-to-b from-emerald-950 to-gray-950",
+    // Minimal gradient — just a soft bottom fade so text is readable
+    headerGradient: "from-transparent via-transparent to-emerald-950/80",
+    sidebarBg: "bg-[#0a1f14]",
+    canvasBg: "bg-[#0a1f14]",
     textAccent: "text-emerald-400",
-    borderAccent: "border-emerald-800/40",
-    buttonAccent: "bg-emerald-600 hover:bg-emerald-500",
+    // Raspberry accent for UI pops
+    raspberryAccent: "text-rose-400",
+    raspberryBorder: "border-rose-500/30",
+    raspberryBg: "bg-rose-500/10",
+    borderAccent: "border-emerald-900/50",
+    buttonAccent: "bg-emerald-700 hover:bg-emerald-600",
   },
   {
     id: "cozy-den",
     name: "Cozy Den",
     description: "Warm cabin studio with amber light and forest window",
     image: "/manus-storage/studio-header-cozy-den_20475e46.jpg",
-    accent: "from-amber-500 to-orange-600",
+    accent: "from-amber-600 to-orange-700",
     accentLight: "bg-amber-50 text-amber-700 border-amber-200",
-    headerGradient: "from-amber-900/70 via-orange-900/50 to-transparent",
-    sidebarBg: "bg-amber-950/95",
-    canvasBg: "bg-gradient-to-b from-amber-950 to-gray-950",
+    headerGradient: "from-transparent via-transparent to-amber-950/80",
+    sidebarBg: "bg-[#1f1208]",
+    canvasBg: "bg-[#1f1208]",
     textAccent: "text-amber-400",
-    borderAccent: "border-amber-800/40",
-    buttonAccent: "bg-amber-600 hover:bg-amber-500",
+    raspberryAccent: "text-amber-300",
+    raspberryBorder: "border-amber-500/30",
+    raspberryBg: "bg-amber-500/10",
+    borderAccent: "border-amber-900/50",
+    buttonAccent: "bg-amber-700 hover:bg-amber-600",
   },
   {
     id: "producer-workshop",
     name: "Producer's Workshop",
     description: "Tropical jungle studio with waterfall view",
     image: "/manus-storage/studio-header-producer-workshop_df572a47.jpg",
-    accent: "from-violet-500 to-purple-600",
-    accentLight: "bg-violet-50 text-violet-700 border-violet-200",
-    headerGradient: "from-violet-900/70 via-purple-900/50 to-transparent",
-    sidebarBg: "bg-violet-950/95",
-    canvasBg: "bg-gradient-to-b from-violet-950 to-gray-950",
-    textAccent: "text-violet-400",
-    borderAccent: "border-violet-800/40",
-    buttonAccent: "bg-violet-600 hover:bg-violet-500",
+    // Dialed-down to deep indigo instead of bright violet
+    accent: "from-indigo-700 to-purple-800",
+    accentLight: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    headerGradient: "from-transparent via-transparent to-indigo-950/80",
+    sidebarBg: "bg-[#0d0a1f]",
+    canvasBg: "bg-[#0d0a1f]",
+    textAccent: "text-indigo-400",
+    raspberryAccent: "text-indigo-300",
+    raspberryBorder: "border-indigo-500/30",
+    raspberryBg: "bg-indigo-500/10",
+    borderAccent: "border-indigo-900/50",
+    buttonAccent: "bg-indigo-700 hover:bg-indigo-600",
   },
   {
     id: "rock-room",
     name: "Rock Room",
     description: "Exposed brick rehearsal space with Marshall stacks",
     image: "/manus-storage/studio-header-rock-room_606b6222.jpg",
-    accent: "from-rose-500 to-red-600",
+    accent: "from-rose-700 to-red-800",
     accentLight: "bg-rose-50 text-rose-700 border-rose-200",
-    headerGradient: "from-rose-900/70 via-red-900/50 to-transparent",
-    sidebarBg: "bg-rose-950/95",
-    canvasBg: "bg-gradient-to-b from-rose-950 to-gray-950",
+    headerGradient: "from-transparent via-transparent to-rose-950/80",
+    sidebarBg: "bg-[#1f0a0a]",
+    canvasBg: "bg-[#1f0a0a]",
     textAccent: "text-rose-400",
-    borderAccent: "border-rose-800/40",
-    buttonAccent: "bg-rose-600 hover:bg-rose-500",
+    raspberryAccent: "text-rose-300",
+    raspberryBorder: "border-rose-500/30",
+    raspberryBg: "bg-rose-500/10",
+    borderAccent: "border-rose-900/50",
+    buttonAccent: "bg-rose-700 hover:bg-rose-600",
   },
 ];
 
@@ -223,19 +237,20 @@ function StudioSidebar({
           Resources
         </p>
 
+        {/* Fusions — uses raspberry/accent color for visual pop */}
         <button
           onClick={onOpenFusions}
-          className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+          className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}
         >
           <Layers className="w-4 h-4 flex-shrink-0" />
           <div className="hidden md:block">
             <p className="text-sm font-medium leading-none">Fusions</p>
-            <p className="text-xs mt-0.5 text-gray-500">47 recipes</p>
+            <p className="text-xs mt-0.5 opacity-60">47 recipes</p>
           </div>
         </button>
 
         <button
-          onClick={onOpenFusions}
+          onClick={() => {}}
           className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left text-gray-400 hover:text-white hover:bg-white/10 transition-all"
         >
           <BookOpen className="w-4 h-4 flex-shrink-0" />
@@ -300,110 +315,142 @@ function StudioContextPanel({
   const tips = activeTool === "lyrics" ? writerTips : generateTips;
   const [tipIndex] = useState(() => Math.floor(Math.random() * tips.length));
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 280, opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className={`flex-shrink-0 h-full ${theme.sidebarBg} border-l ${theme.borderAccent} overflow-hidden`}
-        >
-          <div className="w-[280px] h-full flex flex-col">
-            {/* Header */}
-            <div className={`px-4 py-3 border-b ${theme.borderAccent} flex items-center justify-between`}>
-              <span className={`text-sm font-semibold ${theme.textAccent}`}>Context</span>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-500 hover:text-white" onClick={onClose}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+  const panelContent = (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className={`px-4 py-3 border-b ${theme.borderAccent} flex items-center justify-between flex-shrink-0`}>
+        <span className={`text-sm font-semibold ${theme.textAccent}`}>Context</span>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-white" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Quick Tip */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Zap className={`w-3.5 h-3.5 ${theme.textAccent}`} />
+            <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
+              Pro Tip
+            </span>
+          </div>
+          <div className={`rounded-lg p-3 bg-white/5 border ${theme.borderAccent}`}>
+            <p className="text-sm text-gray-300 leading-relaxed italic">"{tips[tipIndex]}"</p>
+          </div>
+        </div>
+
+        {/* Recent Generations */}
+        {user && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Clock className={`w-3.5 h-3.5 ${theme.textAccent}`} />
+              <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
+                Recent
+              </span>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              {/* Quick Tip */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Zap className={`w-3.5 h-3.5 ${theme.textAccent}`} />
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
-                    Pro Tip
-                  </span>
-                </div>
-                <div className={`rounded-lg p-3 bg-white/5 border ${theme.borderAccent}`}>
-                  <p className="text-sm text-gray-300 leading-relaxed italic">"{tips[tipIndex]}"</p>
-                </div>
-              </div>
-
-              {/* Recent Generations */}
-              {user && (
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Clock className={`w-3.5 h-3.5 ${theme.textAccent}`} />
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
-                      Recent
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {historyQuery.isLoading && (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className={`h-10 rounded-lg bg-white/5 animate-pulse`} />
-                        ))}
-                      </div>
-                    )}
-                    {historyQuery.data?.slice(0, 4).map((gen: { id: number; title: string | null; prompt: string | null }) => (
-                      <div
-                        key={gen.id}
-                        className={`rounded-lg p-2.5 bg-white/5 border ${theme.borderAccent} hover:bg-white/10 transition-colors cursor-pointer`}
-                      >
-                        <p className="text-xs font-medium text-gray-200 truncate">{gen.title || "Untitled"}</p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{gen.prompt?.slice(0, 50)}…</p>
-                      </div>
-                    ))}
-                    {historyQuery.data?.length === 0 && (
-                      <p className="text-xs text-gray-500 text-center py-3">No generations yet</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Fusions */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Shuffle className={`w-3.5 h-3.5 ${theme.textAccent}`} />
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
-                    Quick Fusions
-                  </span>
-                </div>
-                <div className="space-y-1.5">
-                  {["Lo-fi Hip Hop + Dreamy Jazz", "Indie Folk + Electronic", "Cinematic + Chill Trap"].map((f) => (
-                    <div
-                      key={f}
-                      className={`rounded-lg px-3 py-2 bg-white/5 border ${theme.borderAccent} text-xs text-gray-300 hover:bg-white/10 transition-colors cursor-pointer`}
-                    >
-                      {f}
-                    </div>
+            <div className="space-y-2">
+              {historyQuery.isLoading && (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-10 rounded-lg bg-white/5 animate-pulse" />
                   ))}
                 </div>
-              </div>
-
-              {/* Premium Upsell */}
-              {user && !user.isPremium && (
-                <div className={`rounded-xl p-4 bg-gradient-to-br ${theme.accent} bg-opacity-20`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="w-4 h-4 text-yellow-300" />
-                    <span className="text-sm font-semibold text-white">Go Premium</span>
-                  </div>
-                  <p className="text-xs text-white/80 mb-3">Unlock unlimited generations, voice cloning, and more.</p>
-                  <Link href="/pricing">
-                    <Button size="sm" className="w-full bg-white text-gray-900 hover:bg-gray-100 text-xs font-semibold">
-                      View Plans
-                    </Button>
-                  </Link>
+              )}
+              {historyQuery.data?.slice(0, 4).map((gen: { id: number; title: string | null; prompt: string | null }) => (
+                <div
+                  key={gen.id}
+                  className={`rounded-lg p-2.5 bg-white/5 border ${theme.borderAccent} hover:bg-white/10 transition-colors cursor-pointer`}
+                >
+                  <p className="text-xs font-medium text-gray-200 truncate">{gen.title || "Untitled"}</p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">{gen.prompt?.slice(0, 50)}…</p>
                 </div>
+              ))}
+              {historyQuery.data?.length === 0 && (
+                <p className="text-xs text-gray-500 text-center py-3">No generations yet</p>
               )}
             </div>
           </div>
-        </motion.div>
+        )}
+
+        {/* Quick Fusions */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Shuffle className={`w-3.5 h-3.5 ${theme.textAccent}`} />
+            <span className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>
+              Quick Fusions
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {["Lo-fi Hip Hop + Dreamy Jazz", "Indie Folk + Electronic", "Cinematic + Chill Trap"].map((f) => (
+              <div
+                key={f}
+                className={`rounded-lg px-3 py-2 bg-white/5 border ${theme.borderAccent} text-xs text-gray-300 hover:bg-white/10 transition-colors cursor-pointer`}
+              >
+                {f}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Premium Upsell */}
+        {user && !user.isPremium && (
+          <div className={`rounded-xl p-4 bg-gradient-to-br ${theme.accent} bg-opacity-20`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Crown className="w-4 h-4 text-yellow-300" />
+              <span className="text-sm font-semibold text-white">Go Premium</span>
+            </div>
+            <p className="text-xs text-white/80 mb-3">Unlock unlimited generations, voice cloning, and more.</p>
+            <Link href="/pricing">
+              <Button size="sm" className="w-full bg-white text-gray-900 hover:bg-gray-100 text-xs font-semibold">
+                View Plans
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* ── Desktop: slide-in side panel ── */}
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={`hidden md:flex flex-shrink-0 h-full ${theme.sidebarBg} border-l ${theme.borderAccent} overflow-hidden`}
+          >
+            <div className="w-[280px] h-full">{panelContent}</div>
+          </motion.div>
+
+          {/* ── Mobile: bottom sheet overlay ── */}
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={`md:hidden fixed inset-x-0 bottom-0 z-50 rounded-t-2xl ${theme.sidebarBg} border-t ${theme.borderAccent} shadow-2xl`}
+            style={{ maxHeight: "60vh" }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+            <div className="h-[calc(60vh-2rem)] overflow-y-auto">{panelContent}</div>
+          </motion.div>
+
+          {/* Mobile backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 z-40 bg-black/50"
+            onClick={onClose}
+          />
+        </>
       )}
     </AnimatePresence>
   );
@@ -413,13 +460,9 @@ function StudioContextPanel({
 function StudioHeader({
   theme,
   onOpenThemePicker,
-  onToggleContext,
-  contextOpen,
 }: {
   theme: typeof STUDIO_THEMES[0];
   onOpenThemePicker: () => void;
-  onToggleContext: () => void;
-  contextOpen: boolean;
 }) {
   return (
     <div className="relative h-48 md:h-56 flex-shrink-0 overflow-hidden">
@@ -428,8 +471,8 @@ function StudioHeader({
         alt={theme.name}
         className="absolute inset-0 w-full h-full object-cover object-center"
       />
+      {/* Soft bottom fade only — no dark overlay on the photo */}
       <div className={`absolute inset-0 bg-gradient-to-b ${theme.headerGradient}`} />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-950" />
 
       {/* Header Content */}
       <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
@@ -447,25 +490,16 @@ function StudioHeader({
             </h1>
             <p className="text-sm text-white/70 mt-0.5 drop-shadow">{theme.description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onOpenThemePicker}
-              className="bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 border border-white/20 h-8 px-3 text-xs"
-            >
-              <Palette className="w-3.5 h-3.5 mr-1.5" />
-              Change
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleContext}
-              className={`bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 border border-white/20 h-8 w-8 p-0 ${contextOpen ? "bg-white/20" : ""}`}
-            >
-              {contextOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </Button>
-          </div>
+          {/* Only the Change Theme button in the top-right; context toggle lives in sidebar */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenThemePicker}
+            className="bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 border border-white/20 h-8 px-3 text-xs"
+          >
+            <Palette className="w-3.5 h-3.5 mr-1.5" />
+            Change
+          </Button>
         </div>
 
         {/* Bottom Row — Breadcrumb */}
@@ -549,16 +583,38 @@ export default function Studio() {
     );
   }
 
+  // Studio always renders in dark mode — override CSS vars so shadcn components
+  // (Card, Input, Select, etc.) use dark-theme colors regardless of global theme.
+  const darkVars = {
+    "--background": "oklch(0.10 0.02 280)",
+    "--foreground": "oklch(0.95 0.01 300)",
+    "--card": "oklch(0.14 0.02 280)",
+    "--card-foreground": "oklch(0.95 0.01 300)",
+    "--popover": "oklch(0.14 0.02 280)",
+    "--popover-foreground": "oklch(0.95 0.01 300)",
+    "--secondary": "oklch(0.20 0.03 280)",
+    "--secondary-foreground": "oklch(0.90 0.01 300)",
+    "--muted": "oklch(0.20 0.02 280)",
+    "--muted-foreground": "oklch(0.65 0.03 300)",
+    "--accent": "oklch(0.22 0.05 280)",
+    "--accent-foreground": "oklch(0.90 0.01 300)",
+    "--border": "oklch(0.22 0.02 280)",
+    "--input": "oklch(0.22 0.02 280)",
+    "--ring": "oklch(0.70 0.22 340)",
+  } as React.CSSProperties;
+
   return (
-    <div className={`flex h-screen overflow-hidden ${theme.canvasBg}`}>
-      {/* Left Sidebar */}
-      <StudioSidebar
-        activeTool={activeTool}
-        onToolChange={setActiveTool}
-        theme={theme}
-        onOpenThemePicker={() => setThemePickerOpen(true)}
-        onOpenFusions={() => setFusionsOpen(true)}
-      />
+    <div className={`flex h-screen overflow-hidden ${theme.canvasBg}`} style={darkVars}>
+      {/* Left Sidebar — hidden on mobile */}
+      <div className="hidden md:flex">
+        <StudioSidebar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          theme={theme}
+          onOpenThemePicker={() => setThemePickerOpen(true)}
+          onOpenFusions={() => setFusionsOpen(true)}
+        />
+      </div>
 
       {/* Central Canvas */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -566,12 +622,10 @@ export default function Studio() {
         <StudioHeader
           theme={theme}
           onOpenThemePicker={() => setThemePickerOpen(true)}
-          onToggleContext={() => setContextOpen((v) => !v)}
-          contextOpen={contextOpen}
         />
 
         {/* Tool Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTool}
@@ -591,13 +645,58 @@ export default function Studio() {
         </div>
       </div>
 
-      {/* Right Context Panel */}
+      {/* Right Context Panel (desktop side panel / mobile bottom sheet) */}
       <StudioContextPanel
         theme={theme}
         activeTool={activeTool}
         isOpen={contextOpen}
         onClose={() => setContextOpen(false)}
       />
+
+      {/* Mobile bottom toolbar */}
+      <div className={`md:hidden fixed bottom-0 inset-x-0 z-30 ${theme.sidebarBg} border-t ${theme.borderAccent} flex items-center justify-around px-4 py-2 safe-area-pb`}>
+        <button
+          onClick={() => setActiveTool("generate")}
+          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
+            activeTool === "generate" ? `bg-gradient-to-r ${theme.accent} text-white` : "text-gray-400"
+          }`}
+        >
+          <Music className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Generate</span>
+        </button>
+        <button
+          onClick={() => setActiveTool("lyrics")}
+          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
+            activeTool === "lyrics" ? `bg-gradient-to-r ${theme.accent} text-white` : "text-gray-400"
+          }`}
+        >
+          <Pen className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Lyrics</span>
+        </button>
+        <button
+          onClick={() => setFusionsOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg text-gray-400"
+        >
+          <Layers className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Fusions</span>
+        </button>
+        <button
+          onClick={() => setContextOpen((v) => !v)}
+          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
+            contextOpen ? `${theme.textAccent}` : "text-gray-400"
+          }`}
+        >
+          <Star className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Tips</span>
+        </button>
+        <button
+          onClick={() => setThemePickerOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg text-gray-400"
+        >
+          <Palette className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Theme</span>
+        </button>
+      </div>
 
       {/* Theme Picker Modal */}
       <AnimatePresence>

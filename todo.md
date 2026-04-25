@@ -315,3 +315,16 @@
 - [x] Add "Browse Fusions" button to Generate page form (alongside Surprise Me)
 - [x] Wire "Use This" to close drawer and set prompt field (direct callback or sessionStorage for cross-page)
 - [x] FusionRecipesDrawer also accessible from Studio sidebar
+
+## Phase 40: Studio & Home Polish (User Feedback Round)
+- [x] Home hero: remove/reduce dark overlay so photo reads clearly (from-black/75 → from-black/55)
+- [x] Home hero: fix Enter Studio button layout so it sits diagonal to Start Creating on desktop (two-row flex)
+- [x] Studio: remove dark overlay on all four themes; deepened base bg colors to compensate
+- [x] Studio Forest theme: added raspberry/rose accent touches to Fusions button and sidebar
+- [x] Studio Producer's Workshop: dialed down to deep indigo (from bright violet)
+- [x] Studio: removed top-right redundant context toggle button (Change Theme only in top-right)
+- [x] Studio mobile: right panel converted to bottom sheet with drag handle, backdrop, and visible X close
+- [x] Studio mobile: sidebar hidden on mobile, replaced with bottom toolbar (Generate/Lyrics/Fusions/Tips/Theme)
+- [x] Studio: injected dark CSS variables so all shadcn Cards/Inputs render in dark mode
+- [x] Studio: central canvas pb-16 on mobile to clear bottom toolbar
+- [x] All 130 tests passing

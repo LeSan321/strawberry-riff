@@ -233,8 +233,8 @@ export default function Home() {
           backgroundPosition: "center 30%",
         }}
       >
-        {/* Dark overlay — left side readable, right side lets image breathe */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/10" />
+        {/* Subtle overlay — keeps text readable without killing the photo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-black/5" />
         {/* Bottom fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
@@ -277,56 +277,62 @@ export default function Home() {
               "Some revolutions hum. Others drop bass."
             </p>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-3">
-              {isAuthenticated ? (
-                <Link href="/upload">
+            {/* CTAs — two rows for natural diagonal balance */}
+            <div className="flex flex-col gap-3">
+              {/* Row 1: primary actions */}
+              <div className="flex flex-wrap gap-3">
+                {isAuthenticated ? (
+                  <Link href="/upload">
+                    <Button
+                      size="lg"
+                      className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
+                      style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                    >
+                      Start Creating
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     size="lg"
                     className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
                     style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                    onClick={() => setSignInModalOpen(true)}
                   >
                     Start Creating
                   </Button>
+                )}
+                <Link href="/pricing">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                  >
+                    Join the Tribe
+                  </Button>
                 </Link>
-              ) : (
-                <Button
-                  size="lg"
-                  className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
-                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-                  onClick={() => setSignInModalOpen(true)}
-                >
-                  Start Creating
-                </Button>
-              )}
-              <Link href="/pricing">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
-                >
-                  Join the Tribe
-                </Button>
-              </Link>
-              <Link href="/discover">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
-                >
-                  Discover
-                </Button>
-              </Link>
-              <Link href="/studio">
-                <Button
-                  size="lg"
-                  className="rounded-full px-8 text-base font-semibold shadow-lg shadow-purple-500/30 border-0 text-white flex items-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Enter Studio
-                </Button>
-              </Link>
+                <Link href="/discover">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                  >
+                    Discover
+                  </Button>
+                </Link>
+              </div>
+              {/* Row 2: Studio CTA — sits diagonally below, offset right */}
+              <div className="flex">
+                <Link href="/studio">
+                  <Button
+                    size="lg"
+                    className="rounded-full px-8 text-base font-semibold shadow-lg shadow-purple-500/30 border-0 text-white flex items-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Enter Studio
+                  </Button>
+                </Link>
+              </div>
             </div>
           </motion.div>
         </div>
