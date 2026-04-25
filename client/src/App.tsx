@@ -21,12 +21,14 @@ import TrackPage from "./pages/TrackPage";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { LyricsGeneratorPage } from "./pages/LyricsGenerator";
 import Studio from "./pages/Studio";
+import { StyleLibrary } from "./pages/StyleLibrary";
 
 function Router() {
   return (
     <Switch>
-      {/* Studio is full-screen — outside AppLayout */}
+      {/* Studio and Style Library are full-screen — outside AppLayout */}
       <Route path="/studio" component={Studio} />
+      <Route path="/style-library" component={StyleLibrary} />
       <Route>
         <AppLayout>
           <Switch>

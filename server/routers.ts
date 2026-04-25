@@ -46,6 +46,11 @@ import {
   getMusicGenerationHistory,
   countGenerationsThisMonth,
   toggleMusicGenerationFavorite,
+  getStyleLibraryByUserId,
+  saveStyleToLibrary,
+  deleteStyleFromLibrary,
+  incrementStyleUsage,
+  updateStyleLibraryEntry,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -189,12 +194,33 @@ const tracksRouter = router({
 
   getById: publicProcedure
     .input(z.object({ id: z.number().int() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const result = await getTrackWithCreator(input.id);
       if (!result) return null;
+      const { track } = result;
+      const viewerId = ctx.user?.id ?? null;
+      // Access control based on visibility
+      if (track.visibility === "private") {
+        // Only the owner can view private tracks
+        if (viewerId !== track.userId) {
+          return { accessDenied: true as const, reason: "private" as const, id: track.id };
+        }
+      } else if (track.visibility === "inner-circle") {
+        // Owner can always view; logged-in followers can view
+        if (viewerId !== track.userId) {
+          if (!viewerId) {
+            return { accessDenied: true as const, reason: "inner-circle" as const, id: track.id };
+          }
+          const following = await isFollowing(viewerId, track.userId);
+          if (!following) {
+            return { accessDenied: true as const, reason: "inner-circle" as const, id: track.id };
+          }
+        }
+      }
       return {
-        ...result.track,
-        moodTags: result.track.moodTags ? (JSON.parse(result.track.moodTags) as string[]) : [],
+        accessDenied: false as const,
+        ...track,
+        moodTags: track.moodTags ? (JSON.parse(track.moodTags) as string[]) : [],
         creatorUsername: result.creatorUsername,
         creatorAvatarUrl: result.creatorAvatarUrl,
         creatorBio: result.creatorBio,
@@ -956,6 +982,59 @@ const studioRouter = router({
     }),
 });
 
+// ─── Style Library Router ────────────────────────────────────────────────────
+const styleLibraryRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return getStyleLibraryByUserId(ctx.user.id);
+  }),
+
+  save: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(200),
+      prompt: z.string().min(1),
+      sourceGenerationId: z.number().optional(),
+      sourceTitle: z.string().max(200).optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await saveStyleToLibrary({
+        userId: ctx.user.id,
+        name: input.name,
+        prompt: input.prompt,
+        sourceGenerationId: input.sourceGenerationId ?? null,
+        sourceTitle: input.sourceTitle ?? null,
+        notes: input.notes ?? null,
+      });
+      return entry;
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const success = await deleteStyleFromLibrary(input.id, ctx.user.id);
+      return { success };
+    }),
+
+  use: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await incrementStyleUsage(input.id, ctx.user.id);
+      return { success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1).max(200).optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input;
+      const success = await updateStyleLibraryEntry(id, ctx.user.id, updates);
+      return { success };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -970,6 +1049,7 @@ export const appRouter = router({
   musicGeneration: musicGenerationRouter,
   lyrics: lyricsRouter,
   studio: studioRouter,
+  styleLibrary: styleLibraryRouter,
 });
 
 export type AppRouter = typeof appRouter;

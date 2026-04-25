@@ -369,17 +369,15 @@ function TrackCard({ track }: { track: Track }) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {track.visibility === "public" && (
-                      <motion.button
-                        onClick={handleShare}
-                        animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
-                        transition={{ duration: 0.4 }}
-                        className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
-                        title="Copy track link"
-                      >
-                        <LinkIcon className="w-4 h-4" />
-                      </motion.button>
-                    )}
+                    <motion.button
+                      onClick={handleShare}
+                      animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+                      transition={{ duration: 0.4 }}
+                      className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
+                      title={track.visibility === "public" ? "Copy track link" : track.visibility === "inner-circle" ? "Copy link — Inner Circle only" : "Copy link — Private (only you can view)"}
+                    >
+                      <LinkIcon className="w-4 h-4" />
+                    </motion.button>
                     <AddToPlaylistButton trackId={track.id} />
                     <Button
                       variant="ghost"

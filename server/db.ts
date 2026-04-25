@@ -16,6 +16,8 @@ import {
   InsertLyricsDraft,
   LyricsDraft,
   VibePreset,
+  StyleLibraryEntry,
+  InsertStyleLibraryEntry,
   friends,
   lyricsDrafts,
   musicGenerationHistory,
@@ -23,6 +25,7 @@ import {
   playlistTracks,
   playlists,
   profiles,
+  styleLibrary,
   trackLikes,
   tracks,
   users,
@@ -682,5 +685,59 @@ export async function deleteLyricsDraft(id: number, userId: number): Promise<boo
   const result = await db
     .delete(lyricsDrafts)
     .where(and(eq(lyricsDrafts.id, id), eq(lyricsDrafts.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+// ─── Style Library ────────────────────────────────────────────────────────────
+
+export async function getStyleLibraryByUserId(userId: number): Promise<StyleLibraryEntry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(styleLibrary)
+    .where(eq(styleLibrary.userId, userId))
+    .orderBy(styleLibrary.createdAt);
+}
+
+export async function saveStyleToLibrary(entry: InsertStyleLibraryEntry): Promise<StyleLibraryEntry | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(styleLibrary).values(entry);
+  const insertId = (result as any)[0]?.insertId;
+  if (!insertId) return null;
+  const rows = await db.select().from(styleLibrary).where(eq(styleLibrary.id, insertId));
+  return rows[0] ?? null;
+}
+
+export async function deleteStyleFromLibrary(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .delete(styleLibrary)
+    .where(and(eq(styleLibrary.id, id), eq(styleLibrary.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+export async function incrementStyleUsage(id: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(styleLibrary)
+    .set({ usageCount: sql`${styleLibrary.usageCount} + 1` })
+    .where(and(eq(styleLibrary.id, id), eq(styleLibrary.userId, userId)));
+}
+
+export async function updateStyleLibraryEntry(
+  id: number,
+  userId: number,
+  updates: Partial<Pick<StyleLibraryEntry, "name" | "notes">>
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(styleLibrary)
+    .set(updates)
+    .where(and(eq(styleLibrary.id, id), eq(styleLibrary.userId, userId)));
   return (result as any)[0]?.affectedRows > 0;
 }

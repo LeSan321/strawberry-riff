@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -140,6 +140,16 @@ function GenerationCard({
 }) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [saveLibraryOpen, setSaveLibraryOpen] = useState(false);
+  const [libraryStyleName, setLibraryStyleName] = useState("");
+  const saveStyleMutation = trpc.styleLibrary.save.useMutation({
+    onSuccess: () => {
+      toast.success("Style saved to your library!");
+      setSaveLibraryOpen(false);
+      setLibraryStyleName("");
+    },
+    onError: () => toast.error("Failed to save style"),
+  });
 
   const statusColor =
     gen.status === "complete"
@@ -205,6 +215,37 @@ function GenerationCard({
               <RefreshCw className="mr-1.5 h-3 w-3" />
               Re-generate
             </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="flex-1 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+              onClick={() => {
+                const riffPrompt = `${gen.prompt} — Complementary variation: same energy, different mood. Push the contrast.`;
+                sessionStorage.setItem("prefill_lyrics", "");
+                sessionStorage.setItem("prefill_prompt", riffPrompt);
+                sessionStorage.setItem("prefill_title", `Riff on: ${gen.title}`);
+                window.location.href = "/generate";
+              }}
+              title="Pre-fill Generate with a variation of this style"
+            >
+              <GitFork className="mr-1.5 h-3 w-3" />
+              Riff
+            </Button>
+            {isPremium && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex-1 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                onClick={() => {
+                  setLibraryStyleName(gen.title);
+                  setSaveLibraryOpen(true);
+                }}
+                title="Save this music style to your Style Library"
+              >
+                <BookMarked className="mr-1.5 h-3 w-3" />
+                Save Style
+              </Button>
+            )}
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1">
             <Button
@@ -289,6 +330,49 @@ function GenerationCard({
                 }}
               >
                 Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {saveLibraryOpen && (
+        <Dialog open={saveLibraryOpen} onOpenChange={(v) => !v && setSaveLibraryOpen(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BookMarked className="w-5 h-5 text-amber-500" />
+                Save to Style Library
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Style Name</label>
+                <Input
+                  value={libraryStyleName}
+                  onChange={(e) => setLibraryStyleName(e.target.value)}
+                  placeholder="e.g. Funky Lo-Fi Groove"
+                  autoFocus
+                />
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1 font-medium">Style Prompt</p>
+                <p className="text-xs font-mono text-foreground/80 line-clamp-4">{gen.prompt}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSaveLibraryOpen(false)}>Cancel</Button>
+              <Button
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+                disabled={!libraryStyleName.trim() || saveStyleMutation.isPending}
+                onClick={() => saveStyleMutation.mutate({
+                  name: libraryStyleName.trim(),
+                  prompt: gen.prompt,
+                  sourceGenerationId: gen.id,
+                  sourceTitle: gen.title,
+                })}
+              >
+                <BookMarked className="w-4 h-4 mr-1.5" />
+                Save to Library
               </Button>
             </DialogFooter>
           </DialogContent>

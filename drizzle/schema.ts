@@ -192,3 +192,20 @@ export const lyricsDrafts = mysqlTable("lyrics_drafts", {
 
 export type LyricsDraft = typeof lyricsDrafts.$inferSelect;
 export type InsertLyricsDraft = typeof lyricsDrafts.$inferInsert;
+
+// ─── Style Library ────────────────────────────────────────────────────────────
+export const styleLibrary = mysqlTable("style_library", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 200 }).notNull(),          // User-given name for this style
+  prompt: text("prompt").notNull(),                           // The music style prompt
+  sourceGenerationId: int("sourceGenerationId"),              // Optional: which generation it came from
+  sourceTitle: varchar("sourceTitle", { length: 200 }),       // Title of the source generation
+  notes: text("notes"),                                       // Optional user notes
+  usageCount: int("usageCount").default(0).notNull(),         // How many times used
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StyleLibraryEntry = typeof styleLibrary.$inferSelect;
+export type InsertStyleLibraryEntry = typeof styleLibrary.$inferInsert;

@@ -43,25 +43,29 @@ export default function TrackPage() {
     { enabled: !isNaN(trackId) && trackId > 0, retry: false }
   );
 
+  // Narrow to full track (after access-denied guard below)
+  type FullTrack = Extract<typeof track, { accessDenied: false }>;
+  const fullTrack = (!track || track.accessDenied) ? null : track as FullTrack;
+
   const gradient = useMemo(
-    () => track?.gradient ?? CARD_GRADIENTS[trackId % CARD_GRADIENTS.length],
-    [track?.gradient, trackId]
+    () => fullTrack?.gradient ?? CARD_GRADIENTS[trackId % CARD_GRADIENTS.length],
+    [fullTrack?.gradient, trackId]
   );
 
   const isCurrentlyPlaying = currentTrack?.id === trackId && isPlaying;
 
   const handlePlay = () => {
-    if (!track) return;
+    if (!fullTrack) return;
     if (isCurrentlyPlaying) {
       pause();
     } else {
       play({
-        id: track.id,
-        title: track.title,
-        artist: track.artist ?? track.creatorUsername ?? "Unknown",
-        audioUrl: track.audioUrl,
+        id: fullTrack.id,
+        title: fullTrack.title,
+        artist: fullTrack.artist ?? fullTrack.creatorUsername ?? "Unknown",
+        audioUrl: fullTrack.audioUrl,
         gradient,
-        coverArtUrl: track.coverArtUrl,
+        coverArtUrl: fullTrack.coverArtUrl,
       });
     }
   };
@@ -120,6 +124,32 @@ export default function TrackPage() {
     );
   }
 
+  // ── Access denied ──
+  if (track.accessDenied) {
+    const isInnerCircle = track.reason === "inner-circle";
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <div className="text-5xl mb-4">{isInnerCircle ? "🔒" : "🔐"}</div>
+        <h2 className="text-2xl font-bold mb-2">
+          {isInnerCircle ? "Inner Circle Only" : "Private Track"}
+        </h2>
+        <p className="text-muted-foreground mb-6 max-w-sm">
+          {isInnerCircle
+            ? "This track is shared with the creator's inner circle. Follow them to listen."
+            : "This track is private. Only the creator can listen to it."}
+        </p>
+        <Link href="/discover">
+          <Button
+            className="rounded-full px-8"
+            style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+          >
+            Browse Discover
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-10 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -142,8 +172,8 @@ export default function TrackPage() {
           <div
             className={`h-72 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
           >
-            {track?.coverArtUrl && (
-              <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+            {fullTrack?.coverArtUrl && (
+              <img src={fullTrack.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
             )}
             {isCurrentlyPlaying && (
               <div className="absolute inset-0 ring-8 ring-white/40 pointer-events-none animate-pulse" />
@@ -182,9 +212,9 @@ export default function TrackPage() {
             )}
 
             {/* Duration badge */}
-            {track.duration && (
+            {fullTrack!.duration && (
               <div className="absolute top-4 right-4 bg-black/30 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
-                {fmt(track.duration)}
+                {fmt(fullTrack!.duration)}
               </div>
             )}
           </div>
@@ -194,25 +224,25 @@ export default function TrackPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold text-foreground leading-tight truncate">
-                  {track.title}
+                  {fullTrack!.title}
                 </h1>
-                {track.creatorUsername ? (
-                  <Link href={`/creator/${encodeURIComponent(track.creatorUsername)}`}>
+                {fullTrack!.creatorUsername ? (
+                  <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
                     <p className="text-pink-600 font-medium mt-1 hover:underline cursor-pointer flex items-center gap-1">
-                      {track.artist ?? track.creatorUsername}
+                      {fullTrack!.artist ?? fullTrack!.creatorUsername}
                       <ExternalLink className="w-3.5 h-3.5 opacity-60" />
                     </p>
                   </Link>
                 ) : (
                   <p className="text-muted-foreground mt-1">
-                    {track.artist ?? "Unknown Artist"}
+                    {fullTrack!.artist ?? "Unknown Artist"}
                   </p>
                 )}
               </div>
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <AddToPlaylistButton trackId={track.id} className="border border-purple-200 hover:bg-purple-50 rounded-full w-9 h-9" />
+                <AddToPlaylistButton trackId={fullTrack!.id} className="border border-purple-200 hover:bg-purple-50 rounded-full w-9 h-9" />
                 <motion.button
                   onClick={handleShare}
                   animate={shareAnimating ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
@@ -226,23 +256,23 @@ export default function TrackPage() {
             </div>
 
             {/* Genre */}
-            {track.genre && (
+            {fullTrack!.genre && (
               <p className="text-sm text-muted-foreground mt-3">
-                Genre: <span className="font-medium text-foreground">{track.genre}</span>
+                Genre: <span className="font-medium text-foreground">{fullTrack!.genre}</span>
               </p>
             )}
 
             {/* Description */}
-            {track.description && (
+            {fullTrack!.description && (
               <p className="text-muted-foreground mt-3 leading-relaxed text-sm">
-                {track.description}
+                {fullTrack!.description}
               </p>
             )}
 
             {/* Mood tags */}
-            {track.moodTags.length > 0 && (
+            {fullTrack!.moodTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
-                {track.moodTags.map((tag) => (
+                {fullTrack!.moodTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
@@ -255,17 +285,17 @@ export default function TrackPage() {
             )}
 
             {/* Creator card */}
-            {track.creatorUsername && (
-              <Link href={`/creator/${encodeURIComponent(track.creatorUsername)}`}>
+            {fullTrack!.creatorUsername && (
+              <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
                 <motion.div
                   whileHover={{ y: -2 }}
                   className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-100 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    {track.creatorAvatarUrl ? (
+                    {fullTrack!.creatorAvatarUrl ? (
                       <img
-                        src={track.creatorAvatarUrl}
-                        alt={track.creatorUsername}
+                        src={fullTrack!.creatorAvatarUrl}
+                        alt={fullTrack!.creatorUsername}
                         className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                       />
                     ) : (
@@ -273,16 +303,16 @@ export default function TrackPage() {
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm"
                         style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
                       >
-                        {track.creatorUsername.charAt(0).toUpperCase()}
+                        {fullTrack!.creatorUsername!.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">
-                        {track.creatorUsername}
+                        {fullTrack!.creatorUsername}
                       </p>
-                      {track.creatorBio && (
+                      {fullTrack!.creatorBio && (
                         <p className="text-xs text-muted-foreground truncate">
-                          {track.creatorBio}
+                          {fullTrack!.creatorBio}
                         </p>
                       )}
                     </div>

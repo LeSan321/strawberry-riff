@@ -368,3 +368,26 @@
 - [x] VisualBriefPanel gated behind isPremium in GenerationCard — hidden on Generate page for free users
 - [x] isPremium passed from monthlyUsage to GenerationCard at call site
 - [x] 138 tests passing (all passing)
+
+## Phase 45: Share Links for All Visibility Levels
+- [x] Share button now shows for all visibility levels in MyRiffs (removed public-only guard)
+- [x] Added access control to tracks.getById: private = owner only, inner-circle = logged-in followers, public = anyone
+- [x] TrackPage shows graceful access denied message with appropriate icon and CTA based on visibility level
+- [x] 138 tests passing
+
+## Phase 46: Riff on This Mode
+- [x] Riff button added to GenerationCard in Generate.tsx (purple ghost button)
+- [x] Pre-fills Generate form with variation prompt (same energy, different mood) + Riff on: title via sessionStorage
+- [x] Clears lyrics field for fresh creative direction
+- [x] 138 tests passing
+
+## Phase 47: My Style Library (Premium)
+- [x] Added style_library table to schema and ran migration
+- [x] Added DB helpers: getStyleLibraryByUserId, saveStyleToLibrary, deleteStyleFromLibrary, incrementStyleUsage, updateStyleLibraryEntry
+- [x] Added styleLibraryRouter with list, save, delete, use, update procedures wired into appRouter
+- [x] Built StyleLibrary.tsx page with saved styles grid, stats bar, Use/Riff/Edit/Delete actions
+- [x] Save to Library button on generation cards (Premium only, amber BookMarked icon)
+- [x] Save to Library dialog shows style name input and prompt preview
+- [x] Style Library link added to AppLayout user dropdown (amber BookMarked icon)
+- [x] /style-library route added to App.tsx
+- [x] 138 tests passing
