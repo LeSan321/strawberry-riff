@@ -832,7 +832,7 @@ const musicGenerationRouter = router({
         title: generation.title,
         artist: null,
         genre: null,
-        description: `Generated with MiniMax Music 2.5 • AI`,
+        description: null,
         audioUrl: generation.audioUrl,
         audioKey: generation.audioKey,
         duration: generation.duration,

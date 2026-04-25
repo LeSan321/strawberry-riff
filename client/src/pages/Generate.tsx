@@ -645,7 +645,7 @@ export function GeneratePage() {
       });
       setVoiceReferenceUrl(res.url);
       setVoiceReferenceName(file.name);
-      toast.success("Voice reference uploaded — MiniMax will match the vocal style!");
+      toast.success("Voice reference uploaded — the AI will match the vocal style!");
     } catch (err) {
       toast.error("Failed to upload voice reference — please try again");
       console.error(err);
@@ -696,7 +696,7 @@ export function GeneratePage() {
           <Music className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h2 className="mb-2 text-2xl font-bold">Sign in to Generate Music</h2>
           <p className="text-muted-foreground">
-            Create full-length AI-generated songs with MiniMax Music 2.5
+            Create full-length AI-generated songs with Strawberry Riff
           </p>
         </Card>
       </div>
@@ -716,7 +716,7 @@ export function GeneratePage() {
               <div>
                 <h1 className="text-3xl font-bold">Generate Music</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Create full-length AI songs with vocals using MiniMax Music 2.6.
+                  Create full-length AI songs with vocals — just add a prompt and lyrics.
                 </p>
               </div>
             </div>
@@ -783,7 +783,7 @@ export function GeneratePage() {
                   <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Upload a song you love and MiniMax will match its vibe, energy, and style when generating your track.
+                  Upload a song you love and the AI will match its vibe, energy, and style when generating your track.
                 </p>
                 {referenceAudioUrl ? (
                   <div className="flex items-center gap-2 rounded-md bg-pink-500/10 border border-pink-200 px-3 py-2">
@@ -837,7 +837,7 @@ export function GeneratePage() {
                   <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Upload a vocal sample and MiniMax will generate your song sung in that voice style — your voice, a character, or any singer.
+                  Upload a vocal sample and the AI will generate your song sung in that voice style — your voice, a character, or any singer.
                 </p>
                 {voiceReferenceUrl ? (
                   <div className="flex items-center gap-2 rounded-md bg-teal-500/10 border border-teal-200 px-3 py-2">
