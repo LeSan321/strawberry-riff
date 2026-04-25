@@ -51,6 +51,11 @@ import {
   deleteStyleFromLibrary,
   incrementStyleUsage,
   updateStyleLibraryEntry,
+  createPreviewLink,
+  getPreviewLinkByToken,
+  getPreviewLinksByTrack,
+  consumePreviewPlay,
+  revokePreviewLink,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -1035,6 +1040,97 @@ const styleLibraryRouter = router({
     }),
 });
 
+// ─── Preview Links Router ──────────────────────────────────────────────────────
+const previewLinksRouter = router({
+  /** Creator: generate a new 3-play preview link for a private/inner-circle track */
+  create: protectedProcedure
+    .input(z.object({ trackId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const track = await getTrackById(input.trackId);
+      if (!track) throw new TRPCError({ code: "NOT_FOUND" });
+      if (track.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      if (track.visibility === "public") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Public tracks don't need preview links" });
+      }
+      const token = nanoid(32);
+      const link = await createPreviewLink(input.trackId, ctx.user.id, token);
+      if (!link) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return link;
+    }),
+
+  /** Creator: list all preview links for a track */
+  listForTrack: protectedProcedure
+    .input(z.object({ trackId: z.number().int() }))
+    .query(async ({ ctx, input }) => {
+      const track = await getTrackById(input.trackId);
+      if (!track || track.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      return getPreviewLinksByTrack(input.trackId, ctx.user.id);
+    }),
+
+  /** Creator: revoke a preview link */
+  revoke: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const ok = await revokePreviewLink(input.id, ctx.user.id);
+      if (!ok) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+
+  /** Public: resolve a preview token — returns track info if valid, decrements play count */
+  resolve: publicProcedure
+    .input(z.object({ token: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const link = await getPreviewLinkByToken(input.token);
+      if (!link || !link.isActive) {
+        return { valid: false as const, reason: "invalid" as const };
+      }
+      if (link.playsRemaining <= 0) {
+        return { valid: false as const, reason: "exhausted" as const };
+      }
+      // Fetch the track + creator info (no visibility filter — preview bypasses it)
+      const result = await getTrackWithCreator(link.trackId);
+      if (!result) return { valid: false as const, reason: "invalid" as const };
+      const { track } = result;
+      return {
+        valid: true as const,
+        link: {
+          id: link.id,
+          token: link.token,
+          playsRemaining: link.playsRemaining,
+          playsTotal: link.playsTotal,
+        },
+        track: {
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          audioUrl: track.audioUrl,
+          duration: track.duration,
+          gradient: track.gradient,
+          coverArtUrl: track.coverArtUrl,
+          moodTags: track.moodTags ? (JSON.parse(track.moodTags) as string[]) : [],
+          visibility: track.visibility,
+          userId: track.userId,
+        },
+        creator: {
+          username: result.creatorUsername,
+          avatarUrl: result.creatorAvatarUrl,
+          bio: result.creatorBio,
+        },
+      };
+    }),
+
+  /** Public: consume a play (called when audio actually starts) */
+  consumePlay: publicProcedure
+    .input(z.object({ token: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      const updated = await consumePreviewPlay(input.token);
+      if (!updated) {
+        return { success: false as const, playsRemaining: 0 };
+      }
+      return { success: true as const, playsRemaining: updated.playsRemaining };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1050,6 +1146,7 @@ export const appRouter = router({
   lyrics: lyricsRouter,
   studio: studioRouter,
   styleLibrary: styleLibraryRouter,
+  previewLinks: previewLinksRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -21,6 +21,7 @@ import {
   X,
   Link as LinkIcon,
   ImagePlus,
+  Flame,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -272,6 +273,9 @@ function TrackCard({ track }: { track: Track }) {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareAnimating, setShareAnimating] = useState(false);
+  const [previewAnimating, setPreviewAnimating] = useState(false);
+
+  const createPreviewLinkMutation = trpc.previewLinks.create.useMutation();
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -283,6 +287,26 @@ function TrackCard({ track }: { track: Track }) {
       toast.success("Link copied — drop it somewhere good 🍓", { duration: 2500 });
     } catch {
       toast.info(`Share: ${url}`);
+    }
+  };
+
+  const handleCreatePreviewLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewAnimating(true);
+    setTimeout(() => setPreviewAnimating(false), 600);
+    try {
+      const link = await createPreviewLinkMutation.mutateAsync({ trackId: track.id });
+      const url = `${window.location.origin}/preview/${link.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success(
+        <div>
+          <p className="font-semibold">Preview link created 🍓</p>
+          <p className="text-xs mt-0.5 opacity-80">3 plays — link copied to clipboard</p>
+        </div>,
+        { duration: 4000 }
+      );
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create preview link");
     }
   };
 
@@ -369,6 +393,23 @@ function TrackCard({ track }: { track: Track }) {
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Preview link button — only for private/inner-circle tracks */}
+                    {track.visibility !== "public" && (
+                      <motion.button
+                        onClick={handleCreatePreviewLink}
+                        animate={previewAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+                        transition={{ duration: 0.4 }}
+                        disabled={createPreviewLinkMutation.isPending}
+                        className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${previewAnimating ? "text-orange-500" : "text-gray-400 hover:text-orange-500"}`}
+                        title="Create 3-play preview link — share with non-followers to invite them in"
+                      >
+                        {createPreviewLinkMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Flame className="w-4 h-4" />
+                        )}
+                      </motion.button>
+                    )}
                     <motion.button
                       onClick={handleShare}
                       animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}

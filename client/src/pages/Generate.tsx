@@ -215,23 +215,48 @@ function GenerationCard({
               <RefreshCw className="mr-1.5 h-3 w-3" />
               Re-generate
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="flex-1 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-              onClick={() => {
-                const riffPrompt = `${gen.prompt} — Complementary variation: same energy, different mood. Push the contrast.`;
-                sessionStorage.setItem("prefill_lyrics", "");
-                sessionStorage.setItem("prefill_prompt", riffPrompt);
-                sessionStorage.setItem("prefill_title", `Riff on: ${gen.title}`);
-                window.location.href = "/generate";
-              }}
-              title="Pre-fill Generate with a variation of this style"
-            >
-              <GitFork className="mr-1.5 h-3 w-3" />
-              Riff
-            </Button>
-            {isPremium && (
+            {isPremium ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex-1 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                onClick={() => {
+                  const riffPrompt = `${gen.prompt} — Complementary variation: same energy, different mood. Push the contrast.`;
+                  sessionStorage.setItem("prefill_lyrics", "");
+                  sessionStorage.setItem("prefill_prompt", riffPrompt);
+                  sessionStorage.setItem("prefill_title", `Riff on: ${gen.title}`);
+                  window.location.href = "/generate";
+                }}
+                title="Pre-fill Generate with a variation of this style"
+              >
+                <GitFork className="mr-1.5 h-3 w-3" />
+                Riff
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex-1 text-xs text-gray-400 hover:text-purple-600 hover:bg-purple-50 relative"
+                onClick={() => {
+                  toast(
+                    <div className="flex items-start gap-2">
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-sm">Riff Mode is Premium</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Generate variations on your tracks with one click.</p>
+                        <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                }}
+                title="Riff Mode — Premium feature"
+              >
+                <Crown className="mr-1 h-3 w-3 text-amber-400" />
+                Riff
+              </Button>
+            )}
+            {isPremium ? (
               <Button
                 size="sm"
                 variant="ghost"
@@ -243,6 +268,29 @@ function GenerationCard({
                 title="Save this music style to your Style Library"
               >
                 <BookMarked className="mr-1.5 h-3 w-3" />
+                Save Style
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex-1 text-xs text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+                onClick={() => {
+                  toast(
+                    <div className="flex items-start gap-2">
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-sm">Style Library is Premium</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Save and reuse your best music styles.</p>
+                        <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                }}
+                title="Style Library — Premium feature"
+              >
+                <Crown className="mr-1 h-3 w-3 text-amber-400" />
                 Save Style
               </Button>
             )}
@@ -276,12 +324,37 @@ function GenerationCard({
               🔄 Vibe
             </Button>
           </div>
-          {gen.visualBrief && isPremium && (
-            <VisualBriefPanel
-              visualBriefJson={gen.visualBrief}
-              className="mt-2"
-            />
-          )}
+          {gen.visualBrief ? (
+            isPremium ? (
+              <VisualBriefPanel
+                visualBriefJson={gen.visualBrief}
+                className="mt-2"
+              />
+            ) : (
+              <div
+                className="mt-2 rounded-lg border border-dashed border-amber-200 bg-amber-50/50 p-3 cursor-pointer"
+                onClick={() => {
+                  toast(
+                    <div className="flex items-start gap-2">
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-sm">Visual Brief is Premium</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Unlock AI-generated visual direction for your tracks — camera, lighting, color palette, and scene.</p>
+                        <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <Crown className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-xs font-medium text-amber-700">Visual Brief available — Premium unlocks it</span>
+                </div>
+                <p className="text-xs text-amber-600/70 mt-1">Camera direction, lighting, color palette &amp; scene for your track.</p>
+              </div>
+            )
+          ) : null}
         </div>
       )}
       {gen.status === "failed" && (
@@ -776,8 +849,31 @@ export function GeneratePage() {
                 <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
               </div>
 
-              {/* Reference Audio Panel — Premium only */}
-              {monthlyUsage?.isPremium && <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
+              {/* Reference Audio Panel — Premium only (visible-but-locked for free users) */}
+              {!monthlyUsage?.isPremium ? (
+                <div
+                  className="rounded-lg border border-dashed border-pink-200 bg-pink-50/50 p-4 cursor-pointer"
+                  onClick={() => {
+                    toast(
+                      <div className="flex items-start gap-2">
+                        <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-sm">Style Reference Audio is Premium</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Upload a song you love and the AI will match its vibe when generating your track.</p>
+                          <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
+                        </div>
+                      </div>,
+                      { duration: 5000 }
+                    );
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm font-medium text-pink-700">Style Reference Audio <span className="text-xs font-normal text-pink-500 ml-1">Premium</span></p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Upload a song you love and the AI will match its vibe, energy, and style.</p>
+                </div>
+              ) : <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Mic2 className="h-4 w-4 text-pink-600" />
                   <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
@@ -830,8 +926,31 @@ export function GeneratePage() {
                 </p>
               </div>}
 
-              {/* Voice Reference Audio Panel — Premium only */}
-              {monthlyUsage?.isPremium && <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
+              {/* Voice Reference Audio Panel — Premium only (visible-but-locked for free users) */}
+              {!monthlyUsage?.isPremium ? (
+                <div
+                  className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-4 cursor-pointer"
+                  onClick={() => {
+                    toast(
+                      <div className="flex items-start gap-2">
+                        <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-sm">Voice Reference is Premium</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Upload a vocal sample and the AI will generate your song in that voice style.</p>
+                          <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
+                        </div>
+                      </div>,
+                      { duration: 5000 }
+                    );
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm font-medium text-teal-700">Voice Reference <span className="text-xs font-normal text-teal-500 ml-1">Premium</span></p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Upload a vocal sample and the AI will generate your song in that voice style.</p>
+                </div>
+              ) : <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Mic2 className="h-4 w-4 text-teal-600" />
                   <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>

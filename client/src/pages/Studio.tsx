@@ -19,6 +19,7 @@ import {
   Lock,
   X,
   Check,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 import { GeneratePage } from "./Generate";
 import { LyricsGeneratorPage } from "./LyricsGenerator";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
+import { StyleLibrary } from "./StyleLibrary";
 
 // ─── Studio Theme Definitions ─────────────────────────────────────────────────
 const STUDIO_THEMES = [
@@ -181,8 +183,8 @@ function StudioSidebar({
   onOpenThemePicker,
   onOpenFusions,
 }: {
-  activeTool: "generate" | "lyrics";
-  onToolChange: (t: "generate" | "lyrics") => void;
+  activeTool: "generate" | "lyrics" | "styles";
+  onToolChange: (t: "generate" | "lyrics" | "styles") => void;
   theme: typeof STUDIO_THEMES[0];
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
@@ -190,6 +192,7 @@ function StudioSidebar({
   const tools = [
     { id: "generate" as const, label: "Generate", icon: Music, desc: "AI music creation" },
     { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Writer's Bible" },
+    { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
   ];
 
   return (
@@ -286,7 +289,7 @@ function StudioContextPanel({
   onClose,
 }: {
   theme: typeof STUDIO_THEMES[0];
-  activeTool: "generate" | "lyrics";
+  activeTool: "generate" | "lyrics" | "styles";
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -518,7 +521,7 @@ function StudioHeader({
 // ─── Main Studio Page ──────────────────────────────────────────────────────────
 export default function Studio() {
   const { user, isAuthenticated } = useAuth();
-  const [activeTool, setActiveTool] = useState<"generate" | "lyrics">("generate");
+  const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(true);
   const [fusionsOpen, setFusionsOpen] = useState(false);
@@ -637,8 +640,10 @@ export default function Studio() {
             >
               {activeTool === "generate" ? (
                 <GeneratePage />
-              ) : (
+              ) : activeTool === "lyrics" ? (
                 <LyricsGeneratorPage />
+              ) : (
+                <StyleLibrary />
               )}
             </motion.div>
           </AnimatePresence>
@@ -672,6 +677,15 @@ export default function Studio() {
         >
           <Pen className="w-5 h-5" />
           <span className="text-[10px] font-medium">Lyrics</span>
+        </button>
+        <button
+          onClick={() => setActiveTool("styles")}
+          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
+            activeTool === "styles" ? `bg-gradient-to-r ${theme.accent} text-white` : "text-gray-400"
+          }`}
+        >
+          <Library className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Styles</span>
         </button>
         <button
           onClick={() => setFusionsOpen(true)}

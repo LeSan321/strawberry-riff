@@ -209,3 +209,19 @@ export const styleLibrary = mysqlTable("style_library", {
 
 export type StyleLibraryEntry = typeof styleLibrary.$inferSelect;
 export type InsertStyleLibraryEntry = typeof styleLibrary.$inferInsert;
+
+// ─── Preview Links (3-play limited share links for private/inner-circle tracks) ──
+export const previewLinks = mysqlTable("preview_links", {
+  id: int("id").autoincrement().primaryKey(),
+  trackId: int("trackId").notNull(),
+  ownerId: int("ownerId").notNull(),         // creator who generated the link
+  token: varchar("token", { length: 64 }).notNull().unique(), // nanoid token
+  playsRemaining: int("playsRemaining").default(3).notNull(), // decrements on each listen
+  playsTotal: int("playsTotal").default(3).notNull(),         // original limit (for display)
+  isActive: boolean("isActive").default(true).notNull(),      // creator can revoke
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastPlayedAt: timestamp("lastPlayedAt"),
+});
+
+export type PreviewLink = typeof previewLinks.$inferSelect;
+export type InsertPreviewLink = typeof previewLinks.$inferInsert;

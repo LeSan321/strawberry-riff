@@ -27,7 +27,6 @@ import {
   Sparkles,
   Repeat,
   Repeat1,
-  BookMarked,
 } from "lucide-react";
 import { useState } from "react";
 import { SignInExplainerModal } from "./SignInExplainerModal";
@@ -57,7 +56,6 @@ const navItems = [
 ];
 
 const studioNavItem = { href: "/studio", label: "Studio", icon: Sparkles };
-const styleLibraryNavItem = { href: "/style-library", label: "Style Library", icon: BookMarked };
 
 function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -168,11 +166,6 @@ function AppHeader() {
                     <DropdownMenuItem asChild>
                       <Link href="/my-riffs" className="cursor-pointer">
                         <Music className="w-4 h-4 mr-2" /> My Riffs
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/style-library" className="cursor-pointer">
-                        <BookMarked className="w-4 h-4 mr-2 text-amber-500" /> Style Library
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

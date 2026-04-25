@@ -391,3 +391,11 @@
 - [x] Style Library link added to AppLayout user dropdown (amber BookMarked icon)
 - [x] /style-library route added to App.tsx
 - [x] 138 tests passing
+
+## Phase 48 — Inner Circle Bug Fix + Preview Links + Style Library + Premium UX + Pricing
+
+- [x] Fix Inner Circle share link bug — getTrackWithCreator had hardcoded visibility="public" filter
+- [x] One-time preview link (3-play limit) for Private/Inner Circle tracks — DB table, toggle UI, preview landing page with Follow CTA
+- [x] Move Style Library to Studio sidebar as dedicated "My Styles" tab (remove from AppLayout dropdown)
+- [x] Lock Riff Mode and Visual Brief with upgrade prompts for free users (visible but locked)
+- [x] Update Pricing page with clean tier breakdown listing all Premium features

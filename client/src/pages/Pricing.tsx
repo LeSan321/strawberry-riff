@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Music, Zap, Users, ListMusic, User, BarChart2, Download, Star, Heart, Shield,
-  ChevronDown, ChevronUp, CheckCircle2, Loader2,
+  ChevronDown, ChevronUp, CheckCircle2, Loader2, Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { getLoginUrl } from "@/const";
@@ -13,27 +13,35 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 const FREE_FEATURES = [
-  { icon: Music, label: "Uploads", value: "5/month" },
-  { icon: Zap, label: "Streaming", value: "High-quality" },
-  { icon: Users, label: "Sharing Options", value: "Public & Friends" },
+  { icon: Music, label: "AI Generations", value: "5 per month" },
+  { icon: Zap, label: "Music Generation", value: "Full access" },
+  { icon: Users, label: "Visibility", value: "Public, Inner Circle & Private" },
   { icon: ListMusic, label: "Playlists", value: "Yes" },
-  { icon: User, label: "Profile Styling", value: "Basic" },
-  { icon: BarChart2, label: "Feedback Tools", value: "Basic" },
-  { icon: Download, label: "Track Downloads", value: "No" },
-  { icon: Star, label: "Early Access", value: "No" },
-  { icon: Heart, label: "Tipping Eligibility", value: "No" },
+  { icon: User, label: "Creator Profile", value: "Yes" },
+  { icon: Heart, label: "Discover & Follow", value: "Yes" },
+  { icon: Shield, label: "Preview Share Links", value: "Yes (3-play limit)" },
+  { icon: Star, label: "Studio Mode", value: "Generate + Lyrics" },
+  { icon: Download, label: "Riff Mode", value: "No" },
+  { icon: BarChart2, label: "Style Library", value: "No" },
+  { icon: Star, label: "Visual Brief", value: "No" },
+  { icon: Heart, label: "Style Reference Audio", value: "No" },
+  { icon: Users, label: "Voice Reference", value: "No" },
 ];
 
 const PRO_FEATURES = [
-  { icon: Music, label: "Uploads", value: "Unlimited" },
-  { icon: Zap, label: "Streaming", value: "High-quality" },
-  { icon: Users, label: "Sharing Options", value: "Private, Inner Circle, Public" },
-  { icon: ListMusic, label: "Playlists", value: "Yes + Custom Covers" },
-  { icon: User, label: "Profile Styling", value: "Custom styling (emoji, colors, tags)" },
-  { icon: BarChart2, label: "Feedback Tools", value: "Real-time insights (non-metric based)" },
-  { icon: Download, label: "Track Downloads", value: "Download archive enabled" },
-  { icon: Star, label: "Early Access", value: "Yes" },
-  { icon: Heart, label: "Tipping Eligibility", value: "Yes" },
+  { icon: Music, label: "AI Generations", value: "Unlimited" },
+  { icon: Zap, label: "Music Generation", value: "Full access" },
+  { icon: Users, label: "Visibility", value: "Public, Inner Circle & Private" },
+  { icon: ListMusic, label: "Playlists", value: "Yes" },
+  { icon: User, label: "Creator Profile", value: "Yes" },
+  { icon: Heart, label: "Discover & Follow", value: "Yes" },
+  { icon: Shield, label: "Preview Share Links", value: "Yes (3-play limit)" },
+  { icon: Star, label: "Studio Mode", value: "Generate + Lyrics + My Styles" },
+  { icon: Download, label: "Riff Mode", value: "Yes — one-click variations" },
+  { icon: BarChart2, label: "Style Library", value: "Yes — save & reuse styles" },
+  { icon: Star, label: "Visual Brief", value: "Yes — AI visual direction" },
+  { icon: Heart, label: "Style Reference Audio", value: "Yes — match any song's vibe" },
+  { icon: Users, label: "Voice Reference", value: "Yes — clone any vocal style" },
 ];
 
 const FAQS = [
@@ -211,15 +219,24 @@ export default function Pricing() {
             {isAuthenticated ? "Your Current Plan" : "Get Started Free"}
           </Button>
           <div className="space-y-3">
-            {FREE_FEATURES.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Icon className="w-4 h-4 text-pink-400" />
-                  <span>{label}</span>
+            {FREE_FEATURES.map(({ icon: Icon, label, value }) => {
+              const isLocked = value === "No";
+              return (
+                <div key={label} className={`flex items-center justify-between text-sm ${isLocked ? "opacity-50" : ""}`}>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon className="w-4 h-4 text-pink-400" />
+                    <span>{label}</span>
+                  </div>
+                  {isLocked ? (
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Premium
+                    </span>
+                  ) : (
+                    <span className="font-medium text-foreground text-right text-xs">{value}</span>
+                  )}
                 </div>
-                <span className="font-medium text-foreground">{value}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
 

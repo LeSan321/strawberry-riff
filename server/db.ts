@@ -18,6 +18,8 @@ import {
   VibePreset,
   StyleLibraryEntry,
   InsertStyleLibraryEntry,
+  PreviewLink,
+  previewLinks,
   friends,
   lyricsDrafts,
   musicGenerationHistory,
@@ -476,7 +478,7 @@ export async function getTrackWithCreator(trackId: number): Promise<{
     })
     .from(tracks)
     .leftJoin(profiles, eq(tracks.userId, profiles.userId))
-    .where(and(eq(tracks.id, trackId), eq(tracks.visibility, "public")))
+    .where(eq(tracks.id, trackId))
     .limit(1);
   if (!result[0]) return undefined;
   return {
@@ -739,5 +741,80 @@ export async function updateStyleLibraryEntry(
     .update(styleLibrary)
     .set(updates)
     .where(and(eq(styleLibrary.id, id), eq(styleLibrary.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+// ─── Preview Links ─────────────────────────────────────────────────────────────
+export async function createPreviewLink(
+  trackId: number,
+  ownerId: number,
+  token: string
+): Promise<PreviewLink | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(previewLinks).values({
+    trackId,
+    ownerId,
+    token,
+    playsRemaining: 3,
+    playsTotal: 3,
+    isActive: true,
+  });
+  const result = await db
+    .select()
+    .from(previewLinks)
+    .where(eq(previewLinks.token, token))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function getPreviewLinkByToken(token: string): Promise<PreviewLink | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(previewLinks)
+    .where(eq(previewLinks.token, token))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function getPreviewLinksByTrack(trackId: number, ownerId: number): Promise<PreviewLink[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(previewLinks)
+    .where(and(eq(previewLinks.trackId, trackId), eq(previewLinks.ownerId, ownerId)))
+    .orderBy(desc(previewLinks.createdAt));
+}
+
+/** Decrements playsRemaining by 1. Returns the updated link or null if exhausted/inactive. */
+export async function consumePreviewPlay(token: string): Promise<PreviewLink | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const link = await getPreviewLinkByToken(token);
+  if (!link || !link.isActive || link.playsRemaining <= 0) return null;
+
+  await db
+    .update(previewLinks)
+    .set({
+      playsRemaining: sql`${previewLinks.playsRemaining} - 1`,
+      lastPlayedAt: new Date(),
+    })
+    .where(eq(previewLinks.token, token));
+
+  // Return refreshed
+  const updated = await getPreviewLinkByToken(token);
+  return updated;
+}
+
+export async function revokePreviewLink(id: number, ownerId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(previewLinks)
+    .set({ isActive: false })
+    .where(and(eq(previewLinks.id, id), eq(previewLinks.ownerId, ownerId)));
   return (result as any)[0]?.affectedRows > 0;
 }
