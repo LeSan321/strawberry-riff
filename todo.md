@@ -409,3 +409,9 @@
 ## Backlog — Analytics (revisit in broader context)
 - [ ] Preview link play analytics — "2 of 3 plays used" indicator on MyRiffs card per link
 - [ ] Broader creator analytics dashboard — plays, follows, shares, generation usage over time
+
+## Phase 50 — My Riffs Polish & Preview Link UX
+
+- [x] Inline title editing on My Riffs track cards (click-to-rename, parity with Studio)
+- [x] Preview link play status badge on My Riffs cards ("🔗 2/3 plays used")
+- [x] Post-OAuth redirect for unauthenticated preview followers (getLoginUrl now accepts returnPath, OAuth callback parses and honors it)

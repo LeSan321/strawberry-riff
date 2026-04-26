@@ -22,6 +22,7 @@ import {
   Link as LinkIcon,
   ImagePlus,
   Flame,
+  Pencil,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -267,13 +268,31 @@ function EditDialog({ track, onClose }: EditDialogProps) {
   );
 }
 
-function TrackCard({ track }: { track: Track }) {
+function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStatus?: { playsRemaining: number; playsTotal: number; token: string } }) {
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
   const utils = trpc.useUtils();
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareAnimating, setShareAnimating] = useState(false);
   const [previewAnimating, setPreviewAnimating] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(track.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const renameMutation = trpc.tracks.update.useMutation({
+    onSuccess: () => {
+      utils.tracks.myTracks.invalidate();
+      toast.success("Title updated!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleTitleSave = () => {
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === track.title) { setEditingTitle(false); return; }
+    renameMutation.mutate({ id: track.id, title: trimmed });
+    setEditingTitle(false);
+  };
 
   const createPreviewLinkMutation = trpc.previewLinks.create.useMutation();
 
@@ -387,7 +406,43 @@ function TrackCard({ track }: { track: Track }) {
               <div className="flex-1 p-4 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-gray-800 truncate">{track.title}</h3>
+                    {/* Preview link play status badge */}
+                    {previewLinkStatus && track.visibility !== "public" && (
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className="flex items-center gap-1 text-xs font-medium text-orange-500">
+                          <Flame className="w-3 h-3" />
+                          {previewLinkStatus.playsTotal - previewLinkStatus.playsRemaining}/{previewLinkStatus.playsTotal} plays used
+                        </span>
+                        {previewLinkStatus.playsRemaining > 0 ? (
+                          <span className="text-xs text-muted-foreground">· {previewLinkStatus.playsRemaining} left</span>
+                        ) : (
+                          <span className="text-xs text-orange-600 font-medium">· exhausted</span>
+                        )}
+                      </div>
+                    )}
+                    {editingTitle ? (
+                      <input
+                        ref={titleInputRef}
+                        value={titleDraft}
+                        onChange={(e) => setTitleDraft(e.target.value)}
+                        onBlur={handleTitleSave}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleTitleSave();
+                          if (e.key === "Escape") { setTitleDraft(track.title); setEditingTitle(false); }
+                        }}
+                        className="font-semibold text-gray-800 text-sm bg-transparent border-b border-pink-400 outline-none w-full min-w-0"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        className="font-semibold text-gray-800 truncate text-left group flex items-center gap-1 hover:text-pink-600 transition-colors w-full min-w-0"
+                        onClick={(e) => { e.stopPropagation(); setTitleDraft(track.title); setEditingTitle(true); }}
+                        title="Click to rename"
+                      >
+                        <span className="truncate">{track.title}</span>
+                        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
+                      </button>
+                    )}
                     {track.artist && (
                       <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
                     )}
@@ -533,6 +588,15 @@ export default function MyRiffs() {
   const { isAuthenticated } = useAuth();
   const tracksQuery = trpc.tracks.myTracks.useQuery(undefined, { enabled: isAuthenticated });
   const tracks = (tracksQuery.data ?? []) as Track[];
+  const previewLinksQuery = trpc.previewLinks.myActiveLinks.useQuery(undefined, { enabled: isAuthenticated });
+  // Build a map of trackId → most recent active link (for badge display)
+  const previewLinkByTrack = (previewLinksQuery.data ?? []).reduce<Record<number, { playsRemaining: number; playsTotal: number; token: string }>>((acc, link) => {
+    // Keep the most recently created link per track (array is ordered by createdAt desc)
+    if (!acc[link.trackId]) {
+      acc[link.trackId] = { playsRemaining: link.playsRemaining, playsTotal: link.playsTotal, token: link.token };
+    }
+    return acc;
+  }, {});
 
   if (!isAuthenticated) {
     return (
@@ -599,7 +663,7 @@ export default function MyRiffs() {
         <AnimatePresence>
           <div className="space-y-3">
             {tracks.map((track) => (
-              <TrackCard key={track.id} track={track} />
+              <TrackCard key={track.id} track={track} previewLinkStatus={previewLinkByTrack[track.id]} />
             ))}
           </div>
         </AnimatePresence>

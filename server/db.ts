@@ -828,3 +828,14 @@ export async function updateMusicGenerationTitle(id: number, userId: number, tit
     .where(and(eq(musicGenerations.id, id), eq(musicGenerations.userId, userId)));
   return (result as any)[0]?.affectedRows > 0;
 }
+
+/** Returns all active preview links for a given owner, grouped by trackId — used for the My Riffs badge display */
+export async function getActivePreviewLinksByOwner(ownerId: number): Promise<PreviewLink[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(previewLinks)
+    .where(and(eq(previewLinks.ownerId, ownerId), eq(previewLinks.isActive, true)))
+    .orderBy(desc(previewLinks.createdAt));
+}

@@ -55,6 +55,7 @@ import {
   createPreviewLink,
   getPreviewLinkByToken,
   getPreviewLinksByTrack,
+  getActivePreviewLinksByOwner,
   consumePreviewPlay,
   revokePreviewLink,
 } from "./db";
@@ -1077,6 +1078,12 @@ const previewLinksRouter = router({
       const track = await getTrackById(input.trackId);
       if (!track || track.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       return getPreviewLinksByTrack(input.trackId, ctx.user.id);
+    }),
+
+  /** Creator: get all active preview links for the current user (for My Riffs badge display) */
+  myActiveLinks: protectedProcedure
+    .query(async ({ ctx }) => {
+      return getActivePreviewLinksByOwner(ctx.user.id);
     }),
 
   /** Creator: revoke a preview link */

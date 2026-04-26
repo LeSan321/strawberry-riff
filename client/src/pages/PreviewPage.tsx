@@ -312,11 +312,7 @@ export default function PreviewPage() {
               </Button>
             ) : (
               <a
-                href={getLoginUrl()}
-                onClick={() => {
-                  // Store the return path so after login we can redirect with welcome flag
-                  sessionStorage.setItem("preview_follow_return", `/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
-                }}
+                href={getLoginUrl(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`)}
                 className="flex-1"
               >
                 <Button
