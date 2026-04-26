@@ -237,6 +237,7 @@ function GenerationCard({
       {gen.status === "complete" && gen.audioUrl && (
         <div className="mt-2 space-y-2">
           <audio src={gen.audioUrl} controls className="w-full h-8" />
+          <div className="space-y-1.5">
           <div className="flex gap-1.5">
             <Button
               size="sm"
@@ -256,6 +257,8 @@ function GenerationCard({
               <RefreshCw className="mr-1.5 h-3 w-3" />
               Re-generate
             </Button>
+          </div>
+          <div className="flex gap-1.5">
             {isPremium ? (
               <Button
                 size="sm"
@@ -335,6 +338,7 @@ function GenerationCard({
                 Save Style
               </Button>
             )}
+          </div>
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1">
             <Button
@@ -1173,7 +1177,7 @@ export function GeneratePage() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : myGenerations && myGenerations.length > 0 ? (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+              <div className="space-y-3 pr-1">
                 {myGenerations.map((gen) => (
                   <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} />
                 ))}

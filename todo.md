@@ -445,3 +445,12 @@ Manus-managed services so the site can run entirely independently long-term.
 ## Phase 51 — Style Library Save Button
 
 - [x] Add "Save to Style Library" button on generation cards in Studio/Generate page
+
+## Phase 52 — Studio Layout Fixes
+
+- [x] Remove "Rock Room" title text and descriptor from Studio header
+- [x] Remove "Change" button from Studio header top-right (Theme button in sidebar is sufficient)
+- [x] Convert Context side panel to a dropdown/collapsible (closed by default)
+- [x] Fix triple scrollbar issue — Studio should fill viewport height without nested scroll containers
+- [x] Fix empty space at bottom of Studio page
+- [x] Move Save Style button to a visible position on all screen sizes (not hidden off-screen on laptop)

@@ -462,13 +462,11 @@ function StudioContextPanel({
 // ─── Studio Header ─────────────────────────────────────────────────────────────
 function StudioHeader({
   theme,
-  onOpenThemePicker,
 }: {
   theme: typeof STUDIO_THEMES[0];
-  onOpenThemePicker: () => void;
 }) {
   return (
-    <div className="relative h-48 md:h-56 flex-shrink-0 overflow-hidden">
+    <div className="relative h-24 md:h-28 flex-shrink-0 overflow-hidden">
       <img
         src={theme.image}
         alt={theme.name}
@@ -479,40 +477,15 @@ function StudioHeader({
 
       {/* Header Content */}
       <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
-        {/* Top Row */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Badge className={`text-xs bg-black/40 text-white border-white/20 backdrop-blur-sm`}>
-                <Sparkles className="w-3 h-3 mr-1" />
-                Studio Mode
-              </Badge>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-              {theme.name}
-            </h1>
-            <p className="text-sm text-white/70 mt-0.5 drop-shadow">{theme.description}</p>
-          </div>
-          {/* Only the Change Theme button in the top-right; context toggle lives in sidebar */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenThemePicker}
-            className="bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 border border-white/20 h-8 px-3 text-xs"
-          >
-            <Palette className="w-3.5 h-3.5 mr-1.5" />
-            Change
-          </Button>
+        {/* Top Row — just the Studio Mode badge */}
+        <div className="flex items-center">
+          <Badge className={`text-xs bg-black/40 text-white border-white/20 backdrop-blur-sm`}>
+            <Sparkles className="w-3 h-3 mr-1" />
+            Studio Mode
+          </Badge>
         </div>
 
-        {/* Bottom Row — Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-white/60">
-          <Link href="/">
-            <span className="hover:text-white/90 cursor-pointer transition-colors">Home</span>
-          </Link>
-          <span>/</span>
-          <span className="text-white/90">Studio</span>
-        </div>
+
       </div>
     </div>
   );
@@ -523,7 +496,7 @@ export default function Studio() {
   const { user, isAuthenticated } = useAuth();
   const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
-  const [contextOpen, setContextOpen] = useState(true);
+  const [contextOpen, setContextOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
 
   const prefsQuery = trpc.studio.getPreferences.useQuery(undefined, {
@@ -624,7 +597,6 @@ export default function Studio() {
         {/* Cinematic Header */}
         <StudioHeader
           theme={theme}
-          onOpenThemePicker={() => setThemePickerOpen(true)}
         />
 
         {/* Tool Content */}
