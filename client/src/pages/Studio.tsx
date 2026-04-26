@@ -543,6 +543,9 @@ export default function Studio() {
 
   const currentThemeId = prefsQuery.data?.studioTheme ?? "forest-studio";
   const theme = STUDIO_THEMES.find((t) => t.id === currentThemeId) ?? STUDIO_THEMES[0];
+  const { data: monthlyUsage } = trpc.musicGeneration.monthlyUsage.useQuery(undefined, {
+    enabled: !!user,
+  });
 
   const handleThemeSelect = (id: string) => {
     setThemeMutation.mutate({ theme: id });
@@ -666,12 +669,21 @@ export default function Studio() {
       <div className={`md:hidden fixed bottom-0 inset-x-0 z-30 ${theme.sidebarBg} border-t ${theme.borderAccent} flex items-center justify-around px-4 py-2 safe-area-pb`}>
         <button
           onClick={() => setActiveTool("generate")}
-          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
+          className={`relative flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${
             activeTool === "generate" ? `bg-gradient-to-r ${theme.accent} text-white` : "text-gray-400"
           }`}
         >
           <Music className="w-5 h-5" />
           <span className="text-[10px] font-medium">Generate</span>
+          {monthlyUsage && !monthlyUsage.isPremium && monthlyUsage.limit !== null && (
+            <span className={`absolute -top-1 -right-1 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none ${
+              monthlyUsage.used >= monthlyUsage.limit
+                ? "bg-red-500 text-white"
+                : "bg-pink-500 text-white"
+            }`}>
+              {monthlyUsage.used}/{monthlyUsage.limit}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTool("lyrics")}
