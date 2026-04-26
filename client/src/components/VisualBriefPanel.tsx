@@ -115,9 +115,12 @@ export function VisualBriefPanel({ visualBriefJson, darkMode = false, className 
       )}
     >
       {/* Header — always visible */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors group"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsOpen((o) => !o); }}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors group cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
           <Clapperboard className="w-4 h-4 text-pink-400 flex-shrink-0" />
@@ -150,7 +153,7 @@ export function VisualBriefPanel({ visualBriefJson, darkMode = false, className 
             : <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors flex-shrink-0" />
           }
         </div>
-      </button>
+      </div>
 
       {/* Expanded content */}
       {isOpen && (
