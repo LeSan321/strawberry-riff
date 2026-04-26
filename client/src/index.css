@@ -83,38 +83,39 @@
 }
 
 .dark {
-  /* Dark variant — same berry-plum palette, slightly deeper */
+  /* Dark variant — Option A: warm radial berry-plum palette */
   --primary: oklch(0.68 0.22 340);
   --primary-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.68 0.22 340);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --background: oklch(0.10 0.055 320);
-  --foreground: oklch(0.93 0.018 320);
-  --card: oklch(0.135 0.055 320);
-  --card-foreground: oklch(0.93 0.018 320);
-  --popover: oklch(0.145 0.055 320);
-  --popover-foreground: oklch(0.93 0.018 320);
-  --secondary: oklch(0.175 0.055 320);
-  --secondary-foreground: oklch(0.80 0.025 320);
-  --muted: oklch(0.165 0.048 320);
-  --muted-foreground: oklch(0.62 0.04 320);
-  --accent: oklch(0.20 0.08 300);
-  --accent-foreground: oklch(0.90 0.02 320);
+  /* Use hex directly to ensure true deep plum renders, not near-black */
+  --background: #0f0614;             /* deep plum — radial gradient applied on body */
+  --foreground: #f0e8f5;             /* warm near-white */
+  --card: #160b1e;                   /* card surface — slightly lighter plum */
+  --card-foreground: #f0e8f5;
+  --popover: #1e1028;                /* elevated surface */
+  --popover-foreground: #f0e8f5;
+  --secondary: #1e1028;
+  --secondary-foreground: #c9b8d8;
+  --muted: #1a0f24;
+  --muted-foreground: #8a7098;       /* muted lavender */
+  --accent: #2a1840;                 /* purple-tinted elevated */
+  --accent-foreground: #e8dff0;
   --destructive: oklch(0.65 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.20 0.065 310);
-  --input: oklch(0.20 0.065 310);
+  --border: #2e1a3a;                 /* subtle plum border */
+  --input: #2e1a3a;
   --ring: oklch(0.68 0.22 340);
   --chart-1: oklch(0.75 0.22 340);
   --chart-2: oklch(0.70 0.22 310);
   --chart-3: oklch(0.65 0.20 280);
   --chart-4: oklch(0.60 0.18 260);
   --chart-5: oklch(0.55 0.16 240);
-  --sidebar: oklch(0.135 0.055 320);
-  --sidebar-foreground: oklch(0.93 0.018 320);
-  --sidebar-accent: oklch(0.20 0.08 300);
-  --sidebar-accent-foreground: oklch(0.90 0.02 320);
-  --sidebar-border: oklch(0.20 0.065 310);
+  --sidebar: #160b1e;
+  --sidebar-foreground: #f0e8f5;
+  --sidebar-accent: #2a1840;
+  --sidebar-accent-foreground: #e8dff0;
+  --sidebar-border: #2e1a3a;
   --sidebar-ring: oklch(0.68 0.22 340);
 }
 
@@ -123,7 +124,13 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply text-foreground font-sans antialiased;
+    /* Option A: warm radial berry-plum gradient — berry glow from left, deep at edges */
+    background-color: #0f0614;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 50%, #2a0a3a 0%, #0f0614 60%, #0a0010 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
