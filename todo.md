@@ -399,3 +399,13 @@
 - [x] Move Style Library to Studio sidebar as dedicated "My Styles" tab (remove from AppLayout dropdown)
 - [x] Lock Riff Mode and Visual Brief with upgrade prompts for free users (visible but locked)
 - [x] Update Pricing page with clean tier breakdown listing all Premium features
+
+## Phase 49 — Follow Confirmation, Generation Counter, Studio Title Edit
+
+- [x] Follow confirmation flow on PreviewPage — after following creator, redirect to creator profile with welcome message
+- [x] Generation counter on Generate page — "X of 5 used this month" badge near Generate button (free users)
+- [x] Song title editing inside Studio — inline edit without leaving Studio
+
+## Backlog — Analytics (revisit in broader context)
+- [ ] Preview link play analytics — "2 of 3 plays used" indicator on MyRiffs card per link
+- [ ] Broader creator analytics dashboard — plays, follows, shares, generation usage over time

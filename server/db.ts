@@ -818,3 +818,13 @@ export async function revokePreviewLink(id: number, ownerId: number): Promise<bo
     .where(and(eq(previewLinks.id, id), eq(previewLinks.ownerId, ownerId)));
   return (result as any)[0]?.affectedRows > 0;
 }
+
+export async function updateMusicGenerationTitle(id: number, userId: number, title: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(musicGenerations)
+    .set({ title })
+    .where(and(eq(musicGenerations.id, id), eq(musicGenerations.userId, userId)));
+  return (result as any)[0]?.affectedRows > 0;
+}

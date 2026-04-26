@@ -1,11 +1,13 @@
 import { trpc } from "@/lib/trpc";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import { Play, Pause, Music, UserPlus, Lock, Flame } from "lucide-react";
+import { Play, Pause, Music, UserPlus, Lock, Flame, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 
 const CARD_GRADIENTS = [
@@ -28,9 +30,13 @@ export default function PreviewPage() {
   const params = useParams<{ token: string }>();
   const token = params.token ?? "";
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [hasConsumed, setHasConsumed] = useState(false);
   const [localPlaysRemaining, setLocalPlaysRemaining] = useState<number | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
   const consumePlayMutation = trpc.previewLinks.consumePlay.useMutation();
+  const followMutation = trpc.friends.follow.useMutation();
   const hasConsumedRef = useRef(false);
 
   const { data, isLoading } = trpc.previewLinks.resolve.useQuery(
@@ -269,15 +275,59 @@ export default function PreviewPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link href={`/creator/${encodeURIComponent(creatorUsername)}`} className="flex-1">
+            {isAuthenticated ? (
               <Button
-                className="w-full rounded-full font-semibold"
+                className="flex-1 rounded-full font-semibold"
                 style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                disabled={followMutation.isPending || isFollowing}
+                onClick={() => {
+                  if (!data?.valid) return;
+                  followMutation.mutate(
+                    { userId: data.track.userId },
+                    {
+                      onSuccess: () => {
+                        setIsFollowing(true);
+                        // Redirect to creator profile with welcome flag
+                        navigate(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
+                      },
+                      onError: (err) => {
+                        // If already following, just navigate
+                        if (err.message?.includes("already")) {
+                          navigate(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
+                        } else {
+                          toast.error("Could not follow — please try again.");
+                        }
+                      },
+                    }
+                  );
+                }}
               >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Follow {creatorUsername}
+                {followMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Following…</>
+                ) : isFollowing ? (
+                  <><UserPlus className="w-4 h-4 mr-2" /> Followed!</>
+                ) : (
+                  <><UserPlus className="w-4 h-4 mr-2" /> Follow {creatorUsername}</>
+                )}
               </Button>
-            </Link>
+            ) : (
+              <a
+                href={getLoginUrl()}
+                onClick={() => {
+                  // Store the return path so after login we can redirect with welcome flag
+                  sessionStorage.setItem("preview_follow_return", `/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
+                }}
+                className="flex-1"
+              >
+                <Button
+                  className="w-full rounded-full font-semibold"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Sign in to Follow {creatorUsername}
+                </Button>
+              </a>
+            )}
             <Link href="/discover" className="flex-1">
               <Button variant="outline" className="w-full rounded-full border-pink-200 text-pink-600 hover:bg-pink-50">
                 <Music className="w-4 h-4 mr-2" />

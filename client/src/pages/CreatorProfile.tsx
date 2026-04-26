@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
 import { StrawberryBadge } from "@/components/StrawberryBadge";
 import { toast } from "sonner";
@@ -249,6 +249,31 @@ export default function CreatorProfile() {
   const params = useParams<{ username: string }>();
   const username = params.username ?? "";
   const { user, isAuthenticated } = useAuth();
+
+  // Show welcome toast when arriving from a preview link follow
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("welcome") === "1") {
+      // Small delay so the page has a moment to render first
+      const timer = setTimeout(() => {
+        toast.success(
+          <div className="flex items-start gap-2">
+            <span className="text-lg">🍓</span>
+            <div>
+              <p className="font-semibold text-sm">You're now following {username}!</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Their Inner Circle tracks will appear in your Friends feed.</p>
+            </div>
+          </div>,
+          { duration: 5000 }
+        );
+        // Clean the query param from the URL without a page reload
+        const url = new URL(window.location.href);
+        url.searchParams.delete("welcome");
+        window.history.replaceState({}, "", url.toString());
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [username]);
 
   const {
     data: creator,

@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -142,6 +142,25 @@ function GenerationCard({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saveLibraryOpen, setSaveLibraryOpen] = useState(false);
   const [libraryStyleName, setLibraryStyleName] = useState("");
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(gen.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const utils = trpc.useUtils();
+  const renameMutation = trpc.musicGeneration.rename.useMutation({
+    onSuccess: (data) => {
+      setTitleDraft(data.title);
+      utils.musicGeneration.myGenerations.invalidate();
+      toast.success("Title updated!");
+    },
+    onError: () => toast.error("Failed to update title"),
+  });
+
+  const handleTitleSave = () => {
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === gen.title) { setEditingTitle(false); return; }
+    renameMutation.mutate({ generationId: gen.id, title: trimmed });
+    setEditingTitle(false);
+  };
   const saveStyleMutation = trpc.styleLibrary.save.useMutation({
     onSuccess: () => {
       toast.success("Style saved to your library!");
@@ -161,7 +180,29 @@ function GenerationCard({
   return (
     <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium truncate flex-1">{gen.title}</p>
+        {editingTitle ? (
+          <input
+            ref={titleInputRef}
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={handleTitleSave}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleTitleSave();
+              if (e.key === "Escape") { setTitleDraft(gen.title); setEditingTitle(false); }
+            }}
+            className="flex-1 font-medium text-sm bg-transparent border-b border-pink-400 outline-none px-0 py-0 min-w-0"
+            autoFocus
+          />
+        ) : (
+          <button
+            className="font-medium truncate flex-1 text-left group flex items-center gap-1 hover:text-pink-600 transition-colors"
+            onClick={() => { setTitleDraft(gen.title); setEditingTitle(true); }}
+            title="Click to rename"
+          >
+            <span className="truncate">{titleDraft !== gen.title ? titleDraft : gen.title}</span>
+            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
+          </button>
+        )}
         <div className="flex items-center gap-1 shrink-0">
         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusColor}`}>
           {gen.status === "generating" ? (
@@ -1086,6 +1127,34 @@ export function GeneratePage() {
                   <><Music className="mr-2 h-4 w-4" />Generate Music</>
                 )}
               </Button>
+
+              {/* Compact counter badge for free users */}
+              {monthlyUsage && !monthlyUsage.isPremium && monthlyUsage.limit !== null && (
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: monthlyUsage.limit }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          i < monthlyUsage.used
+                            ? monthlyUsage.used >= monthlyUsage.limit!
+                              ? "bg-destructive"
+                              : "bg-pink-400"
+                            : "bg-gray-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span>
+                    {monthlyUsage.used} of {monthlyUsage.limit} generations used this month
+                    {monthlyUsage.used < monthlyUsage.limit && (
+                      <span className="ml-1 text-pink-500 font-medium">
+                        · {monthlyUsage.limit - monthlyUsage.used} remaining
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </form>
           </Card>
         </div>

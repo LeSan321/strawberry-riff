@@ -42,6 +42,7 @@ import {
   getMusicGenerationById,
   getMusicGenerationsByUserId,
   updateMusicGenerationStatus,
+  updateMusicGenerationTitle,
   deleteMusicGeneration,
   getMusicGenerationHistory,
   countGenerationsThisMonth,
@@ -859,6 +860,17 @@ const musicGenerationRouter = router({
       if (!ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const updated = await getMusicGenerationById(input.generationId);
       return { isFavorited: updated?.isFavorited ?? false };
+    }),
+
+  rename: protectedProcedure
+    .input(z.object({ generationId: z.number().int(), title: z.string().min(1).max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      const generation = await getMusicGenerationById(input.generationId);
+      if (!generation) throw new TRPCError({ code: "NOT_FOUND" });
+      if (generation.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      const ok = await updateMusicGenerationTitle(input.generationId, ctx.user.id, input.title);
+      if (!ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return { success: true, title: input.title };
     }),
 });
 
