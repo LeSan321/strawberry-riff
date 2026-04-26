@@ -415,3 +415,33 @@
 - [x] Inline title editing on My Riffs track cards (click-to-rename, parity with Studio)
 - [x] Preview link play status badge on My Riffs cards ("🔗 2/3 plays used")
 - [x] Post-OAuth redirect for unauthenticated preview followers (getLoginUrl now accepts returnPath, OAuth callback parses and honors it)
+
+## Backlog — Infrastructure Independence (non-urgent, plan when ready)
+
+Current stack is stable and fully functional on Railway. The following items reduce dependency on
+Manus-managed services so the site can run entirely independently long-term.
+
+- [ ] **OAuth migration (HIGH)** — Replace Manus OAuth (OAUTH_SERVER_URL) with a standard provider
+      (Google, GitHub, or Auth0). Users currently cannot log in if Manus OAuth goes away.
+      Code is already abstracted in server/_core/oauth.ts — swap the SDK calls.
+
+- [ ] **File storage migration (MEDIUM)** — Move S3 file storage from BUILT_IN_FORGE_API to
+      Cloudflare R2 (recommended: free egress, S3-compatible API, no code rewrite needed).
+      Affects: audio uploads, cover art, generated images. Existing files would need a one-time
+      migration. Update server/storage.ts with new endpoint + credentials.
+
+- [ ] **LLM API migration (LOWER)** — Replace BUILT_IN_FORGE_API LLM calls with a direct
+      OpenAI (or equivalent) API key. The invokeLLM helper in server/_core/llm.ts is already
+      abstracted — just swap the endpoint and key. Affects: prompt generation, lyrics assist,
+      visual brief generation.
+
+- [ ] **Owner notifications migration (LOWER)** — notifyOwner() uses BUILT_IN_FORGE_API.
+      Can be replaced with a simple email (SendGrid/Resend) or webhook when LLM is migrated.
+
+- [ ] **TiDB Cloud — confirm direct ownership** — The DATABASE_URL credentials are root-level
+      TiDB Cloud credentials. Confirm the TiDB Cloud account is accessible independently of
+      Manus (log in at tidbcloud.com) so the database is never at risk.
+
+## Phase 51 — Style Library Save Button
+
+- [x] Add "Save to Style Library" button on generation cards in Studio/Generate page

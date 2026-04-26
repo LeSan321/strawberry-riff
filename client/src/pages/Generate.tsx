@@ -1175,7 +1175,7 @@ export function GeneratePage() {
             ) : myGenerations && myGenerations.length > 0 ? (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={monthlyUsage?.isPremium} />
+                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} />
                 ))}
               </div>
             ) : (
