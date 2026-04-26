@@ -466,7 +466,7 @@ function StudioHeader({
   theme: typeof STUDIO_THEMES[0];
 }) {
   return (
-    <div className="relative h-24 md:h-28 flex-shrink-0 overflow-hidden">
+    <div className="relative h-40 md:h-48 flex-shrink-0 overflow-hidden">
       <img
         src={theme.image}
         alt={theme.name}
