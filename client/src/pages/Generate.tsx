@@ -178,7 +178,7 @@ function GenerationCard({
       : "bg-yellow-500/10 text-yellow-700 border-yellow-200";
 
   return (
-    <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors">
+    <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors w-full overflow-hidden">
       <div className="flex items-start justify-between gap-2">
         {editingTitle ? (
           <input
@@ -809,7 +809,7 @@ export function GeneratePage() {
 
   if (!user) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="w-full max-w-full px-4 py-6">
         <Card className="p-8 text-center">
           <Music className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h2 className="mb-2 text-2xl font-bold">Sign in to Generate Music</h2>
@@ -822,11 +822,11 @@ export function GeneratePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="grid gap-8 lg:grid-cols-3">
+    <div className="w-full max-w-full px-4 py-6 overflow-x-hidden">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Generation Form */}
         <div className="lg:col-span-2" ref={formRef}>
-          <Card className="p-6">
+          <Card className="p-6 w-full overflow-hidden">
             <div className="mb-6 flex items-start gap-3">
               <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-2.5">
                 <Sparkles className="h-5 w-5 text-white" />
@@ -1153,8 +1153,8 @@ export function GeneratePage() {
         </div>
 
         {/* Recent Generations */}
-        <div>
-          <Card className="p-6">
+        <div className="w-full overflow-hidden">
+          <Card className="p-6 w-full overflow-hidden">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold">Recent Generations</h2>
               {myGenerations && myGenerations.length > 0 && (

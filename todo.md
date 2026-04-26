@@ -454,3 +454,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix triple scrollbar issue — Studio should fill viewport height without nested scroll containers
 - [x] Fix empty space at bottom of Studio page
 - [x] Move Save Style button to a visible position on all screen sizes (not hidden off-screen on laptop)
+
+## Phase 55: Mobile Horizontal Overflow Fix
+- [x] Fix horizontal overflow on Android — generation cards too wide causing left/right scroll
+- [x] Add overflow-x-hidden to Studio canvas scroll container
+- [x] Add w-full max-w-full overflow-x-hidden to GeneratePage root container
+- [x] Add w-full overflow-hidden to GenerationCard, form Card, and Recent Generations Card
+- [x] Add w-full max-w-full to motion.div wrapper in Studio
