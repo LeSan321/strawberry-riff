@@ -349,7 +349,7 @@ export function LyricsGeneratorPage() {
 
   if (!user) {
     return (
-      <div className="w-full max-w-5xl mx-auto px-4 py-6 overflow-x-hidden">
+      <div className="container mx-auto py-8">
         <Card className="p-8 text-center">
           <Pen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h2 className="mb-2 text-2xl font-bold">Sign in to Write Lyrics</h2>
@@ -362,8 +362,8 @@ export function LyricsGeneratorPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+    <div className="container mx-auto py-8">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* ── Left: Form ── */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
