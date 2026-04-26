@@ -615,7 +615,7 @@ export default function Studio() {
   } as React.CSSProperties;
 
   return (
-    <div className={`flex h-screen overflow-hidden ${theme.canvasBg}`} style={darkVars}>
+    <div className={`flex overflow-hidden ${theme.canvasBg}`} style={{ ...darkVars, height: '100dvh' }}>
       {/* Left Sidebar — hidden on mobile */}
       <div className="hidden md:flex">
         <StudioSidebar
