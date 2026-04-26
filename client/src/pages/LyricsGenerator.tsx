@@ -362,8 +362,8 @@ export function LyricsGeneratorPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6 overflow-x-hidden">
-      <div className="grid gap-6 lg:grid-cols-3">
+    <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* ── Left: Form ── */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
