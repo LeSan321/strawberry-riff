@@ -189,6 +189,11 @@ function StudioSidebar({
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
 }) {
+  const { user } = useAuth();
+  const { data: monthlyUsage } = trpc.musicGeneration.monthlyUsage.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
   const tools = [
     { id: "generate" as const, label: "Generate", icon: Music, desc: "AI music creation" },
     { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Writer's Bible" },
@@ -264,6 +269,33 @@ function StudioSidebar({
         </button>
       </nav>
 
+      {/* Premium / Usage Banner */}
+      {monthlyUsage && (
+        <div className={`hidden md:block px-2 pb-2`}>
+          {monthlyUsage.isPremium ? (
+            <div className={`flex items-center gap-2 rounded-lg px-3 py-2 bg-yellow-500/10 border border-yellow-300/20 text-xs text-yellow-400`}>
+              <Crown className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-medium">Premium — unlimited</span>
+            </div>
+          ) : (
+            <div className={`rounded-lg px-3 py-2 bg-white/5 border ${theme.borderAccent}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <Zap className="w-3 h-3" />
+                  <span>{monthlyUsage.used}/{monthlyUsage.limit ?? 5} used</span>
+                </span>
+                <span className="text-xs text-gray-500">{Math.max(0, (monthlyUsage.limit ?? 5) - monthlyUsage.used)} left</span>
+              </div>
+              <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all"
+                  style={{ width: `${Math.min(100, (monthlyUsage.used / (monthlyUsage.limit ?? 5)) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {/* Theme Switcher */}
       <div className={`p-2 border-t ${theme.borderAccent}`}>
         <button
@@ -466,7 +498,7 @@ function StudioHeader({
   theme: typeof STUDIO_THEMES[0];
 }) {
   return (
-    <div className="relative h-40 md:h-48 flex-shrink-0 overflow-hidden">
+    <div className="relative h-48 md:h-64 flex-shrink-0 overflow-hidden">
       <img
         src={theme.image}
         alt={theme.name}

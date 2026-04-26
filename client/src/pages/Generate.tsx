@@ -839,17 +839,6 @@ export function GeneratePage() {
               </div>
             </div>
 
-            {/* Monthly usage */}
-            {monthlyUsage && (
-              <div className="mb-6">
-                <MonthlyUsageBanner
-                  used={monthlyUsage.used}
-                  limit={monthlyUsage.limit}
-                  isPremium={monthlyUsage.isPremium}
-                />
-              </div>
-            )}
-
             <form onSubmit={handleGenerate} className="space-y-6">
               {/* Title */}
               <div>
