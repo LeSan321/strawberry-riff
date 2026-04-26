@@ -81,7 +81,7 @@ function AppHeader() {
 
   return (
     <>
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm">
       <div className="container">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -113,8 +113,8 @@ function AppHeader() {
                   <motion.div
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                       isActive
-                        ? "text-purple-600 bg-purple-50"
-                        : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
@@ -130,8 +130,8 @@ function AppHeader() {
               <motion.div
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ml-1 ${
                   location === "/studio"
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
-                    : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-sm"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-900/40"
+                    : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-sm shadow-purple-900/30"
                 }`}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
@@ -159,7 +159,7 @@ function AppHeader() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <div className="px-3 py-2">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     <DropdownMenuSeparator />
@@ -185,7 +185,7 @@ function AppHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-600 hover:text-pink-600"
+                  className="text-muted-foreground hover:text-primary"
                   onClick={() => setSignInModalOpen(true)}
                 >
                   Sign In
@@ -220,7 +220,7 @@ function AppHeader() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="md:hidden overflow-hidden border-t border-pink-100 pb-3"
+              className="md:hidden overflow-hidden border-t border-border pb-3"
             >
               {visibleItems.map((item) => {
                 const Icon = item.icon;
@@ -229,7 +229,7 @@ function AppHeader() {
                   <Link key={item.href} href={item.href}>
                     <div
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mx-1 mt-1 text-sm font-medium cursor-pointer ${
-                        isActive ? "text-purple-600 bg-purple-50" : "text-gray-600 hover:bg-purple-50"
+                        isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-accent"
                       }`}
                       onClick={() => setMobileOpen(false)}
                     >
@@ -245,7 +245,7 @@ function AppHeader() {
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mx-1 mt-1 text-sm font-semibold cursor-pointer ${
                     location === "/studio"
                       ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                      : "bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-700"
+                      : "bg-gradient-to-r from-purple-500/15 to-pink-500/15 text-primary"
                   }`}
                   onClick={() => setMobileOpen(false)}
                 >
@@ -294,7 +294,7 @@ function PersistentPlayer() {
     <motion.div
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-pink-100 shadow-lg"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg"
     >
       <div className="container py-2">
         <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ function PersistentPlayer() {
             )}
           </div>
           <div className="flex-1 min-w-0 hidden sm:block max-w-[140px]">
-            <p className="text-sm font-semibold text-gray-800 truncate">{currentTrack.title}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{currentTrack.title}</p>
             <p className="text-xs text-muted-foreground truncate">{currentTrack.artist || "Unknown Artist"}</p>
           </div>
 
@@ -321,7 +321,7 @@ function PersistentPlayer() {
             variant="ghost"
             size="sm"
             className={`h-8 w-8 p-0 hidden md:flex ${
-              shuffle ? "text-purple-500" : "text-gray-300 hover:text-gray-500"
+              shuffle ? "text-purple-400" : "text-muted-foreground/40 hover:text-muted-foreground"
             }`}
             onClick={toggleShuffle}
             title="Shuffle"
@@ -335,7 +335,7 @@ function PersistentPlayer() {
               variant="ghost"
               size="sm"
               className={`h-8 w-8 p-0 ${
-                hasPrev ? "text-gray-500 hover:text-gray-800" : "text-gray-200"
+                hasPrev ? "text-muted-foreground hover:text-foreground" : "text-muted-foreground/20"
               }`}
               onClick={previous}
               disabled={!hasPrev}
@@ -354,7 +354,7 @@ function PersistentPlayer() {
               variant="ghost"
               size="sm"
               className={`h-8 w-8 p-0 ${
-                hasNext ? "text-gray-500 hover:text-gray-800" : "text-gray-200"
+                hasNext ? "text-muted-foreground hover:text-foreground" : "text-muted-foreground/20"
               }`}
               onClick={next}
               disabled={!hasNext}
@@ -369,7 +369,7 @@ function PersistentPlayer() {
             variant="ghost"
             size="sm"
             className={`h-8 w-8 p-0 hidden md:flex ${
-              repeatActive ? "text-purple-500" : "text-gray-300 hover:text-gray-500"
+              repeatActive ? "text-purple-400" : "text-muted-foreground/40 hover:text-muted-foreground"
             }`}
             onClick={toggleRepeat}
             title={repeat === "off" ? "Repeat off" : repeat === "all" ? "Repeat all" : "Repeat one"}
@@ -427,7 +427,7 @@ function PersistentPlayer() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentTrack } = useAudioPlayer();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       <AppHeader />
       <main className={`pt-16 ${currentTrack ? "pb-20" : ""}`}>{children}</main>
       <PersistentPlayer />

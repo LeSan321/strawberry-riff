@@ -123,7 +123,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="bg-card rounded-2xl overflow-hidden border border-border hover:border-border/80 hover:shadow-lg hover:shadow-black/30 transition-all"
     >
       {/* Gradient album art */}
       <div className={`h-44 bg-gradient-to-br ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} relative`}>
@@ -160,7 +160,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
             {Array.from({ length: 24 }).map((_, i) => (
               <div
                 key={i}
-                className="flex-1 rounded-full bg-pink-200"
+                className="flex-1 rounded-full bg-primary/30"
                 style={{ height: `${20 + Math.sin(i * 0.8) * 14}%` }}
               />
             ))}
@@ -384,7 +384,7 @@ export default function Home() {
       </section>
 
       {/* ── Who It's For ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white/50">
+      <section className="py-20 px-4 bg-card/30">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -407,7 +407,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center text-center gap-4"
+                className="bg-card rounded-2xl p-6 border border-border flex flex-col items-center text-center gap-4"
               >
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${card.gradient}`}>
                   {card.icon}
@@ -454,7 +454,7 @@ export default function Home() {
       </section>
 
       {/* ── Sonic Soulprints (Testimonials) ───────────────────────────────── */}
-      <section className="py-20 px-4 bg-white/50">
+      <section className="py-20 px-4 bg-card/30">
         <div className="max-w-5xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-2">Sonic Soulprints</h2>
@@ -472,7 +472,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm text-left"
+                className="bg-card rounded-2xl p-6 border border-border text-left"
               >
                 <Quote className="w-7 h-7 text-pink-400 mb-4" />
                 <p className="text-sm text-foreground/80 mb-4 italic">"{t.quote}"</p>
@@ -500,7 +500,7 @@ export default function Home() {
           </div>
           <div className="text-center mt-10">
             <Link href="/discover">
-              <Button variant="outline" className="rounded-full px-8 border-pink-300 text-pink-600 hover:bg-pink-50">
+              <Button variant="outline" className="rounded-full px-8 border-primary/40 text-primary hover:bg-primary/10">
                 Explore All Riffs
               </Button>
             </Link>
@@ -531,7 +531,7 @@ export default function Home() {
       </section>
 
       {/* ── Meet the Band ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white/50">
+      <section className="py-20 px-4 bg-card/30">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-2">Meet the Band</h2>
@@ -570,7 +570,7 @@ export default function Home() {
             key={activeMember}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="hidden md:block mt-8 bg-white rounded-2xl px-8 py-5 shadow-sm max-w-md mx-auto"
+            className="hidden md:block mt-8 bg-card rounded-2xl px-8 py-5 border border-border max-w-md mx-auto"
           >
             <p className="text-sm text-muted-foreground italic">"{BAND_MEMBERS[activeMember].desc}"</p>
           </motion.div>
@@ -578,7 +578,7 @@ export default function Home() {
           {/* Mobile: carousel */}
           <div className="md:hidden relative">
             <div className="flex items-center justify-center gap-4">
-              <button onClick={prevMember} className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors">
+              <button onClick={prevMember} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <motion.div
@@ -597,7 +597,7 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">{BAND_MEMBERS[activeMember].role}</p>
                 <p className="text-sm text-muted-foreground italic max-w-xs">"{BAND_MEMBERS[activeMember].desc}"</p>
               </motion.div>
-              <button onClick={nextMember} className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-muted-foreground hover:text-pink-500 transition-colors">
+              <button onClick={nextMember} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -607,7 +607,7 @@ export default function Home() {
                 <button
                   key={i}
                   onClick={() => { if (autoRef.current) clearInterval(autoRef.current); setActiveMember(i); }}
-                  className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-pink-500 w-4" : "bg-pink-200"}`}
+                  className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-primary w-4" : "bg-primary/25"}`}
                 />
               ))}
             </div>
@@ -619,7 +619,7 @@ export default function Home() {
               <button
                 key={i}
                 onClick={() => { if (autoRef.current) clearInterval(autoRef.current); setActiveMember(i); }}
-                className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-pink-500 w-4" : "bg-pink-200"}`}
+                className={`w-2 h-2 rounded-full transition-all ${i === activeMember ? "bg-primary w-4" : "bg-primary/25"}`}
               />
             ))}
           </div>
@@ -646,7 +646,7 @@ export default function Home() {
             🍓
           </motion.span>
           {/* Subtle hint tooltip */}
-          <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white px-2 py-1 rounded-lg shadow-sm">
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-card border border-border px-2 py-1 rounded-lg shadow-sm">
             Psst... something special inside
           </span>
         </motion.button>
