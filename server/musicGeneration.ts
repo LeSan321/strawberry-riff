@@ -13,6 +13,10 @@
 const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY;
 const MINIMAX_API_BASE = "https://api.minimax.io/v1";
 
+// In-memory store for synchronous hex audio buffers (cleared after retrieval)
+const syncAudioBuffers = new Map<string, Buffer>();
+let syncBufferCounter = 0;
+
 export interface MiniMaxGenerationResult {
   audioUrl: string;
   mimeType: string;
@@ -37,9 +41,9 @@ interface MiniMaxMusicResponse {
   status?: string;
   file?: { file_id: string; download_url?: string };
   extra_info?: { audio_length?: number; audio_sample_rate?: number; audio_size?: number };
-  // New API format (v2): audio URL and status wrapped in data object
+  // New API format (v2): audio URL/hex and status wrapped in data object
   data?: {
-    audio?: string;   // Direct audio URL string
+    audio?: string;   // Hex-encoded audio data (output_format=hex) or URL (output_format=url)
     status?: number;  // 0=Preparing, 1=Running, 2=Success, 3=Fail
     task_id?: string;
   };
@@ -89,7 +93,7 @@ export async function startMusicGeneration(
       bitrate: 256000,
       format: "mp3",
     },
-    output_format: "url",
+    output_format: "hex",  // hex is more reliable: no secondary URL fetch, no expiry issues
   };
 
   // Attach reference audio if provided
@@ -117,12 +121,15 @@ export async function startMusicGeneration(
     throw new Error(`MiniMax API error: ${data.base_resp.status_msg} (code: ${data.base_resp.status_code})`);
   }
 
-  // New API format: audio may be synchronously available in data.audio
+  // New API format: audio is synchronously available in data.audio as hex
   // status 2 = Success in the new numeric format
   if (data.data?.audio && data.data.status === 2) {
-    console.log(`[MiniMax 2.6] Synchronous generation complete (new API format)`);
-    // Return a special sentinel task_id that signals immediate completion
-    return `SYNC:${data.data.audio}`;
+    const hexData = data.data.audio;
+    console.log(`[MiniMax 2.6] Synchronous generation complete (hex format, ${hexData.length} chars)`);
+    // Store buffer in memory map and return a short sentinel ID
+    const bufId = `sync_${++syncBufferCounter}_${Date.now()}`;
+    syncAudioBuffers.set(bufId, Buffer.from(hexData, "hex"));
+    return `SYNCHEX:${bufId}`;
   }
 
   // Async format: get task_id for polling
@@ -149,7 +156,20 @@ export async function pollMusicGeneration(
   const maxAttempts = 120; // 10 minutes max (5s intervals)
   let attempts = 0;
 
-  // Handle synchronous completion (new API format) — audio URL embedded in task_id sentinel
+  // Handle synchronous completion — retrieve buffer from in-memory map
+  if (taskId.startsWith("SYNCHEX:")) {
+    const bufId = taskId.slice(8);
+    const audioBuffer = syncAudioBuffers.get(bufId);
+    syncAudioBuffers.delete(bufId); // clean up immediately
+    if (!audioBuffer) {
+      throw new Error(`Sync audio buffer not found for ID: ${bufId}`);
+    }
+    console.log(`[MiniMax 2.6] Retrieved synchronous audio buffer (${audioBuffer.length} bytes)`);
+    // Use a data URL so fetchAudioBytes can handle it without a network call
+    const base64 = audioBuffer.toString("base64");
+    return { audioUrl: `data:audio/mpeg;base64,${base64}`, mimeType: "audio/mpeg" };
+  }
+  // Legacy: URL-based sentinel (kept for backward compat)
   if (taskId.startsWith("SYNC:")) {
     const audioUrl = taskId.slice(5);
     console.log(`[MiniMax 2.6] Using synchronous audio URL: ${audioUrl.substring(0, 60)}...`);
@@ -213,9 +233,16 @@ export async function pollMusicGeneration(
 }
 
 /**
- * Fetch audio bytes from a URL (downloads from MiniMax before uploading to S3)
+ * Fetch audio bytes from a URL or data URL (downloads from MiniMax before uploading to S3)
  */
 export async function fetchAudioBytes(url: string): Promise<Buffer> {
+  // Handle data URLs (base64-encoded audio from hex conversion)
+  if (url.startsWith("data:")) {
+    const commaIdx = url.indexOf(",");
+    if (commaIdx === -1) throw new Error("Invalid data URL format");
+    const base64 = url.slice(commaIdx + 1);
+    return Buffer.from(base64, "base64");
+  }
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(
