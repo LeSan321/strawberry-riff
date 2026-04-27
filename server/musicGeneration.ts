@@ -269,8 +269,8 @@ export function validateMusicGenerationParams(
   if (prompt.length > 2000) {
     return { valid: false, error: "Prompt is too long (max 2000 characters)" };
   }
-  if (lyrics.length > 5000) {
-    return { valid: false, error: "Lyrics are too long (max 5000 characters)" };
+  if (lyrics.length > 3500) {
+    return { valid: false, error: "Lyrics are too long (max 3500 characters — MiniMax limit)" };
   }
   return { valid: true };
 }

@@ -1074,17 +1074,35 @@ export function GeneratePage() {
 
               {/* Lyrics */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Lyrics</label>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-sm font-medium">Lyrics</label>
+                  <span className={`text-xs ${
+                    lyrics.length > 3500 ? 'text-destructive font-semibold' :
+                    lyrics.length > 3000 ? 'text-yellow-400' :
+                    'text-muted-foreground'
+                  }`}>
+                    {lyrics.length} / 3500 characters
+                  </span>
+                </div>
                 <Textarea
                   placeholder={`[Verse]\nSing your heart out\nUnder the midnight sky\n\n[Chorus]\nThis is the chorus\nWhere the music flies\n\n[Verse]\nSecond verse here\nAnother line to rhyme\n\n[Chorus]\nThis is the chorus\nWhere the music flies`}
                   value={lyrics}
                   onChange={(e) => setLyrics(e.target.value)}
                   disabled={isGenerating}
                   rows={10}
+                  className={lyrics.length > 3500 ? 'border-destructive focus-visible:ring-destructive' : ''}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Use [Verse], [Chorus], [Bridge], [Outro] tags to structure your lyrics
-                </p>
+                <div className="mt-1 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Use [Verse], [Chorus], [Bridge], [Outro] tags to structure your lyrics
+                  </p>
+                  {lyrics.length > 3000 && lyrics.length <= 3500 && (
+                    <p className="text-xs text-yellow-400">Approaching limit — keep under 3500 characters</p>
+                  )}
+                  {lyrics.length > 3500 && (
+                    <p className="text-xs text-destructive font-medium">Too long — trim {lyrics.length - 3500} characters</p>
+                  )}
+                </div>
               </div>
 
               {/* Error */}
