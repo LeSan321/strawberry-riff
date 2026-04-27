@@ -822,7 +822,7 @@ export function GeneratePage() {
   }
 
   return (
-    <div className="w-full max-w-full px-4 py-6 overflow-x-hidden">
+    <div className="w-full max-w-full px-4 py-6 pb-24 overflow-x-hidden">
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Generation Form */}
         <div className="lg:col-span-2" ref={formRef}>

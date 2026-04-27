@@ -125,9 +125,10 @@
   }
   body {
     @apply text-foreground font-sans antialiased;
-    /* Option A: warm radial berry-plum gradient — strong berry glow from left-centre */
+    /* Option A + whisper bottom-right: warm radial from left, faint echo at bottom-right */
     background-color: #0f0614;
     background-image:
+      radial-gradient(ellipse 55% 45% at 92% 95%, #2a0838 0%, transparent 70%),
       radial-gradient(ellipse 120% 90% at 15% 45%, #4a1468 0%, #2a0a3a 35%, #160824 65%, #0a0010 100%);
     background-attachment: fixed;
     min-height: 100vh;

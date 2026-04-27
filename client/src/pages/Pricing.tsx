@@ -67,7 +67,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div
-      className="border border-pink-100 rounded-xl overflow-hidden cursor-pointer bg-white"
+      className="border border-border rounded-xl overflow-hidden cursor-pointer bg-card"
       onClick={() => setOpen(!open)}
     >
       <div className="flex items-center justify-between px-5 py-4">
@@ -79,7 +79,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         )}
       </div>
       {open && (
-        <div className="px-5 pb-4 text-sm text-muted-foreground border-t border-pink-50 pt-3">
+        <div className="px-5 pb-4 text-sm text-muted-foreground border-t border-border pt-3">
           {a}
         </div>
       )}
@@ -202,7 +202,7 @@ export default function Pricing() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl border border-pink-100 p-6 shadow-sm"
+          className="bg-card rounded-2xl border border-border p-6 shadow-sm"
         >
           <h2 className="text-xl font-bold text-center mb-1">Free Tier</h2>
           <div className="text-center mb-1">
@@ -245,7 +245,7 @@ export default function Pricing() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border-2 border-pink-300 p-6 shadow-md relative"
+          className="bg-card rounded-2xl border-2 border-primary/60 p-6 shadow-md relative"
         >
           <Badge
             className="absolute -top-3 right-6 text-white border-0"
@@ -304,7 +304,7 @@ export default function Pricing() {
         viewport={{ once: true }}
         className="max-w-2xl mx-auto mb-10"
       >
-        <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-8 text-center shadow-sm">
           <Heart className="w-10 h-10 text-pink-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">Support Creators Directly</h3>
           <p className="text-muted-foreground text-sm mb-4">
@@ -328,7 +328,7 @@ export default function Pricing() {
         viewport={{ once: true }}
         className="max-w-2xl mx-auto mb-12"
       >
-        <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-8 text-center shadow-sm">
           <Shield className="w-10 h-10 text-purple-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">Why We Charge</h3>
           <p className="text-muted-foreground text-sm">
@@ -371,7 +371,7 @@ export default function Pricing() {
           <Link href="/upload">
             <Button
               size="lg"
-              className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold"
+              className="rounded-full px-10 bg-foreground text-background hover:bg-foreground/90 font-semibold"
             >
               Claim Your Sonic Space
             </Button>
@@ -380,7 +380,7 @@ export default function Pricing() {
           <a href={getLoginUrl()}>
             <Button
               size="lg"
-              className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold"
+              className="rounded-full px-10 bg-foreground text-background hover:bg-foreground/90 font-semibold"
             >
               Claim Your Sonic Space
             </Button>

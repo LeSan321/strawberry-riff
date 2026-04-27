@@ -131,12 +131,12 @@ export default function PreviewPage() {
   const creatorUsername = creator.username ?? "this creator";
 
   return (
-    <div className="min-h-screen py-10 px-4 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+    <div className="min-h-screen py-10 px-4">
       <div className="max-w-lg mx-auto space-y-6">
 
         {/* Header badge */}
         <div className="flex items-center justify-center">
-          <div className="flex items-center gap-2 bg-white border border-pink-100 rounded-full px-4 py-1.5 shadow-sm text-sm text-pink-600 font-medium">
+          <div className="flex items-center gap-2 bg-card border border-border rounded-full px-4 py-1.5 shadow-sm text-sm text-pink-400 font-medium">
             <Flame className="w-3.5 h-3.5" />
             Exclusive Preview — {playsRemaining} of {playsTotal} plays left
           </div>
@@ -146,7 +146,7 @@ export default function PreviewPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl overflow-hidden shadow-md"
+          className="bg-card rounded-3xl overflow-hidden shadow-md"
         >
           {/* Cover art / gradient hero */}
           <div
@@ -229,7 +229,7 @@ export default function PreviewPage() {
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="bg-pink-50 text-pink-600 border-0 px-3 py-1 text-xs"
+                    className="bg-primary/15 text-pink-400 border-0 px-3 py-1 text-xs"
                   >
                     {tag}
                   </Badge>
@@ -244,18 +244,18 @@ export default function PreviewPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white rounded-3xl p-6 shadow-md border border-pink-100"
+          className="bg-card rounded-3xl p-6 shadow-md border border-border"
         >
           <div className="flex items-center gap-3 mb-4">
             {creator.avatarUrl ? (
               <img
                 src={creator.avatarUrl}
                 alt={creatorUsername}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                className="w-12 h-12 rounded-full object-cover border-2 border-border shadow-sm"
               />
             ) : (
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base border-2 border-white shadow-sm"
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base border-2 border-border shadow-sm"
                 style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
               >
                 {creatorUsername.charAt(0).toUpperCase()}
@@ -342,7 +342,7 @@ export default function PreviewPage() {
                   <div
                     key={i}
                     className={`w-2 h-2 rounded-full transition-colors ${
-                      i < playsRemaining ? "bg-pink-400" : "bg-gray-200"
+                      i < playsRemaining ? "bg-pink-400" : "bg-muted"
                     }`}
                   />
                 ))}

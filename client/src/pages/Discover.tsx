@@ -88,7 +88,7 @@ function TrackCard({ track, index, queue }: {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: (index % 6) * 0.07 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
+      className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
     >
       {/* Cover art / gradient */}
       <div className={`h-40 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
@@ -300,7 +300,7 @@ export default function Discover() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mt-5 inline-flex items-center gap-3 bg-white rounded-2xl px-6 py-3 shadow-sm border border-pink-100"
+              className="mt-5 inline-flex items-center gap-3 bg-card rounded-2xl px-6 py-3 shadow-sm border border-border"
             >
               <Music className="w-5 h-5 text-pink-500" />
               <span className="text-sm text-muted-foreground">
@@ -319,7 +319,7 @@ export default function Discover() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white rounded-2xl p-4 shadow-sm mb-8"
+          className="bg-card rounded-2xl p-4 shadow-sm mb-8"
         >
           {/* Search row */}
           <div className="flex gap-3 mb-3">
@@ -337,7 +337,7 @@ export default function Discover() {
               variant="outline"
               onClick={handleShuffle}
               className={`rounded-xl gap-2 border-pink-200 flex-shrink-0 ${
-                shuffled ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0" : "text-pink-600 hover:bg-pink-50"
+                shuffled ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0" : "text-pink-600 hover:bg-primary/10"
               }`}
               title="Shuffle results"
             >
@@ -417,11 +417,11 @@ export default function Discover() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
-                <div className="h-40 bg-pink-100" />
+              <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-sm animate-pulse">
+                <div className="h-40 bg-muted" />
                 <div className="p-4 space-y-2">
-                  <div className="h-4 bg-pink-100 rounded w-3/4" />
-                  <div className="h-3 bg-pink-50 rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted/60 rounded w-1/2" />
                 </div>
               </div>
             ))}
@@ -536,7 +536,7 @@ export default function Discover() {
               Join the community. Upload your tracks, connect with creators, and claim your sonic space.
             </p>
             <a href={getLoginUrl()}>
-              <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold">
+              <Button size="lg" className="rounded-full px-10 bg-foreground text-background hover:bg-foreground/90 font-semibold">
                 Start for Free
               </Button>
             </a>
