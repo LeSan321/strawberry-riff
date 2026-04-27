@@ -77,14 +77,14 @@ function UserRow({ user }: { user: UserCard }) {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-pink-100">
+            <Avatar className="h-10 w-10 border-2 border-border">
               <AvatarImage src={user.avatarUrl ?? undefined} />
               <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-800 truncate">{displayName}</p>
+              <p className="font-semibold text-foreground truncate">{displayName}</p>
               {user.bio && (
                 <p className="text-xs text-muted-foreground truncate">{user.bio}</p>
               )}
@@ -94,7 +94,7 @@ function UserRow({ user }: { user: UserCard }) {
               variant={user.isFollowing ? "outline" : "default"}
               className={
                 user.isFollowing
-                  ? "border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500"
+                  ? "border-border text-muted-foreground hover:border-red-400 hover:text-red-400"
                   : "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-0"
               }
               disabled={isPending}
@@ -184,7 +184,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
             <div className="flex-1 p-3 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-800 truncate text-sm">{track.title}</p>
+                  <p className="font-semibold text-foreground truncate text-sm">{track.title}</p>
                   {track.artist && (
                     <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
                   )}
@@ -193,8 +193,8 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
                   variant="secondary"
                   className={`text-xs flex-shrink-0 ${
                     track.visibility === "public"
-                      ? "bg-green-100 text-green-600"
-                      : "bg-blue-100 text-blue-600"
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-blue-500/20 text-blue-400"
                   }`}
                 >
                   {track.visibility === "public" ? (
@@ -208,7 +208,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
               {track.moodTags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {track.moodTags.slice(0, 3).map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs bg-purple-50 text-purple-600 border-0 py-0">
+                    <Badge key={tag} variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-0 py-0">
                       {tag}
                     </Badge>
                   ))}
@@ -246,7 +246,7 @@ export default function Friends() {
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center mx-auto mb-6">
             <Users className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Sign in to connect</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-3">Sign in to connect</h2>
           <p className="text-muted-foreground mb-6">Follow friends and hear their inner circle tracks.</p>
           <Button
             className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0"
@@ -327,7 +327,7 @@ export default function Friends() {
           ) : following.length === 0 ? (
             <div className="text-center py-16">
               <UserPlus className="w-12 h-12 text-purple-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Not following anyone yet</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Not following anyone yet</h3>
               <p className="text-muted-foreground">Find people to follow in the Discover tab.</p>
             </div>
           ) : (
@@ -348,7 +348,7 @@ export default function Friends() {
           ) : friendTracks.length === 0 ? (
             <div className="text-center py-16">
               <Music className="w-12 h-12 text-purple-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">No tracks from friends yet</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No tracks from friends yet</h3>
               <p className="text-muted-foreground">
                 Follow creators and their public and inner circle tracks will appear here.
               </p>

@@ -430,7 +430,7 @@ export default function Upload() {
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
                         selected
                           ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-md"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-purple-300"
+                          : "bg-card text-muted-foreground border-border hover:border-purple-400"
                       }`}
                     >
                       {tag}
@@ -456,7 +456,7 @@ export default function Upload() {
                     <Badge
                       key={tag}
                       variant="secondary"
-                      className="gap-1 pr-1 bg-purple-100 text-purple-700"
+                      className="gap-1 pr-1 bg-purple-500/20 text-purple-300 border border-purple-500/30"
                     >
                       {tag}
                       <button onClick={() => removeMoodTag(tag)} className="ml-1 hover:text-red-500">
@@ -492,7 +492,7 @@ export default function Upload() {
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  <p className="font-medium text-gray-700">Upload a cover image</p>
+                  <p className="font-medium text-foreground">Upload a cover image</p>
                   <p className="text-xs mt-0.5">JPG, PNG, or WebP — optional</p>
                   <p className="text-xs mt-0.5">Shown on your track card and in the player</p>
                   {coverPreview && (
@@ -549,8 +549,8 @@ export default function Upload() {
                       onClick={() => setForm((p) => ({ ...p, visibility: opt.id }))}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
                         selected
-                          ? "border-purple-400 bg-purple-50 shadow-md"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
+                          ? "border-purple-400 bg-purple-500/15 shadow-md"
+                          : "border-border hover:border-purple-400/60 bg-card"
                       }`}
                     >
                       <div
@@ -558,10 +558,10 @@ export default function Upload() {
                       >
                         <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <p className="font-semibold text-gray-800 text-sm">{opt.label}</p>
+                      <p className="font-semibold text-foreground text-sm">{opt.label}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
                       {selected && (
-                        <Badge className="mt-2 text-xs bg-purple-100 text-purple-700 border-0">
+                        <Badge className="mt-2 text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30">
                           Selected
                         </Badge>
                       )}

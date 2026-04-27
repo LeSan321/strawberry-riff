@@ -58,12 +58,12 @@ function ContactAccordion() {
   const [open, setOpen] = useState(false);
   return (
     <div
-      className="border border-pink-100 rounded-2xl overflow-hidden cursor-pointer bg-white shadow-sm max-w-2xl mx-auto"
+      className="border border-border rounded-2xl overflow-hidden cursor-pointer bg-card shadow-sm max-w-2xl mx-auto"
       onClick={() => setOpen(!open)}
     >
       <div className="flex items-center justify-between px-6 py-5">
         <div>
-          <h3 className="font-bold text-lg">You can ring our bell.</h3>
+          <h3 className="font-bold text-lg text-foreground">You can ring our bell.</h3>
           <p className="text-sm text-muted-foreground mt-0.5">
             Questions, feedback, or a simple hello—drop us a line. We read every note.
           </p>
@@ -75,7 +75,7 @@ function ContactAccordion() {
         )}
       </div>
       {open && (
-        <div className="px-6 pb-5 border-t border-pink-50 pt-4">
+        <div className="px-6 pb-5 border-t border-border pt-4">
           <p className="text-sm text-muted-foreground">
             We're a small team with big ears. Reach out at{" "}
             <a href="mailto:hello@strawberryriff.com" className="text-pink-500 hover:underline">
@@ -125,7 +125,7 @@ export default function About() {
           transition={{ delay: 0.1 }}
         >
           <h2 className="text-2xl font-bold mb-5">Our Vision</h2>
-          <div className="space-y-4 text-muted-foreground leading-relaxed text-sm">
+          <div className="space-y-4 text-foreground/80 leading-relaxed text-sm font-light">
             <p>
               Music begins with a heartbeat. From a kid drumming on a desk to a road-worn pro chasing
               fresh sparks, every dreamer deserves a stage. Strawberry Riff is that stage—a

@@ -20,6 +20,7 @@ import {
   X,
   Check,
   Library,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,6 +297,18 @@ function StudioSidebar({
           )}
         </div>
       )}
+      {/* Home Button */}
+      <div className={`p-2 border-t ${theme.borderAccent}`}>
+        <Link href="/">
+          <button className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+            <Home className="w-4 h-4 flex-shrink-0" />
+            <div className="hidden md:block">
+              <p className="text-sm font-medium leading-none text-left">Home</p>
+              <p className="text-xs mt-0.5 text-gray-500 text-left">Back to app</p>
+            </div>
+          </button>
+        </Link>
+      </div>
       {/* Theme Switcher */}
       <div className={`p-2 border-t ${theme.borderAccent}`}>
         <button
@@ -710,6 +723,12 @@ export default function Studio() {
           <Layers className="w-5 h-5" />
           <span className="text-[10px] font-medium">Fusions</span>
         </button>
+        <Link href="/">
+          <button className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
+          </button>
+        </Link>
         <button
           onClick={() => setContextOpen((v) => !v)}
           className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-all ${

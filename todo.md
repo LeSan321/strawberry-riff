@@ -461,3 +461,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add w-full max-w-full overflow-x-hidden to GeneratePage root container
 - [x] Add w-full overflow-hidden to GenerationCard, form Card, and Recent Generations Card
 - [x] Add w-full max-w-full to motion.div wrapper in Studio
+
+## Phase 56: Dark Theme Polish Pass
+
+- [x] Upload page: mood tags and visibility tags are white — replace with gradient/brand colors
+- [x] Friends page: friend names are too dark to read — brighten text to foreground color
+- [ ] Friends page: ghost accounts still present from initial setup — investigate and purge (deferred)
+- [x] About page: Our Vision body text too faint — make bolder/brighter
+- [x] About page: Contact Us section too bright white — tone down to soft plum/card surface
+- [x] About page: "You Can Ring Our Bell" heading nearly invisible — fix contrast
+- [x] Pricing page: membership status bar and enhanced tags too white — replace with purple + thin gold outline
+- [x] Studio: add a Home button so users can navigate back to the main app

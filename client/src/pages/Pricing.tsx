@@ -151,7 +151,7 @@ export default function Pricing() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-full px-5 py-2.5 text-sm font-medium text-pink-700"
+            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/40 rounded-full px-5 py-2.5 text-sm font-medium text-pink-300"
           >
             <CheckCircle2 className="w-4 h-4 text-pink-500" />
             You're a Premium member — thank you for supporting Strawberry Riff! 🍓
@@ -181,7 +181,7 @@ export default function Pricing() {
             )}
             <Button
               variant="outline"
-              className="rounded-full px-6 border-pink-300 text-pink-600 hover:bg-pink-50"
+              className="rounded-full px-6 border-pink-400/60 text-pink-400 hover:bg-pink-500/10"
               onClick={handleUpgrade}
               disabled={isLoading}
             >
@@ -213,7 +213,7 @@ export default function Pricing() {
           </p>
           <Button
             variant="outline"
-            className="w-full rounded-full border-dashed border-pink-300 text-pink-600 hover:bg-pink-50 mb-6"
+              className="rounded-full px-6 border-dashed border-pink-400/60 text-pink-400 hover:bg-pink-500/10 mb-6"
             onClick={() => !isAuthenticated && (window.location.href = getLoginUrl())}
           >
             {isAuthenticated ? "Your Current Plan" : "Get Started Free"}
@@ -228,7 +228,7 @@ export default function Pricing() {
                     <span>{label}</span>
                   </div>
                   {isLocked ? (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Lock className="w-3 h-3" /> Premium
                     </span>
                   ) : (
@@ -286,7 +286,7 @@ export default function Pricing() {
                   <span className="font-medium text-foreground text-right text-xs">{value}</span>
                   <Badge
                     variant="secondary"
-                    className="text-xs text-purple-600 bg-purple-50 flex-shrink-0"
+                    className="text-xs text-amber-300 bg-amber-500/15 border border-amber-400/30 flex-shrink-0"
                   >
                     Enhanced
                   </Badge>
