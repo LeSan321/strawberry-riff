@@ -20,6 +20,8 @@ import {
   InsertStyleLibraryEntry,
   PreviewLink,
   previewLinks,
+  PlaylistShare,
+  playlistShares,
   friends,
   lyricsDrafts,
   musicGenerationHistory,
@@ -838,4 +840,44 @@ export async function getActivePreviewLinksByOwner(ownerId: number): Promise<Pre
     .from(previewLinks)
     .where(and(eq(previewLinks.ownerId, ownerId), eq(previewLinks.isActive, true)))
     .orderBy(desc(previewLinks.createdAt));
+}
+
+// ─── Playlist Shares ─────────────────────────────────────────────────────────────────────────────────
+/** Create a new playlist share link for a playlist owned by ownerId */
+export async function createPlaylistShare(playlistId: number, ownerId: number, token: string): Promise<PlaylistShare | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(playlistShares).values({ playlistId, ownerId, token, isActive: true });
+  const rows = await db.select().from(playlistShares).where(eq(playlistShares.token, token)).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get a playlist share by token — returns null if not found or revoked */
+export async function getPlaylistShareByToken(token: string): Promise<PlaylistShare | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(playlistShares).where(and(eq(playlistShares.token, token), eq(playlistShares.isActive, true))).limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get all active playlist shares for an owner */
+export async function getActivePlaylistSharesByOwner(ownerId: number): Promise<PlaylistShare[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(playlistShares).where(and(eq(playlistShares.ownerId, ownerId), eq(playlistShares.isActive, true))).orderBy(desc(playlistShares.createdAt));
+}
+
+/** Revoke a playlist share (set isActive = false) */
+export async function revokePlaylistShare(token: string, ownerId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.update(playlistShares).set({ isActive: false }).where(and(eq(playlistShares.token, token), eq(playlistShares.ownerId, ownerId)));
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+/** Update lastViewedAt on a playlist share */
+export async function touchPlaylistShare(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(playlistShares).set({ lastViewedAt: new Date() }).where(eq(playlistShares.token, token));
 }

@@ -225,3 +225,17 @@ export const previewLinks = mysqlTable("preview_links", {
 
 export type PreviewLink = typeof previewLinks.$inferSelect;
 export type InsertPreviewLink = typeof previewLinks.$inferInsert;
+
+// ─── Playlist Shares (followers/friends-only shareable links) ───────────────────────
+export const playlistShares = mysqlTable("playlist_shares", {
+  id: int("id").autoincrement().primaryKey(),
+  playlistId: int("playlistId").notNull(),
+  ownerId: int("ownerId").notNull(),          // creator who generated the link
+  token: varchar("token", { length: 64 }).notNull().unique(), // nanoid token
+  isActive: boolean("isActive").default(true).notNull(),      // creator can revoke
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastViewedAt: timestamp("lastViewedAt"),
+});
+
+export type PlaylistShare = typeof playlistShares.$inferSelect;
+export type InsertPlaylistShare = typeof playlistShares.$inferInsert;

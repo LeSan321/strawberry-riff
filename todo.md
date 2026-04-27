@@ -472,3 +472,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] About page: "You Can Ring Our Bell" heading nearly invisible — fix contrast
 - [x] Pricing page: membership status bar and enhanced tags too white — replace with purple + thin gold outline
 - [x] Studio: add a Home button so users can navigate back to the main app
+
+## Phase 57: Share Playlist Feature
+
+- [ ] Add playlist_shares table to schema (token, playlist_id, created_by, expires_at nullable)
+- [ ] Add DB helpers: createPlaylistShare, getPlaylistShareByToken, revokePlaylistShare
+- [ ] Add tRPC procedures: playlists.createShare, playlists.revokeShare, playlists.getShared
+- [ ] Add Share button to Playlists page with link display and revoke option
+- [ ] Build /playlist/shared/:token page — followers/friends only access gate
+- [ ] Add access denied state for non-followers with follow CTA

@@ -58,6 +58,11 @@ import {
   getActivePreviewLinksByOwner,
   consumePreviewPlay,
   revokePreviewLink,
+  createPlaylistShare,
+  getPlaylistShareByToken,
+  getActivePlaylistSharesByOwner,
+  revokePlaylistShare,
+  touchPlaylistShare,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -489,6 +494,69 @@ const playlistsRouter = router({
       if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       await reorderPlaylistTracks(input.playlistId, input.trackIds);
       return { success: true };
+    }),
+
+  // ─── Playlist Share Procedures ───────────────────────────────────────────────────────────────
+
+  /** Create a share link for a playlist — only the owner can do this */
+  createShare: protectedProcedure
+    .input(z.object({ playlistId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const pl = await getPlaylistById(input.playlistId);
+      if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+      const token = nanoid(32);
+      const share = await createPlaylistShare(input.playlistId, ctx.user.id, token);
+      return share;
+    }),
+
+  /** Revoke a playlist share link */
+  revokeShare: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await revokePlaylistShare(input.token, ctx.user.id);
+      return { success: true };
+    }),
+
+  /** Get all active share links for the current user’s playlists */
+  myShares: protectedProcedure.query(async ({ ctx }) => {
+    return getActivePlaylistSharesByOwner(ctx.user.id);
+  }),
+
+  /** Public: get a shared playlist by token — only accessible to followers/friends of the owner */
+  getShared: publicProcedure
+    .input(z.object({ token: z.string(), origin: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const share = await getPlaylistShareByToken(input.token);
+      if (!share) throw new TRPCError({ code: "NOT_FOUND", message: "This share link is invalid or has been revoked." });
+
+      // Must be logged in
+      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in to view this shared playlist." });
+
+      // Owner can always view their own share
+      if (ctx.user.id !== share.ownerId) {
+        // Check if viewer follows the owner
+        const following = await isFollowing(ctx.user.id, share.ownerId);
+        if (!following) throw new TRPCError({ code: "FORBIDDEN", message: "You need to follow this creator to view their shared playlist." });
+      }
+
+      // Touch lastViewedAt
+      await touchPlaylistShare(input.token);
+
+      const pl = await getPlaylistById(share.playlistId);
+      if (!pl) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const trackList = await getPlaylistTracks(share.playlistId);
+      const owner = await getUserById(share.ownerId);
+      const ownerProfile = await getProfileByUserId(share.ownerId);
+
+      return {
+        playlist: pl,
+        tracks: trackList.map((t) => ({
+          ...t,
+          moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
+        })),
+        owner: { id: owner?.id, name: owner?.name, displayName: ownerProfile?.displayName, avatarUrl: ownerProfile?.avatarUrl },
+      };
     }),
 });
 
