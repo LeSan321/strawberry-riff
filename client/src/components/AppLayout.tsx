@@ -427,7 +427,7 @@ function PersistentPlayer() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentTrack } = useAudioPlayer();
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <AppHeader />
       <main className={`pt-16 ${currentTrack ? "pb-20" : ""}`}>{children}</main>
       <PersistentPlayer />

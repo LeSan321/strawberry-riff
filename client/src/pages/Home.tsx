@@ -384,7 +384,7 @@ export default function Home() {
       </section>
 
       {/* ── Who It's For ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-card/30">
+      <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -444,7 +444,7 @@ export default function Home() {
                 <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${step.gradient} flex items-center justify-center text-white font-bold text-lg`}>
                   {step.num}
                 </div>
-                <div className="h-px w-12 bg-pink-200 hidden md:block" />
+                <div className="h-px w-12 bg-primary/30 hidden md:block" />
                 <h3 className="font-bold text-base">{step.title}</h3>
                 <p className="text-sm text-muted-foreground">{step.desc}</p>
               </motion.div>
@@ -454,7 +454,7 @@ export default function Home() {
       </section>
 
       {/* ── Sonic Soulprints (Testimonials) ───────────────────────────────── */}
-      <section className="py-20 px-4 bg-card/30">
+      <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-2">Sonic Soulprints</h2>
@@ -531,7 +531,7 @@ export default function Home() {
       </section>
 
       {/* ── Meet the Band ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-card/30">
+      <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-2">Meet the Band</h2>
