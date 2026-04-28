@@ -23,14 +23,16 @@ import { LyricsGeneratorPage } from "./pages/LyricsGenerator";
 import Studio from "./pages/Studio";
 import { StyleLibrary } from "./pages/StyleLibrary";
 import PreviewPage from "./pages/PreviewPage";
+import SharedPlaylistPage from "./pages/SharedPlaylistPage";
 
 function Router() {
   return (
     <Switch>
-      {/* Studio, Style Library, and Preview are full-screen — outside AppLayout */}
+      {/* Studio, Style Library, Preview, and Shared Playlist are full-screen — outside AppLayout */}
       <Route path="/studio" component={Studio} />
       <Route path="/style-library" component={StyleLibrary} />
       <Route path="/preview/:token" component={PreviewPage} />
+      <Route path="/shared/playlists/:token" component={SharedPlaylistPage} />
       <Route>
         <AppLayout>
           <Switch>

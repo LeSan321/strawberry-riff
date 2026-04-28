@@ -481,3 +481,11 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Add Share button to Playlists page with link display and revoke option
 - [ ] Build /playlist/shared/:token page — followers/friends only access gate
 - [ ] Add access denied state for non-followers with follow CTA
+
+## Phase 58: Playlist Share UI
+
+- [ ] Add share button to PlaylistCard on Playlists page
+- [ ] Build share link copy dialog with beautiful preview
+- [ ] Create /shared/playlists/:token page with card preview design
+- [ ] Add access control — followers/friends only with follow gate
+- [ ] Test share flow end-to-end

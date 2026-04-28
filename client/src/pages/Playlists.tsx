@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
   ImagePlus,
+  Share2,
 } from "lucide-react";
 import { useRef, useState, useCallback } from "react";
 import {
@@ -222,8 +223,34 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
   });
   const [coverPreview, setCoverPreview] = useState<string | null>(playlist.coverArtUrl ?? null);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const uploadCoverArtMutation = trpc.tracks.uploadCoverArt.useMutation();
+  const createShareMutation = trpc.playlists.createShare.useMutation();
+  const copyShareLink = () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      setShareLinkCopied(true);
+      setTimeout(() => setShareLinkCopied(false), 2000);
+    }
+  };
+  const handleShare = async () => {
+    if (!shareLink) {
+      try {
+        const result = await createShareMutation.mutateAsync({ playlistId: playlist.id });
+        if (result) {
+          const fullLink = `${window.location.origin}/shared/playlists/${result.token}`;
+          setShareLink(fullLink);
+        } else {
+          toast.error("Failed to create share link");
+        }
+      } catch (e) {
+        toast.error("Failed to create share link");
+      }
+    }
+  };
 
   const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -334,6 +361,14 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 relative z-10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-white/70 hover:text-white hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); handleShare(); setShareOpen(true); }}
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -501,6 +536,48 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Save
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Playlist</DialogTitle>
+          </DialogHeader>
+          {shareLink ? (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-card rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-2">Share Link</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shareLink}
+                    readOnly
+                    className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm font-mono text-foreground"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={copyShareLink}
+                    className={shareLinkCopied ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-pink-500 to-purple-600"}
+                  >
+                    {shareLinkCopied ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this link with your followers and friends. Only they can view this playlist.
+              </p>
+            </div>
+          ) : (
+            <div className="py-4 text-center">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-purple-400" />
+              <p className="text-sm text-muted-foreground mt-2">Creating share link...</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
