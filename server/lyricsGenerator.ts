@@ -194,11 +194,16 @@ export async function generateLyrics(input: LyricsGenerationInput): Promise<{
 }> {
   const userPrompt = buildLyricsPrompt(input);
 
+  // Generate a unique conversation ID for this generation to prevent context bleed
+  // This ensures each generation is isolated from previous ones
+  const conversationId = `lyrics-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
   const response = await invokeLLM({
     messages: [
       { role: "system", content: WRITERS_BIBLE_SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
+    conversationId,
   });
 
   const fullResponse: string =

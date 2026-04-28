@@ -66,6 +66,7 @@ export type InvokeParams = {
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
   response_format?: ResponseFormat;
+  conversationId?: string;
 };
 
 export type ToolCall = {
@@ -277,6 +278,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    conversationId,
   } = params;
 
   const payload: Record<string, unknown> = {
@@ -310,6 +312,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   if (normalizedResponseFormat) {
     payload.response_format = normalizedResponseFormat;
+  }
+
+  if (conversationId) {
+    payload.conversation_id = conversationId;
   }
 
   const response = await fetch(resolveApiUrl(), {
