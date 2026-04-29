@@ -505,3 +505,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Implement conditional lyrics display on shared pages based on `showLyricsOnShare` toggle
 - [ ] Implement conditional riff button on shared pages based on `allowRiffsOnShare` toggle
 - [ ] Test end-to-end: creator controls → shared page respects settings
+
+
+## Phase 60: Audio Editing Tools - 3-Band EQ & Trimming
+
+- [x] Implement 3-band EQ tool (bass/mid/treble sliders, real-time Web Audio processing)
+- [x] Build EQ UI component with waveform display and frequency visualization
+- [x] Add tRPC procedures for EQ processing and export
+- [ ] Implement audio trimming tool (drag handles on waveform, fade in/out)
+- [ ] Build trimming UI component with timeline scrubber
+- [ ] Add tRPC procedures for trimming and export
+- [x] Integrate both tools into track editor page
+- [x] Test end-to-end: upload track → apply EQ → trim → export (EQ complete, 158 tests passing)

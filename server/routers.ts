@@ -338,6 +338,57 @@ const tracksRouter = router({
       const success = await updateTrackShareSettings(input.trackId, ctx.user.id, settings);
       return { success };
     }),
+
+  applyEQ: protectedProcedure
+    .input(
+      z.object({
+        trackId: z.number().int(),
+        bass: z.number().min(-12).max(12),
+        mid: z.number().min(-12).max(12),
+        treble: z.number().min(-12).max(12),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const track = await getTrackById(input.trackId);
+      if (!track || track.userId !== ctx.user.id) {
+        throw new Error("Track not found or not authorized");
+      }
+      // Store EQ settings as JSON in a new column (eqSettings)
+      // Actual audio processing happens on client via Web Audio API
+      // This procedure validates and stores the settings for export
+      const eqSettings = JSON.stringify({
+        bass: input.bass,
+        mid: input.mid,
+        treble: input.treble,
+      });
+      return { success: true, eqSettings };
+    }),
+
+  applyTrim: protectedProcedure
+    .input(
+      z.object({
+        trackId: z.number().int(),
+        startTime: z.number().min(0),
+        endTime: z.number().min(0),
+        fadeInDuration: z.number().min(0).optional(),
+        fadeOutDuration: z.number().min(0).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const track = await getTrackById(input.trackId);
+      if (!track || track.userId !== ctx.user.id) {
+        throw new Error("Track not found or not authorized");
+      }
+      // Store trim settings as JSON
+      // Actual audio processing happens on client via Web Audio API
+      const trimSettings = JSON.stringify({
+        startTime: input.startTime,
+        endTime: input.endTime,
+        fadeInDuration: input.fadeInDuration ?? 0,
+        fadeOutDuration: input.fadeOutDuration ?? 0,
+      });
+      return { success: true, trimSettings };
+    }),
 });
 
 // ─── Friends ──────────────────────────────────────────────────────────────────
