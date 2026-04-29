@@ -4,7 +4,7 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, Heart, Share2, LogIn } from "lucide-react";
+import { Loader2, Play, Pause, Heart, LogIn, Music } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
@@ -109,80 +109,148 @@ export default function SharedPlaylistPage() {
   }
 
   return (
-    <div className="min-h-screen pb-32">
-      {/* Hero Card */}
-      <div className="relative h-64 md:h-80 overflow-hidden rounded-lg mx-4 md:mx-0 md:rounded-none">
-        <div
-          className={`absolute inset-0 bg-gradient-to-br ${playlist.gradient || "from-pink-400 to-purple-500"}`}
-        />
-        {playlist.coverArtUrl && (
-          <img
-            src={playlist.coverArtUrl}
-            alt="cover"
-            className="absolute inset-0 w-full h-full object-cover opacity-40"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <p className="text-sm text-muted-foreground mb-2">Playlist</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">{playlist.title}</h1>
-          {playlist.description && (
-            <p className="text-white/80 text-lg mb-4">{playlist.description}</p>
-          )}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-            {creator?.avatarUrl && (
-              <img src={creator.avatarUrl} alt={creator?.displayName || "Creator"} className="w-10 h-10 rounded-full" />
-            )}
-              <div>
-                <p className="text-sm font-medium text-white">{creator.displayName}</p>
-                <p className="text-xs text-white/70">{tracks.length} tracks</p>
-              </div>
+    <div className="min-h-screen pb-32 flex flex-col items-center justify-center px-4 md:px-0">
+      {/* Centered Release Card */}
+      <div className="w-full max-w-2xl">
+        {/* Cover Art - Prominent */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl">
+            <div
+              className={`w-full h-full bg-gradient-to-br ${playlist.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center`}
+            >
+              {playlist.coverArtUrl ? (
+                <img
+                  src={playlist.coverArtUrl}
+                  alt={playlist.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Music className="w-24 h-24 text-white/30" />
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tracks */}
-      <div className="container py-8">
-        {tracks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No tracks in this playlist yet.</p>
+        {/* Playlist Title & Creator Info */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+            {playlist.title}
+          </h1>
+          
+          {/* Creator Profile Section */}
+          <div className="flex flex-col items-center gap-3 mb-6">
+            {creator?.avatarUrl && (
+              <img
+                src={creator.avatarUrl}
+                alt={creator?.displayName || "Creator"}
+                className="w-16 h-16 rounded-full border-2 border-purple-500/30"
+              />
+            )}
+            <div>
+              <p className="text-xl font-semibold text-foreground">{creator.displayName}</p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {tracks.map((track, idx) => (
-              <Card
-                key={track.id}
-                className="p-4 hover:bg-card/80 transition-colors cursor-pointer group"
-                onClick={() => play(track)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                    {track.coverArtUrl && (
-                      <img src={track.coverArtUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                    )}
-                    <span className="relative z-10">
-                      {currentTrack?.id === track.id && isPlaying ? (
-                        <Pause className="w-5 h-5 text-white" />
-                      ) : (
-                        <Play className="w-5 h-5 text-white ml-0.5" />
+
+          {/* Description */}
+          {playlist.description && (
+            <p className="text-lg text-muted-foreground mb-6 max-w-md mx-auto">
+              {playlist.description}
+            </p>
+          )}
+
+          {/* Follow Button */}
+          {user?.id !== creator?.id && !isFollowing && (
+            <Button
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white border-0 mb-6"
+              onClick={handleFollow}
+              disabled={followPending}
+            >
+              {followPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Follow {creator.displayName}
+            </Button>
+          )}
+        </div>
+
+        {/* Tracks List - Elegant & Minimal */}
+        <div className="mb-12">
+          {tracks.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No tracks in this playlist yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tracks.map((track) => (
+                <Card
+                  key={track.id}
+                  className="p-4 hover:bg-card/80 transition-all duration-200 cursor-pointer group border border-border/50 hover:border-purple-500/50"
+                  onClick={() => play(track)}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Play Button & Cover */}
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 relative overflow-hidden group-hover:shadow-lg transition-shadow">
+                      {track.coverArtUrl && (
+                        <img
+                          src={track.coverArtUrl}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
                       )}
-                    </span>
+                      <span className="relative z-10">
+                        {currentTrack?.id === track.id && isPlaying ? (
+                          <Pause className="w-6 h-6 text-white" />
+                        ) : (
+                          <Play className="w-6 h-6 text-white ml-0.5" />
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Track Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate group-hover:text-purple-400 transition-colors">
+                        {track.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {track.artist || "Unknown Artist"}
+                      </p>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="text-sm text-muted-foreground flex-shrink-0">
+                      {Math.floor((track.duration || 0) / 60)}:
+                      {String((track.duration || 0) % 60).padStart(2, "0")}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{track.title}</p>
-                    <p className="text-sm text-muted-foreground truncate">{track.artist || "Unknown Artist"}</p>
-                  </div>
-                  <div className="text-xs text-muted-foreground flex-shrink-0">
-                    {Math.floor((track.duration || 0) / 60)}:
-                    {String((track.duration || 0) % 60).padStart(2, "0")}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* More from Creator Section */}
+        <div className="border-t border-border/50 pt-12">
+          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
+            More from {creator.displayName}
+          </h2>
+          
+          {/* Placeholder for other creator playlists/tracks */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="p-6 text-center border border-border/50 hover:border-purple-500/50 transition-colors cursor-pointer group">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-shadow">
+                <Music className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-sm text-muted-foreground">Explore more playlists</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Coming soon</p>
+            </Card>
+            
+            <Card className="p-6 text-center border border-border/50 hover:border-purple-500/50 transition-colors cursor-pointer group">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-400 flex items-center justify-center mx-auto mb-3 group-hover:shadow-lg transition-shadow">
+                <Music className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-sm text-muted-foreground">Discover their riffs</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Coming soon</p>
+            </Card>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -63,6 +63,10 @@ import {
   getActivePlaylistSharesByOwner,
   revokePlaylistShare,
   touchPlaylistShare,
+  updateTrackShareSettings,
+  updatePlaylistShareSettings,
+  getTrackShareSettings,
+  getPlaylistShareSettings,
 } from "./db";
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
@@ -313,6 +317,27 @@ const tracksRouter = router({
   myLikes: protectedProcedure.query(async ({ ctx }) => {
     return getLikedTrackIds(ctx.user.id);
   }),
+
+  updateShareSettings: protectedProcedure
+    .input(
+      z.object({
+        trackId: z.number().int(),
+        showLyricsOnShare: z.boolean().optional(),
+        allowRiffsOnShare: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const track = await getTrackById(input.trackId);
+      if (!track || track.userId !== ctx.user.id) {
+        throw new Error("Track not found or not authorized");
+      }
+      const settings: { showLyricsOnShare?: boolean; allowRiffsOnShare?: boolean } = {};
+      if (input.showLyricsOnShare !== undefined) settings.showLyricsOnShare = input.showLyricsOnShare;
+      if (input.allowRiffsOnShare !== undefined) settings.allowRiffsOnShare = input.allowRiffsOnShare;
+      
+      const success = await updateTrackShareSettings(input.trackId, ctx.user.id, settings);
+      return { success };
+    }),
 });
 
 // ─── Friends ──────────────────────────────────────────────────────────────────
@@ -594,6 +619,27 @@ const creatorsRouter = router({
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
         })),
       };
+    }),
+
+  updateShareSettings: protectedProcedure
+    .input(
+      z.object({
+        playlistId: z.number().int(),
+        showLyricsOnShare: z.boolean().optional(),
+        allowRiffsOnShare: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const playlist = await getPlaylistById(input.playlistId);
+      if (!playlist || playlist.userId !== ctx.user.id) {
+        throw new Error("Playlist not found or not authorized");
+      }
+      const settings: { showLyricsOnShare?: boolean; allowRiffsOnShare?: boolean } = {};
+      if (input.showLyricsOnShare !== undefined) settings.showLyricsOnShare = input.showLyricsOnShare;
+      if (input.allowRiffsOnShare !== undefined) settings.allowRiffsOnShare = input.allowRiffsOnShare;
+      
+      const success = await updatePlaylistShareSettings(input.playlistId, ctx.user.id, settings);
+      return { success };
     }),
 });
 

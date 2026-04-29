@@ -489,3 +489,19 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Create /shared/playlists/:token page with card preview design
 - [ ] Add access control — followers/friends only with follow gate
 - [ ] Test share flow end-to-end
+
+## Phase 59: Shared Link Landing Page Redesign (Release Page)
+
+- [x] Add `showLyricsOnShare` and `allowRiffsOnShare` boolean columns to both `tracks` and `playlists` tables (default true)
+- [x] Run schema migration for new columns
+- [x] Add DB helpers: updateTrackShareSettings, updatePlaylistShareSettings
+- [x] Add tRPC procedures: tracks.updateShareSettings, playlists.updateShareSettings
+- [ ] Build creator controls panel in My Riffs track cards — small toggle UI for lyrics/riffs visibility
+- [ ] Build creator controls panel in Playlists page — small toggle UI for lyrics/riffs visibility
+- [x] Redesign SharedPlaylistPage to match release page aesthetic (large centered card, prominent cover art, elegant player)
+- [ ] Redesign TrackPage (individual track share link) to match release page aesthetic
+- [x] Add "More from [Creator]" section to SharedPlaylistPage — show creator's other playlists/tracks as funnel
+- [ ] Add "More from [Creator]" section to TrackPage — show creator's other tracks as funnel
+- [ ] Implement conditional lyrics display on shared pages based on `showLyricsOnShare` toggle
+- [ ] Implement conditional riff button on shared pages based on `allowRiffsOnShare` toggle
+- [ ] Test end-to-end: creator controls → shared page respects settings

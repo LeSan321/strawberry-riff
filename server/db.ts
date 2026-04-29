@@ -881,3 +881,71 @@ export async function touchPlaylistShare(token: string): Promise<void> {
   if (!db) return;
   await db.update(playlistShares).set({ lastViewedAt: new Date() }).where(eq(playlistShares.token, token));
 }
+
+/** Update share settings for a track (lyrics visibility and riff permissions) */
+export async function updateTrackShareSettings(
+  trackId: number,
+  userId: number,
+  settings: { showLyricsOnShare?: boolean; allowRiffsOnShare?: boolean }
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db
+    .update(tracks)
+    .set(settings)
+    .where(and(eq(tracks.id, trackId), eq(tracks.userId, userId)));
+  
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+/** Update share settings for a playlist (lyrics visibility and riff permissions) */
+export async function updatePlaylistShareSettings(
+  playlistId: number,
+  userId: number,
+  settings: { showLyricsOnShare?: boolean; allowRiffsOnShare?: boolean }
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db
+    .update(playlists)
+    .set(settings)
+    .where(and(eq(playlists.id, playlistId), eq(playlists.userId, userId)));
+  
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+/** Get track share settings */
+export async function getTrackShareSettings(trackId: number): Promise<{ showLyricsOnShare: boolean; allowRiffsOnShare: boolean } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const rows = await db
+    .select({
+      showLyricsOnShare: tracks.showLyricsOnShare,
+      allowRiffsOnShare: tracks.allowRiffsOnShare,
+    })
+    .from(tracks)
+    .where(eq(tracks.id, trackId))
+    .limit(1);
+  
+  return rows[0] ?? null;
+}
+
+/** Get playlist share settings */
+export async function getPlaylistShareSettings(playlistId: number): Promise<{ showLyricsOnShare: boolean; allowRiffsOnShare: boolean } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const rows = await db
+    .select({
+      showLyricsOnShare: playlists.showLyricsOnShare,
+      allowRiffsOnShare: playlists.allowRiffsOnShare,
+    })
+    .from(playlists)
+    .where(eq(playlists.id, playlistId))
+    .limit(1);
+  
+  return rows[0] ?? null;
+}

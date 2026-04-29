@@ -63,6 +63,8 @@ export const tracks = mysqlTable("tracks", {
   plays: int("plays").default(0).notNull(),
   gradient: varchar("gradient", { length: 100 }).default("from-pink-400 to-purple-500"),
   coverArtUrl: text("coverArtUrl"),
+  showLyricsOnShare: boolean("showLyricsOnShare").default(true).notNull(),
+  allowRiffsOnShare: boolean("allowRiffsOnShare").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -98,6 +100,8 @@ export const playlists = mysqlTable("playlists", {
   description: text("description"),
   gradient: varchar("gradient", { length: 100 }).default("from-purple-400 to-pink-400"),
   coverArtUrl: text("coverArtUrl"),
+  showLyricsOnShare: boolean("showLyricsOnShare").default(true).notNull(),
+  allowRiffsOnShare: boolean("allowRiffsOnShare").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
