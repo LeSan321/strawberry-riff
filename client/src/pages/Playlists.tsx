@@ -196,7 +196,7 @@ function SortableTrackRow({
         </span>
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{track.title}</p>
+        <p className="text-sm font-medium text-foreground truncate">{track.title}</p>
         {track.artist && <p className="text-xs text-muted-foreground truncate">{track.artist}</p>}
       </div>
       <button

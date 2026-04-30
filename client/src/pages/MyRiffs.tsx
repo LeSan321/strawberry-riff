@@ -430,12 +430,12 @@ function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStat
                           if (e.key === "Enter") handleTitleSave();
                           if (e.key === "Escape") { setTitleDraft(track.title); setEditingTitle(false); }
                         }}
-                        className="font-semibold text-gray-800 text-sm bg-transparent border-b border-pink-400 outline-none w-full min-w-0"
+                        className="font-semibold text-foreground text-sm bg-transparent border-b border-pink-400 outline-none w-full min-w-0"
                         autoFocus
                       />
                     ) : (
                       <button
-                        className="font-semibold text-gray-800 truncate text-left group flex items-center gap-1 hover:text-pink-600 transition-colors w-full min-w-0"
+                        className="font-semibold text-foreground truncate text-left group flex items-center gap-1 hover:text-pink-600 transition-colors w-full min-w-0"
                         onClick={(e) => { e.stopPropagation(); setTitleDraft(track.title); setEditingTitle(true); }}
                         title="Click to rename"
                       >
