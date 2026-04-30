@@ -367,7 +367,7 @@ export async function getPlaylistById(id: number): Promise<Playlist | undefined>
 export async function updatePlaylist(
   id: number,
   userId: number,
-  data: Partial<Pick<Playlist, "title" | "description" | "gradient" | "coverArtUrl">>
+  data: Partial<Pick<Playlist, "title" | "description" | "gradient" | "coverArtUrl" | "visibility">>
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;

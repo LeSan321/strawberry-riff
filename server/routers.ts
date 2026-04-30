@@ -519,6 +519,7 @@ const playlistsRouter = router({
         id: z.number().int(),
         title: z.string().min(1).max(200).optional(),
         description: z.string().max(500).optional(),
+        visibility: z.enum(["private", "inner-circle", "public"]).optional(),
         gradient: z.string().optional(),
         coverArtUrl: z.string().url().optional().or(z.literal("")),
       })
@@ -620,6 +621,15 @@ const playlistsRouter = router({
 
       const pl = await getPlaylistById(share.playlistId);
       if (!pl) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Check playlist visibility
+      if (pl.visibility === "private" && ctx.user.id !== share.ownerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This playlist is private." });
+      }
+      if (pl.visibility === "inner-circle" && ctx.user.id !== share.ownerId) {
+        const following = await isFollowing(ctx.user.id, share.ownerId);
+        if (!following) throw new TRPCError({ code: "FORBIDDEN", message: "You need to follow this creator to view their inner-circle playlist." });
+      }
 
       const trackList = await getPlaylistTracks(share.playlistId);
       const owner = await getUserById(share.ownerId);

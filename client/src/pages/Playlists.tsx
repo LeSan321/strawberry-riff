@@ -218,6 +218,7 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const [editForm, setEditForm] = useState({
     title: playlist.title,
     description: playlist.description ?? "",
+    visibility: (playlist as any).visibility ?? "private",
     gradient: playlist.gradient ?? GRADIENTS[0],
     coverArtUrl: playlist.coverArtUrl ?? "",
   });
@@ -510,6 +511,31 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                 </div>
                 <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverArtChange} />
               </div>
+            </div>
+            <div>
+              <Label>Visibility</Label>
+              <div className="flex gap-2 mt-2">
+                {(["private", "inner-circle", "public"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setEditForm((p) => ({ ...p, visibility: v }))}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      editForm.visibility === v
+                        ? "bg-purple-600 text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {v === "private" ? "🔒 Private" : v === "inner-circle" ? "👥 Friends" : "🌍 Public"}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {editForm.visibility === "private"
+                  ? "Only you can see this playlist."
+                  : editForm.visibility === "inner-circle"
+                  ? "Your followers can see this playlist."
+                  : "Everyone can see this playlist."}
+              </p>
             </div>
             <div>
               <Label>Color</Label>

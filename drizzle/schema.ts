@@ -98,6 +98,7 @@ export const playlists = mysqlTable("playlists", {
   userId: int("userId").notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
+  visibility: mysqlEnum("visibility", ["private", "inner-circle", "public"]).default("private").notNull(),
   gradient: varchar("gradient", { length: 100 }).default("from-purple-400 to-pink-400"),
   coverArtUrl: text("coverArtUrl"),
   showLyricsOnShare: boolean("showLyricsOnShare").default(true).notNull(),

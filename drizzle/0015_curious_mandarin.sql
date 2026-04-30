@@ -1,0 +1,1 @@
+ALTER TABLE `playlists` ADD `visibility` enum('private','inner-circle','public') DEFAULT 'private' NOT NULL;

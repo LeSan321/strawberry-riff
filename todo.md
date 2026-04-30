@@ -517,3 +517,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Add tRPC procedures for trimming and export
 - [x] Integrate both tools into track editor page
 - [x] Test end-to-end: upload track → apply EQ → trim → export (EQ complete, 158 tests passing)
+
+
+## Bug Fix: Playlist Share Links Not Working
+
+- [x] Add visibility enum field to playlists table (private/inner-circle/public, default private)
+- [x] Run schema migration to add visibility column
+- [x] Update updatePlaylist DB helper to include visibility field
+- [x] Add visibility field to playlists.update tRPC procedure
+- [x] Add visibility check to playlists.getShared procedure (enforce access rules)
+- [x] Add visibility toggle UI to Playlists page edit dialog
+- [x] All 158 tests passing
