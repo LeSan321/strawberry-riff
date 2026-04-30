@@ -201,7 +201,7 @@ export default function SharedPlaylistPage() {
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       )}
-                      <span className="relative z-10" onClick={(e) => e.stopPropagation()}>
+                      <span className="relative z-10">
                         {currentTrack?.id === track.id && isPlaying ? (
                           <Pause className="w-6 h-6 text-white" />
                         ) : (
