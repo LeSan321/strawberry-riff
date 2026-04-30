@@ -183,7 +183,13 @@ export default function SharedPlaylistPage() {
                 <Card
                   key={track.id}
                   className="p-4 hover:bg-card/80 transition-all duration-200 cursor-pointer group border border-border/50 hover:border-purple-500/50"
-                  onClick={() => play(track)}
+                  onClick={() => {
+                    if (currentTrack?.id === track.id && isPlaying) {
+                      pause();
+                    } else {
+                      play(track);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-4">
                     {/* Play Button & Cover */}
@@ -195,7 +201,7 @@ export default function SharedPlaylistPage() {
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       )}
-                      <span className="relative z-10">
+                      <span className="relative z-10" onClick={(e) => e.stopPropagation()}>
                         {currentTrack?.id === track.id && isPlaying ? (
                           <Pause className="w-6 h-6 text-white" />
                         ) : (
