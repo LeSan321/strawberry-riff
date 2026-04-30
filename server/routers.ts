@@ -606,16 +606,6 @@ const playlistsRouter = router({
       const share = await getPlaylistShareByToken(input.token);
       if (!share) throw new TRPCError({ code: "NOT_FOUND", message: "This share link is invalid or has been revoked." });
 
-      // Must be logged in
-      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in to view this shared playlist." });
-
-      // Owner can always view their own share
-      if (ctx.user.id !== share.ownerId) {
-        // Check if viewer follows the owner
-        const following = await isFollowing(ctx.user.id, share.ownerId);
-        if (!following) throw new TRPCError({ code: "FORBIDDEN", message: "You need to follow this creator to view their shared playlist." });
-      }
-
       // Touch lastViewedAt
       await touchPlaylistShare(input.token);
 
@@ -623,13 +613,15 @@ const playlistsRouter = router({
       if (!pl) throw new TRPCError({ code: "NOT_FOUND" });
 
       // Check playlist visibility
-      if (pl.visibility === "private" && ctx.user.id !== share.ownerId) {
+      if (pl.visibility === "private" && (!ctx.user || ctx.user.id !== share.ownerId)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "This playlist is private." });
       }
-      if (pl.visibility === "inner-circle" && ctx.user.id !== share.ownerId) {
+      if (pl.visibility === "inner-circle" && (!ctx.user || ctx.user.id !== share.ownerId)) {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in to view this inner-circle playlist." });
         const following = await isFollowing(ctx.user.id, share.ownerId);
         if (!following) throw new TRPCError({ code: "FORBIDDEN", message: "You need to follow this creator to view their inner-circle playlist." });
       }
+      // Public playlists are accessible to anyone with a valid share link
 
       const trackList = await getPlaylistTracks(share.playlistId);
       const owner = await getUserById(share.ownerId);
