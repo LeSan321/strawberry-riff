@@ -355,7 +355,14 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-white truncate">{playlist.title}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-white truncate">{playlist.title}</p>
+                    <span className="text-lg shrink-0">
+                      {(playlist as any).visibility === "public" && "🌍"}
+                      {(playlist as any).visibility === "inner-circle" && "👥"}
+                      {(playlist as any).visibility === "private" && "🔒"}
+                    </span>
+                  </div>
                   <p className="text-xs text-white/70">
                     {playlist.trackCount} {playlist.trackCount === 1 ? "track" : "tracks"}
                   </p>
