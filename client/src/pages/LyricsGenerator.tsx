@@ -116,6 +116,7 @@ function DraftCard({
   onDelete: (id: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
     <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors">
@@ -152,7 +153,7 @@ function DraftCard({
             </Button>
           )}
           <button
-            onClick={() => onDelete(draft.id)}
+            onClick={() => setConfirmDelete(true)}
             className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -174,6 +175,32 @@ function DraftCard({
           </CollapsibleContent>
         </Collapsible>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Draft?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete <strong>{draft.title}</strong>? This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete(draft.id);
+                setConfirmDelete(false);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
