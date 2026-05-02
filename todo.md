@@ -528,3 +528,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add visibility check to playlists.getShared procedure (enforce access rules)
 - [x] Add visibility toggle UI to Playlists page edit dialog
 - [x] All 158 tests passing
+
+
+## Phase 61: Vocal Nuances Bible v2 Integration
+
+- [ ] Update vocal generation system prompt with Vocal Nuances Bible content (genre profiles, emotional expression, imperfection guidance)
+- [ ] Add 8 core vocal archetypes as presets (Intimate Bedroom, Raw Emotional, Soulful Belter, Gritty Rock, Confident Modern Pop, Lo-fi Whisper, Powerful Anthem, Storyteller Folk)
+- [ ] Implement negative prompt master list with automatic inclusion (overly polished, sterile, robotic, perfect pitch, heavy autotune, etc.)
+- [ ] Add vocal archetype selector to Generate page UI (dropdown or fusion-style cards)
+- [ ] Create negative prompt toggles for fine-tuning (polished, autotune, breath sounds, etc.)
+- [ ] Test vocal generation with new presets and compare quality to previous system
+- [ ] Build vocal preset library page for creators to browse, listen, and customize
+- [ ] Document MiniMax 2.6 prompting tips in internal wiki for future reference

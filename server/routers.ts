@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
 import {
   addTrackToPlaylist,
   createPlaylist,
@@ -739,6 +740,16 @@ const musicGenerationRouter = router({
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
         referenceAudioUrl: z.string().url().optional(),
         voiceReferenceUrl: z.string().url().optional(),
+        vocalArchetype: z.enum([
+          "intimate-bedroom",
+          "raw-emotional",
+          "soulful-belter",
+          "gritty-rock",
+          "confident-pop",
+          "lo-fi-whisper",
+          "powerful-anthem",
+          "storyteller-folk",
+        ] as const).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -752,8 +763,17 @@ const musicGenerationRouter = router({
         });
       }
 
-      // Build prompt with intensity prefix
-      const promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+      // Build prompt with intensity prefix and vocal archetype guidance
+      let promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+      
+      // If vocal archetype is specified, enhance prompt with vocal guidance
+      if (input.vocalArchetype) {
+        promptWithIntensity = buildVocalPrompt(
+          promptWithIntensity,
+          input.vocalArchetype as VocalArchetype,
+          true // include negative prompts
+        );
+      }
 
       // Validate parameters
       const validation = validateMusicGenerationParams(promptWithIntensity, input.lyrics);
