@@ -778,7 +778,7 @@ export function GeneratePage() {
     setError(null);
 
     if (!title.trim()) { setError("Title is required"); return; }
-    if (!prompt.trim()) { setError("Prompt is required"); return; }
+    if (!referenceAudioUrl && !prompt.trim()) { setError("Prompt or reference audio is required"); return; }
     if (!lyrics.trim()) { setError("Lyrics are required"); return; }
 
     setIsGenerating(true);
@@ -1148,7 +1148,7 @@ export function GeneratePage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={isGenerating || !!pollingId || !title.trim() || !prompt.trim() || !lyrics.trim() || !!isAtLimit}
+                disabled={isGenerating || !!pollingId || !title.trim() || (!prompt.trim() && !referenceAudioUrl) || !lyrics.trim() || !!isAtLimit}
                 className="w-full"
               >
                 {isGenerating ? (
