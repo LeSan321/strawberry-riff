@@ -544,6 +544,7 @@ export function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
+  const [vocalArchetype, setVocalArchetype] = useState<string>("intimate-bedroom");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
@@ -787,6 +788,7 @@ export function GeneratePage() {
         prompt: prompt.trim(),
         lyrics: lyrics.trim(),
         intensity,
+        vocalArchetype,
         referenceAudioUrl: referenceAudioUrl ?? undefined,
         voiceReferenceUrl: voiceReferenceUrl ?? undefined,
       });
@@ -881,6 +883,27 @@ export function GeneratePage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-xs text-muted-foreground">Guides how the AI interprets your prompt</p>
+              </div>
+
+              {/* Vocal Archetype */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">Vocal Character</label>
+                <Select value={vocalArchetype} onValueChange={setVocalArchetype} disabled={isGenerating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="intimate-bedroom">Intimate Bedroom — Vulnerable, close-mic'd, breathy</SelectItem>
+                    <SelectItem value="raw-emotional">Raw Emotional — Unpolished, honest, imperfect</SelectItem>
+                    <SelectItem value="soulful-belter">Soulful Belter — Powerful, controlled, expressive runs</SelectItem>
+                    <SelectItem value="gritty-rock">Gritty Rock — Strained, energetic, live-feeling</SelectItem>
+                    <SelectItem value="confident-pop">Confident Modern Pop — Polished, produced, layered</SelectItem>
+                    <SelectItem value="lofi-whisper">Lo-Fi Whisper — Intimate, textured, imperfect pitch</SelectItem>
+                    <SelectItem value="powerful-anthem">Powerful Anthem — Soaring, confident, stadium-ready</SelectItem>
+                    <SelectItem value="storyteller-folk">Storyteller Folk — Conversational, natural phrasing, acoustic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">Shapes the vocal's tone, delivery, and production style</p>
               </div>
 
               {/* Reference Audio Panel — Premium only (visible-but-locked for free users) */}
