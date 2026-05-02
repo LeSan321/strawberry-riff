@@ -540,3 +540,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test vocal generation with new presets and compare quality to previous system
 - [ ] Build vocal preset library page for creators to browse, listen, and customize
 - [ ] Document MiniMax 2.6 prompting tips in internal wiki for future reference
+
+
+## Bug: Audio Reference Feature Not Working
+
+- [ ] Audio reference uploads successfully but MiniMax API ignores it
+- [ ] Generated tracks don't match uploaded reference audio at all
+- [ ] Investigate MiniMax API field requirements (refer_music, refer_voice, refer_instrumental)
+- [ ] Check if reference audio URLs need specific format or validation
+- [ ] Verify S3 URLs are accessible to MiniMax API
+- [ ] Review MiniMax API response for error messages about references
+- [ ] Test with MiniMax documentation examples
+- [ ] Validate audio reference feature end-to-end

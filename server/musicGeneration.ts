@@ -97,13 +97,13 @@ export async function startMusicGeneration(
   };
 
   // Attach reference audio if provided
-  // MiniMax API field mapping:
-  // - refer_voice: voice/vocal reference (clone vocal style)
-  // - refer_music: music/style reference (match overall vibe)
-  // - refer_instrumental: instrumental reference (generate without vocals)
-  if (voiceReferenceUrl) body.refer_voice = voiceReferenceUrl;
-  if (referenceAudioUrl) body.refer_music = referenceAudioUrl;
-  if (instrumentalReferenceUrl) body.refer_instrumental = instrumentalReferenceUrl;
+  // MiniMax API field mapping (from docs: song_file, voice_file, instrumental_file):
+  // - voice_file: voice/vocal reference (clone vocal style)
+  // - song_file: music/style reference (match overall vibe)
+  // - instrumental_file: instrumental reference (generate without vocals)
+  if (voiceReferenceUrl) body.voice_file = voiceReferenceUrl;
+  if (referenceAudioUrl) body.song_file = referenceAudioUrl;
+  if (instrumentalReferenceUrl) body.instrumental_file = instrumentalReferenceUrl;
 
   const response = await fetch(`${MINIMAX_API_BASE}/music_generation`, {
     method: "POST",
