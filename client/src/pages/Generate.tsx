@@ -930,58 +930,60 @@ export function GeneratePage() {
                   </div>
                   <p className="text-xs text-muted-foreground">Upload a song you love and the AI will match its vibe, energy, and style.</p>
                 </div>
-              ) : <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Mic2 className="h-4 w-4 text-pink-600" />
-                  <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Upload a song you love and the AI will match its vibe, energy, and style when generating your track.
-                </p>
-                {referenceAudioUrl ? (
-                  <div className="flex items-center gap-2 rounded-md bg-pink-500/10 border border-pink-200 px-3 py-2">
-                    <FileAudio className="h-4 w-4 text-pink-600 shrink-0" />
-                    <span className="text-xs text-pink-800 truncate flex-1">{referenceAudioName}</span>
-                    <button
-                      type="button"
-                      onClick={() => { setReferenceAudioUrl(null); setReferenceAudioName(null); }}
-                      className="text-pink-500 hover:text-pink-700 transition-colors"
-                      title="Remove reference audio"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+              ) : (
+                <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mic2 className="h-4 w-4 text-pink-600" />
+                    <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
                   </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-pink-300 text-pink-700 hover:bg-pink-500/10"
-                    onClick={() => refAudioInputRef.current?.click()}
-                    disabled={isUploadingRef || isGenerating}
-                  >
-                    {isUploadingRef ? (
-                      <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
-                    ) : (
-                      <><Upload className="mr-2 h-3.5 w-3.5" />Upload Reference Song</>  
-                    )}
-                  </Button>
-                )}
-                <input
-                  ref={refAudioInputRef}
-                  type="file"
-                  accept="audio/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleReferenceAudioSelect(file);
-                    e.target.value = "";
-                  }}
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds
-                </p>
-              </div>}
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Upload a song you love and the AI will match its vibe, energy, and style when generating your track.
+                  </p>
+                  {referenceAudioUrl ? (
+                    <div className="flex items-center gap-2 rounded-md bg-pink-500/10 border border-pink-200 px-3 py-2">
+                      <FileAudio className="h-4 w-4 text-pink-600 shrink-0" />
+                      <span className="text-xs text-pink-800 truncate flex-1">{referenceAudioName}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setReferenceAudioUrl(null); setReferenceAudioName(null); }}
+                        className="text-pink-500 hover:text-pink-700 transition-colors"
+                        title="Remove reference audio"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-pink-300 text-pink-700 hover:bg-pink-500/10"
+                      onClick={() => refAudioInputRef.current?.click()}
+                      disabled={isUploadingRef || isGenerating}
+                    >
+                      {isUploadingRef ? (
+                        <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
+                      ) : (
+                        <><Upload className="mr-2 h-3.5 w-3.5" />Upload Reference Song</>  
+                      )}
+                    </Button>
+                  )}
+                  <input
+                    ref={refAudioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleReferenceAudioSelect(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds
+                  </p>
+                </div>
+              )}
 
               {/* Voice Reference Audio Panel — Premium only (visible-but-locked for free users) */}
               {!monthlyUsage?.isPremium ? (
@@ -1007,58 +1009,60 @@ export function GeneratePage() {
                   </div>
                   <p className="text-xs text-muted-foreground">Upload a vocal sample and the AI will generate your song in that voice style.</p>
                 </div>
-              ) : <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Mic2 className="h-4 w-4 text-teal-600" />
-                  <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Upload a vocal sample and the AI will generate your song sung in that voice style — your voice, a character, or any singer.
-                </p>
-                {voiceReferenceUrl ? (
-                  <div className="flex items-center gap-2 rounded-md bg-teal-500/10 border border-teal-200 px-3 py-2">
-                    <FileAudio className="h-4 w-4 text-teal-600 shrink-0" />
-                    <span className="text-xs text-teal-800 truncate flex-1">{voiceReferenceName}</span>
-                    <button
-                      type="button"
-                      onClick={() => { setVoiceReferenceUrl(null); setVoiceReferenceName(null); }}
-                      className="text-teal-500 hover:text-teal-700 transition-colors"
-                      title="Remove voice reference"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+              ) : (
+                <div className="rounded-lg border border-dashed border-teal-300 bg-teal-500/5 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mic2 className="h-4 w-4 text-teal-600" />
+                    <p className="text-sm font-medium text-teal-900">Voice Reference <span className="text-xs font-normal text-teal-600 ml-1">(optional)</span></p>
                   </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-teal-300 text-teal-700 hover:bg-teal-500/10"
-                    onClick={() => voiceRefAudioInputRef.current?.click()}
-                    disabled={isUploadingVoiceRef || isGenerating}
-                  >
-                    {isUploadingVoiceRef ? (
-                      <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
-                    ) : (
-                      <><Upload className="mr-2 h-3.5 w-3.5" />Upload Voice Sample</>
-                    )}
-                  </Button>
-                )}
-                <input
-                  ref={voiceRefAudioInputRef}
-                  type="file"
-                  accept="audio/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleVoiceReferenceSelect(file);
-                    e.target.value = "";
-                  }}
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds of clear vocals
-                </p>
-              </div>}
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Upload a vocal sample and the AI will generate your song sung in that voice style — your voice, a character, or any singer.
+                  </p>
+                  {voiceReferenceUrl ? (
+                    <div className="flex items-center gap-2 rounded-md bg-teal-500/10 border border-teal-200 px-3 py-2">
+                      <FileAudio className="h-4 w-4 text-teal-600 shrink-0" />
+                      <span className="text-xs text-teal-800 truncate flex-1">{voiceReferenceName}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setVoiceReferenceUrl(null); setVoiceReferenceName(null); }}
+                        className="text-teal-500 hover:text-teal-700 transition-colors"
+                        title="Remove voice reference"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-teal-300 text-teal-700 hover:bg-teal-500/10"
+                      onClick={() => voiceRefAudioInputRef.current?.click()}
+                      disabled={isUploadingVoiceRef || isGenerating}
+                    >
+                      {isUploadingVoiceRef ? (
+                        <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Uploading...</>
+                      ) : (
+                        <><Upload className="mr-2 h-3.5 w-3.5" />Upload Voice Sample</>
+                      )}
+                    </Button>
+                  )}
+                  <input
+                    ref={voiceRefAudioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleVoiceReferenceSelect(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds of clear vocals
+                  </p>
+                </div>
+              )}
 
               {/* Surprise Me + Fusion Recipes Buttons */}
               <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">

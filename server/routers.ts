@@ -735,7 +735,7 @@ const musicGenerationRouter = router({
     .input(
       z.object({
         title: z.string().min(1).max(200),
-        prompt: z.string().min(1).max(1000),
+        prompt: z.string().min(1).max(1000).optional(),
         lyrics: z.string().min(1),
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
         referenceAudioUrl: z.string().url().optional(),
@@ -753,6 +753,14 @@ const musicGenerationRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Validate: either prompt or reference audio must be provided
+      if (!input.prompt && !input.referenceAudioUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Either a music style prompt or reference audio is required",
+        });
+      }
+
       // Check monthly generation limit
       const used = await countGenerationsThisMonth(ctx.user.id);
       const limit = ctx.user.isPremium ? Infinity : 5;
@@ -776,7 +784,7 @@ const musicGenerationRouter = router({
         );
       } else {
         // Normal mode: use full music style prompt
-        promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+        promptWithIntensity = buildPromptWithIntensity(input.prompt ?? "", input.intensity as IntensityLevel);
       }
       
       // If vocal archetype is specified, enhance prompt with vocal guidance
@@ -798,7 +806,7 @@ const musicGenerationRouter = router({
       const generationId = await createMusicGeneration({
         userId: ctx.user.id,
         title: input.title,
-        prompt: input.prompt,
+        prompt: input.prompt ?? "",
         lyrics: input.lyrics,
         duration: 0,
         audioUrl: "",
@@ -834,7 +842,7 @@ const musicGenerationRouter = router({
           let visualBriefJson: string | null = null;
           try {
             const brief = await generateVisualBrief({
-              prompt: input.prompt,
+              prompt: input.prompt ?? "",
               lyrics: input.lyrics,
               title: input.title,
             });
