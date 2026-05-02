@@ -764,7 +764,20 @@ const musicGenerationRouter = router({
       }
 
       // Build prompt with intensity prefix and vocal archetype guidance
-      let promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+      // When reference audio is provided, skip the music style prompt and use minimal guidance
+      // (reference audio IS the style instruction)
+      let promptWithIntensity: string;
+      
+      if (input.referenceAudioUrl) {
+        // Reference audio mode: minimal prompt (just intensity + vocal archetype + lyrics context)
+        promptWithIntensity = buildPromptWithIntensity(
+          `Generate music matching the uploaded reference audio style. Lyrics: ${input.lyrics.substring(0, 100)}`,
+          input.intensity as IntensityLevel
+        );
+      } else {
+        // Normal mode: use full music style prompt
+        promptWithIntensity = buildPromptWithIntensity(input.prompt, input.intensity as IntensityLevel);
+      }
       
       // If vocal archetype is specified, enhance prompt with vocal guidance
       if (input.vocalArchetype) {
