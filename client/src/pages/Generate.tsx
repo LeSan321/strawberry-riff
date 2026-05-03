@@ -941,7 +941,7 @@ export function GeneratePage() {
                         <Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                         <div>
                           <p className="font-semibold text-sm">Style Reference Audio is Premium</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Upload a song you love and the AI will match its vibe when generating your track.</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Upload a reference track to influence the style. The AI captures the general vibe rather than exact matching — think of it as inspiration rather than duplication.</p>
                           <a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a>
                         </div>
                       </div>,
@@ -953,7 +953,7 @@ export function GeneratePage() {
                     <Crown className="h-4 w-4 text-amber-500" />
                     <p className="text-sm font-medium text-pink-700">Style Reference Audio <span className="text-xs font-normal text-pink-500 ml-1">Premium</span></p>
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload a song you love and the AI will match its vibe, energy, and style.</p>
+                  <p className="text-xs text-muted-foreground">Upload a reference track for style inspiration. The AI captures the general vibe rather than exact matching — think of it as inspiration rather than duplication.</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-pink-300 bg-pink-500/5 p-4">
@@ -962,7 +962,7 @@ export function GeneratePage() {
                     <p className="text-sm font-medium text-pink-900">Style Reference Audio <span className="text-xs font-normal text-pink-600 ml-1">(optional)</span></p>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Upload a song you love and the AI will match its vibe, energy, and style when generating your track.
+                    Upload a reference track for style inspiration. The AI captures the general vibe rather than exact matching — think of it as inspiration rather than duplication.
                   </p>
                   {referenceAudioUrl ? (
                     <div className="flex items-center gap-2 rounded-md bg-pink-500/10 border border-pink-200 px-3 py-2">
