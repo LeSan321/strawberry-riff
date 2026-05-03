@@ -81,8 +81,9 @@ export async function startMusicGeneration(
   }
 
   console.log(`[MiniMax 2.6] Starting generation: ${prompt.substring(0, 60)}...`);
-  if (referenceAudioUrl) console.log(`[MiniMax 2.6] Using style reference: ${referenceAudioUrl.substring(0, 60)}...`);
-  if (voiceReferenceUrl) console.log(`[MiniMax 2.6] Using voice reference`);
+  if (referenceAudioUrl) console.log(`[MiniMax 2.6] ✓ Using style reference: ${referenceAudioUrl.substring(0, 80)}...`);
+  if (voiceReferenceUrl) console.log(`[MiniMax 2.6] ✓ Using voice reference: ${voiceReferenceUrl.substring(0, 80)}...`);
+  if (!referenceAudioUrl && !voiceReferenceUrl) console.log(`[MiniMax 2.6] ⚠ No reference audio provided (text-only generation)`);
 
   const body: Record<string, unknown> = {
     model: "music-2.6",
@@ -101,10 +102,23 @@ export async function startMusicGeneration(
   // - voice_file: voice/vocal reference (clone vocal style)
   // - song_file: music/style reference (match overall vibe)
   // - instrumental_file: instrumental reference (generate without vocals)
-  if (voiceReferenceUrl) body.voice_file = voiceReferenceUrl;
-  if (referenceAudioUrl) body.song_file = referenceAudioUrl;
-  if (instrumentalReferenceUrl) body.instrumental_file = instrumentalReferenceUrl;
+  if (voiceReferenceUrl) {
+    body.voice_file = voiceReferenceUrl;
+    console.log(`[MiniMax 2.6] Added voice_file to request body`);
+  }
+  if (referenceAudioUrl) {
+    body.song_file = referenceAudioUrl;
+    console.log(`[MiniMax 2.6] Added song_file to request body`);
+  }
+  if (instrumentalReferenceUrl) {
+    body.instrumental_file = instrumentalReferenceUrl;
+    console.log(`[MiniMax 2.6] Added instrumental_file to request body`);
+  }
+  
+  console.log(`[MiniMax 2.6] Request body keys: ${Object.keys(body).join(', ')}`);
+  console.log(`[MiniMax 2.6] Prompt length: ${prompt.length}, Lyrics length: ${lyrics.length}`);
 
+  console.log(`[MiniMax 2.6] Sending request to ${MINIMAX_API_BASE}/music_generation`);
   const response = await fetch(`${MINIMAX_API_BASE}/music_generation`, {
     method: "POST",
     headers: {
@@ -113,9 +127,11 @@ export async function startMusicGeneration(
     },
     body: JSON.stringify(body),
   });
+  console.log(`[MiniMax 2.6] Response status: ${response.status}`);
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`[MiniMax 2.6] ✗ API error ${response.status}: ${errorText}`);
     throw new Error(`MiniMax API error ${response.status}: ${errorText}`);
   }
 

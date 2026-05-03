@@ -545,6 +545,7 @@ export function GeneratePage() {
   const [lyrics, setLyrics] = useState("");
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
   const [vocalArchetype, setVocalArchetype] = useState<string>("intimate-bedroom");
+  const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
@@ -796,6 +797,7 @@ export function GeneratePage() {
         lyrics: lyrics.trim(),
         intensity,
         vocalArchetype,
+        vocalGender,
         referenceAudioUrl: referenceAudioUrl ?? undefined,
         voiceReferenceUrl: voiceReferenceUrl ?? undefined,
       });
@@ -911,6 +913,22 @@ export function GeneratePage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-xs text-muted-foreground">Shapes the vocal's tone, delivery, and production style</p>
+              </div>
+
+              {/* Vocal Gender */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">Vocal Gender</label>
+                <Select value={vocalGender} onValueChange={(val) => setVocalGender(val as "male" | "female" | "neutral")} disabled={isGenerating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="neutral">Neutral — Let AI decide</SelectItem>
+                    <SelectItem value="male">Male Vocals</SelectItem>
+                    <SelectItem value="female">Female Vocals</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">Controls the gender of the generated vocals</p>
               </div>
 
               {/* Reference Audio Panel — Premium only (visible-but-locked for free users) */}

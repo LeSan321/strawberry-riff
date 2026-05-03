@@ -750,6 +750,7 @@ const musicGenerationRouter = router({
           "powerful-anthem",
           "storyteller-folk",
         ] as const).optional(),
+        vocalGender: z.enum(["male", "female", "neutral"] as const).default("neutral"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -777,11 +778,15 @@ const musicGenerationRouter = router({
       let promptWithIntensity: string;
       
       if (input.referenceAudioUrl) {
-        // Reference audio mode: MINIMAL prompt (just intensity, no descriptive text)
+        // Reference audio mode: MINIMAL prompt (just intensity + vocal gender)
         // MiniMax will analyze the song_file and match its style automatically
-        // We only add intensity as a structural guide, not a style override
+        // We only add intensity and vocal gender as structural guides, not style overrides
+        let basePrompt = "";
+        if (input.vocalGender && input.vocalGender !== "neutral") {
+          basePrompt = `Generate with ${input.vocalGender} vocals`;
+        }
         promptWithIntensity = buildPromptWithIntensity(
-          "",  // Empty prompt — let reference audio do the work
+          basePrompt,
           input.intensity as IntensityLevel
         );
       } else {
