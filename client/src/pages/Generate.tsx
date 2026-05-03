@@ -594,6 +594,13 @@ export function GeneratePage() {
     }
   }, []);
 
+  // Auto-fill prompt with reference audio URL when uploaded
+  useEffect(() => {
+    if (referenceAudioUrl) {
+      setPrompt(referenceAudioUrl);
+    }
+  }, [referenceAudioUrl]);
+
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
   const regenerateMutation = trpc.musicGeneration.regenerate.useMutation({
