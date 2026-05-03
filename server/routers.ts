@@ -772,14 +772,16 @@ const musicGenerationRouter = router({
       }
 
       // Build prompt with intensity prefix and vocal archetype guidance
-      // When reference audio is provided, skip the music style prompt and use minimal guidance
-      // (reference audio IS the style instruction)
+      // When reference audio is provided, use MINIMAL prompt to let MiniMax's audio analysis take priority
+      // (reference audio IS the style instruction — text prompt would override it)
       let promptWithIntensity: string;
       
       if (input.referenceAudioUrl) {
-        // Reference audio mode: minimal prompt (just intensity + vocal archetype + lyrics context)
+        // Reference audio mode: MINIMAL prompt (just intensity, no descriptive text)
+        // MiniMax will analyze the song_file and match its style automatically
+        // We only add intensity as a structural guide, not a style override
         promptWithIntensity = buildPromptWithIntensity(
-          `Generate music matching the uploaded reference audio style. Lyrics: ${input.lyrics.substring(0, 100)}`,
+          "",  // Empty prompt — let reference audio do the work
           input.intensity as IntensityLevel
         );
       } else {
