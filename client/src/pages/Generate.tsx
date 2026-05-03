@@ -546,6 +546,7 @@ export function GeneratePage() {
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
   const [vocalArchetype, setVocalArchetype] = useState<string>("intimate-bedroom");
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
+  const [vocalSpectrumValue, setVocalSpectrumValue] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
@@ -798,6 +799,7 @@ export function GeneratePage() {
         intensity,
         vocalArchetype,
         vocalGender,
+        vocalSpectrumValue,
         referenceAudioUrl: referenceAudioUrl ?? undefined,
         voiceReferenceUrl: voiceReferenceUrl ?? undefined,
       });
@@ -929,6 +931,28 @@ export function GeneratePage() {
                   </SelectContent>
                 </Select>
                 <p className="mt-1 text-xs text-muted-foreground">Controls the gender of the generated vocals</p>
+              </div>
+
+              {/* Vocal Spectrum Slider — Fine-tune the vocal character within the selected archetype */}
+              <div>
+                <label className="mb-3 block text-sm font-medium">Vocal Spectrum</label>
+                <div className="space-y-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={vocalSpectrumValue}
+                    onChange={(e) => setVocalSpectrumValue(Number(e.target.value))}
+                    disabled={isGenerating}
+                    className="w-full h-2 bg-gradient-to-r from-purple-300 to-pink-300 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Smooth Soaring</span>
+                    <span>{vocalSpectrumValue}</span>
+                    <span>Gritty Belting</span>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Fine-tune the vocal character within your selected archetype</p>
               </div>
 
               {/* Reference Audio Panel — Premium only (visible-but-locked for free users) */}

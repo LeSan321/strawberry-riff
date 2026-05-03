@@ -552,3 +552,16 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Review MiniMax API response for error messages about references
 - [ ] Test with MiniMax documentation examples
 - [ ] Validate audio reference feature end-to-end
+
+
+## Phase 47: Vocal Spectrum Slider Controls (Premium Feature)
+- [x] Add vocalSpectrumValue column (0-100) to music_generations table and run migration
+- [x] Create server/vocalSpectrumMapper.ts — maps each vocal archetype to spectrum endpoints (e.g., "Powerful Anthem" = "Smooth Soaring ← → Gritty Belting")
+- [x] Update musicGeneration.generate tRPC procedure to accept optional vocalSpectrumValue (0-100)
+- [x] Build Vocal Spectrum Slider UI on Generate page (below Vocal Character preset select)
+- [x] Slider shows endpoint labels dynamically based on selected preset
+- [x] Wire slider value to backend in generate mutation
+- [x] Update startMusicGeneration to include spectrum guidance in prompt (e.g., "Smooth soaring tone" at 0, "Gritty belting tone" at 100)
+- [x] Write Vitest tests for vocalSpectrumMapper and spectrum integration
+- [x] Test with all 8 vocal archetypes to verify spectrum guidance is applied correctly
+- [x] All tests passing

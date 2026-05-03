@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
+import { mapSpectrumToGuidance } from "./vocalSpectrumMapper";
 import {
   addTrackToPlaylist,
   createPlaylist,
@@ -751,6 +752,7 @@ const musicGenerationRouter = router({
           "storyteller-folk",
         ] as const).optional(),
         vocalGender: z.enum(["male", "female", "neutral"] as const).default("neutral"),
+        vocalSpectrumValue: z.number().min(0).max(100).default(50).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -801,6 +803,17 @@ const musicGenerationRouter = router({
           input.vocalArchetype as VocalArchetype,
           true // include negative prompts
         );
+        
+        // Add spectrum guidance if spectrum value is provided
+        if (input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50) {
+          const spectrumGuidance = mapSpectrumToGuidance(
+            input.vocalArchetype as VocalArchetype,
+            input.vocalSpectrumValue
+          );
+          if (spectrumGuidance) {
+            promptWithIntensity = `${promptWithIntensity} ${spectrumGuidance}`;
+          }
+        }
       }
 
       // Validate parameters
@@ -825,6 +838,7 @@ const musicGenerationRouter = router({
         isFavorited: false,
         referenceAudioUrl: input.referenceAudioUrl ?? null,
         voiceReferenceUrl: input.voiceReferenceUrl ?? null,
+        vocalSpectrumValue: input.vocalSpectrumValue ?? 50,
         visualBrief: null,
       });
       if (!generationId) {
@@ -915,6 +929,7 @@ const musicGenerationRouter = router({
       z.object({
         generationId: z.number().int(),
         refinement: z.enum(["more_aggressive", "less_busy", "different_vibe"]),
+        vocalSpectrumValue: z.number().min(0).max(100).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -962,9 +977,10 @@ const musicGenerationRouter = router({
         metadata: null,
         aceStepTaskId: null,
         errorMessage: null,
-         isFavorited: false,
-        referenceAudioUrl: original.referenceAudioUrl ?? null,
-        voiceReferenceUrl: original.voiceReferenceUrl ?? null,
+        isFavorited: false,
+        referenceAudioUrl: original.referenceAudioUrl,
+        voiceReferenceUrl: original.voiceReferenceUrl,
+        vocalSpectrumValue: input.vocalSpectrumValue ?? original.vocalSpectrumValue ?? 50,
         visualBrief: null,
       });
       if (!generationId) {
