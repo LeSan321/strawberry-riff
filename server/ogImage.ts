@@ -14,7 +14,7 @@ export async function generateTrackOGImage(
   const accentPink = "#FF6B9D"; // Strawberry pink accent
   const textWhite = "#FFFFFF";
 
-  // Create SVG with text content
+  // Create SVG with text content - using Helvetica/Arial for better cross-platform rendering
   const svg = `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <!-- Deep plum background -->
@@ -29,32 +29,33 @@ export async function generateTrackOGImage(
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bgGradient)"/>
       
-      <!-- Strawberry icon (simple emoji or SVG representation) -->
-      <text x="100" y="120" font-size="80" text-anchor="start">🍓</text>
+      <!-- Strawberry icon in top-left corner with subtle background circle -->
+      <circle cx="80" cy="80" r="50" fill="${accentPink}" opacity="0.15"/>
+      <text x="80" y="105" font-size="70" text-anchor="middle" dominant-baseline="middle">🍓</text>
       
-      <!-- Strawberry Riff branding -->
-      <text x="100" y="180" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="${accentPink}" text-anchor="start">
+      <!-- Strawberry Riff branding (next to icon) -->
+      <text x="200" y="85" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="bold" fill="${accentPink}" text-anchor="start">
         Strawberry Riff
       </text>
       
-      <!-- Track title -->
-      <text x="100" y="280" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="${textWhite}" text-anchor="start">
-        <tspan x="100" dy="0">${escapeXml(trackTitle.substring(0, 35))}</tspan>
-        ${trackTitle.length > 35 ? `<tspan x="100" dy="70">${escapeXml(trackTitle.substring(35, 70))}</tspan>` : ""}
+      <!-- Track title (larger and more prominent) -->
+      <text x="100" y="280" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="bold" fill="${textWhite}" text-anchor="start">
+        <tspan x="100" dy="0">${escapeXml(trackTitle.substring(0, 30))}</tspan>
+        ${trackTitle.length > 30 ? `<tspan x="100" dy="85">${escapeXml(trackTitle.substring(30, 60))}</tspan>` : ""}
       </text>
       
-      <!-- Artist name -->
-      <text x="100" y="420" font-family="Arial, sans-serif" font-size="32" fill="${accentPink}" text-anchor="start">
+      <!-- Artist name (more prominent) -->
+      <text x="100" y="450" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="600" fill="${accentPink}" text-anchor="start">
         by ${escapeXml(artistName)}
       </text>
       
       <!-- Tagline -->
-      <text x="100" y="550" font-family="Arial, sans-serif" font-size="24" fill="${textWhite}" opacity="0.8" text-anchor="start">
+      <text x="100" y="550" font-family="Helvetica, Arial, sans-serif" font-size="30" fill="${textWhite}" opacity="0.9" text-anchor="start">
         Share Your Vibe. Build Your Tribe.
       </text>
       
       <!-- Decorative accent line -->
-      <line x1="100" y1="600" x2="1100" y2="600" stroke="${accentPink}" stroke-width="3" opacity="0.6"/>
+      <line x1="100" y1="600" x2="1100" y2="600" stroke="${accentPink}" stroke-width="4" opacity="0.7"/>
     </svg>
   `;
 
@@ -93,21 +94,22 @@ export async function generateDefaultOGImage(): Promise<Buffer> {
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bgGradient)"/>
       
-      <!-- Strawberry icon -->
-      <text x="600" y="150" font-size="100" text-anchor="middle">🍓</text>
+      <!-- Strawberry icon with background circle -->
+      <circle cx="600" cy="150" r="70" fill="${accentPink}" opacity="0.15"/>
+      <text x="600" y="180" font-size="100" text-anchor="middle" dominant-baseline="middle">🍓</text>
       
       <!-- Main heading -->
-      <text x="600" y="320" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="${textWhite}" text-anchor="middle">
+      <text x="600" y="340" font-family="Helvetica, Arial, sans-serif" font-size="80" font-weight="bold" fill="${textWhite}" text-anchor="middle">
         Strawberry Riff
       </text>
       
       <!-- Tagline -->
-      <text x="600" y="420" font-family="Arial, sans-serif" font-size="40" fill="${accentPink}" text-anchor="middle">
+      <text x="600" y="440" font-family="Helvetica, Arial, sans-serif" font-size="44" fill="${accentPink}" text-anchor="middle">
         Share Your Vibe. Build Your Tribe.
       </text>
       
       <!-- Subtext -->
-      <text x="600" y="500" font-family="Arial, sans-serif" font-size="28" fill="${textWhite}" opacity="0.8" text-anchor="middle">
+      <text x="600" y="520" font-family="Helvetica, Arial, sans-serif" font-size="32" fill="${textWhite}" opacity="0.8" text-anchor="middle">
         Music made by us. Not markets.
       </text>
     </svg>

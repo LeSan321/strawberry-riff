@@ -583,3 +583,7 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add fallback OG image for homepage and non-track pages
 - [x] Test OG previews on Twitter, Facebook, Discord, Slack, and messaging apps
 - [x] Verify text rendering and color contrast across platforms
+- [x] Fix font rendering issues (switch to system fonts)
+- [x] Add strawberry icon in top-left corner like Suno's group icon
+- [x] Increase text size and contrast for platform preview compatibility
+- [ ] Re-test on Signal, X, Facebook Messenger after fixes
