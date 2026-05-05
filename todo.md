@@ -586,4 +586,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix font rendering issues (switch to system fonts)
 - [x] Add strawberry icon in top-left corner like Suno's group icon
 - [x] Increase text size and contrast for platform preview compatibility
-- [ ] Re-test on Signal, X, Facebook Messenger after fixes
+- [x] Re-test on Signal, X, Facebook Messenger after fixes
+- [x] Implement low-tech strawberry emoji solution in OG meta tags
+- [x] Add strawberry emoji to og:title, og:description, and og:site_name

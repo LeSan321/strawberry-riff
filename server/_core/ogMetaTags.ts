@@ -12,21 +12,22 @@ export function generateTrackOGMetaTags(
     trackTitle
   )}&artist=${encodeURIComponent(artistName)}`;
   const trackUrl = `${origin}/track/${trackId}`;
+  const strawberry = "🍓";
 
   return `
-    <meta property="og:title" content="${escapeHtml(trackTitle)}" />
+    <meta property="og:title" content="${escapeHtml(trackTitle)} ${strawberry}" />
     <meta property="og:description" content="by ${escapeHtml(
       artistName
-    )} • Strawberry Riff - Share Your Vibe. Build Your Tribe." />
+    )} ${strawberry} Strawberry Riff - Share Your Vibe. Build Your Tribe." />
     <meta property="og:image" content="${ogImageUrl}" />
     <meta property="og:url" content="${trackUrl}" />
-    <meta property="og:site_name" content="Strawberry Riff" />
+    <meta property="og:site_name" content="Strawberry Riff ${strawberry}" />
     <meta property="og:type" content="music.song" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${escapeHtml(trackTitle)}" />
+    <meta name="twitter:title" content="${escapeHtml(trackTitle)} ${strawberry}" />
     <meta name="twitter:description" content="by ${escapeHtml(
       artistName
-    )} • Strawberry Riff" />
+    )} ${strawberry} Strawberry Riff" />
     <meta name="twitter:image" content="${ogImageUrl}" />
   `;
 }
@@ -37,16 +38,17 @@ export function generateTrackOGMetaTags(
 export function generateDefaultOGMetaTags(): string {
   const origin = process.env.VITE_FRONTEND_URL || "https://strawberryriff.com";
   const ogImageUrl = `${origin}/api/og-image/default`;
+  const strawberry = "🍓";
 
   return `
-    <meta property="og:title" content="Strawberry Riff" />
-    <meta property="og:description" content="Share Your Vibe. Build Your Tribe. Music made by us. Not markets." />
+    <meta property="og:title" content="Strawberry Riff ${strawberry}" />
+    <meta property="og:description" content="Share Your Vibe. Build Your Tribe. ${strawberry} Music made by us. Not markets." />
     <meta property="og:image" content="${ogImageUrl}" />
-    <meta property="og:site_name" content="Strawberry Riff" />
+    <meta property="og:site_name" content="Strawberry Riff ${strawberry}" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Strawberry Riff" />
-    <meta name="twitter:description" content="Share Your Vibe. Build Your Tribe." />
+    <meta name="twitter:title" content="Strawberry Riff ${strawberry}" />
+    <meta name="twitter:description" content="Share Your Vibe. Build Your Tribe. ${strawberry}" />
     <meta name="twitter:image" content="${ogImageUrl}" />
   `;
 }
