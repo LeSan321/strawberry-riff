@@ -74,7 +74,7 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
+      ? path.resolve(import.meta.dirname, "../", "dist", "public")
       : path.resolve(import.meta.dirname, "public");
   if (!fs.existsSync(distPath)) {
     console.error(
@@ -93,6 +93,50 @@ export function serveStatic(app: Express) {
       }
     },
   }));
+
+  // Inject dynamic OG tags for track shares in production
+  app.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    const trackMatch = url.match(/\/track\/(\d+)/);
+    
+    if (trackMatch) {
+      try {
+        const trackId = parseInt(trackMatch[1]);
+        const { getTrackById } = await import("../db");
+        const track = await getTrackById(trackId);
+        if (track) {
+          const indexPath = path.resolve(distPath, "index.html");
+          let html = await fs.promises.readFile(indexPath, "utf-8");
+          
+          const { generateTrackOGMetaTags } = await import("./ogMetaTags");
+          const ogTags = generateTrackOGMetaTags(
+            track.title,
+            track.artist || "Unknown Artist",
+            trackId,
+            track.coverArtUrl || undefined,
+            track.duration || undefined
+          );
+          
+          // Replace default OG tags with track-specific ones
+          html = html.replace(
+            /(<meta property="og:[^"]*"[^>]*>\s*)*<meta property="og:title"/,
+            ogTags.trim() + '\n    <meta property="og:title"'
+          );
+          
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+          res.setHeader('Content-Type', 'text/html');
+          return res.send(html);
+        }
+      } catch (error) {
+        console.error("[OG Tags] Error injecting track OG tags in production:", error);
+        // Fall through to default behavior on error
+      }
+    }
+    
+    next();
+  });
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {

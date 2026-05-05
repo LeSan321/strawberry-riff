@@ -600,3 +600,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Update vite.ts to pass coverArtUrl and duration to OG tag generator
 - [x] Write comprehensive Vitest tests for OG tag generation (9 tests, all passing)
 - [x] All 206 tests passing
+
+## Phase 51: Fix Production OG Tag Injection (Critical Bug)
+- [x] Identified root cause: production uses serveStatic() which bypasses OG tag injection
+- [x] Development uses setupVite() which injects OG tags (works correctly)
+- [x] Added OG tag injection middleware to serveStatic() function
+- [x] Middleware reads track data, generates OG tags, and injects into HTML before sending
+- [x] Tested on dev server: track-specific OG tags now appear in raw HTML
+- [x] All 206 tests passing
+- [ ] Deploy to production and test with Facebook Sharing Debugger
+- [ ] Verify og:url, og:type, music:duration all appear in crawler response
