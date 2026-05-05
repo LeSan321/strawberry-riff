@@ -38,6 +38,28 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
       );
+      
+      // Inject dynamic OG tags for track shares
+      const trackMatch = url.match(/\/track\/(\d+)/);
+      if (trackMatch) {
+        try {
+          const trackId = parseInt(trackMatch[1]);
+          const { getTrackById } = await import("../db");
+          const track = await getTrackById(trackId);
+          if (track) {
+            const { generateTrackOGMetaTags } = await import("./ogMetaTags");
+            const ogTags = generateTrackOGMetaTags(
+              track.title,
+              track.artist || "Unknown Artist",
+              trackId
+            );
+            template = template.replace("</head>", `${ogTags}</head>`);
+          }
+        } catch (error) {
+          console.error("[OG Tags] Error injecting track OG tags:", error);
+        }
+      }
+      
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {

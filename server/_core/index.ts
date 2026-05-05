@@ -56,6 +56,38 @@ async function startServer() {
   registerStorageProxy(app);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // OG image generation endpoint
+  app.get("/api/og-image/track", async (req, res) => {
+    try {
+      const { title, artist } = req.query;
+      if (!title || !artist) {
+        return res.status(400).json({ error: "Missing title or artist" });
+      }
+      const { generateTrackOGImage } = await import("../ogImage");
+      const imageBuffer = await generateTrackOGImage(
+        String(title),
+        String(artist)
+      );
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(imageBuffer);
+    } catch (error) {
+      console.error("[OG Image] Error generating track image:", error);
+      res.status(500).json({ error: "Failed to generate OG image" });
+    }
+  });
+  app.get("/api/og-image/default", async (req, res) => {
+    try {
+      const { generateDefaultOGImage } = await import("../ogImage");
+      const imageBuffer = await generateDefaultOGImage();
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(imageBuffer);
+    } catch (error) {
+      console.error("[OG Image] Error generating default image:", error);
+      res.status(500).json({ error: "Failed to generate default OG image" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

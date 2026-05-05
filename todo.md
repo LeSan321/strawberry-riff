@@ -574,3 +574,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Verify vocal gender selector is updating state correctly
 - [ ] Confirm vocalGender is being sent in mutation payload
 - [ ] Fix any issues preventing gender selection from working
+
+
+## Phase 49: Branded Open Graph (OG) Preview Cards
+- [x] Create OG image generation endpoint with sharp library
+- [x] Design OG image template with deep plum background, strawberry icon, and text layout
+- [x] Implement dynamic OG meta tags for track share pages
+- [x] Add fallback OG image for homepage and non-track pages
+- [x] Test OG previews on Twitter, Facebook, Discord, Slack, and messaging apps
+- [x] Verify text rendering and color contrast across platforms
