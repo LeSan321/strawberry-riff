@@ -568,12 +568,12 @@ Manus-managed services so the site can run entirely independently long-term.
 
 
 ## Phase 48: Debug Vocal Gender Selector Not Sending Value
-- [ ] Add frontend console.log to capture vocalGender state before mutation
-- [ ] Add backend logging to see what vocalGender value is received
-- [ ] Deploy to production and test through full pipeline
-- [ ] Verify vocal gender selector is updating state correctly
-- [ ] Confirm vocalGender is being sent in mutation payload
-- [ ] Fix any issues preventing gender selection from working
+- [x] Add frontend console.log to capture vocalGender state before mutation
+- [x] Add backend logging to see what vocalGender value is received
+- [x] Deploy to production and test through full pipeline
+- [x] Verify vocal gender selector is updating state correctly
+- [x] Confirm vocalGender is being sent in mutation payload
+- [x] Fix any issues preventing gender selection from working
 
 
 ## Phase 49: Branded Open Graph (OG) Preview Cards
@@ -589,3 +589,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Re-test on Signal, X, Facebook Messenger after fixes
 - [x] Implement low-tech strawberry emoji solution in OG meta tags
 - [x] Add strawberry emoji to og:title, og:description, and og:site_name
+
+## Phase 50: Improved OG Preview Implementation (Grok's Approach)
+- [x] Replace complex image generation with album art URLs (Spotify-style)
+- [x] Add og:type="music.song" for music-native platform formatting
+- [x] Add music-specific metadata tags (music:duration, music:album, music:musician)
+- [x] Add Twitter/X card tags for better X compatibility
+- [x] Include image dimensions (og:image:width, og:image:height)
+- [x] Format duration in description (e.g., "3:45")
+- [x] Update vite.ts to pass coverArtUrl and duration to OG tag generator
+- [x] Write comprehensive Vitest tests for OG tag generation (9 tests, all passing)
+- [x] All 206 tests passing

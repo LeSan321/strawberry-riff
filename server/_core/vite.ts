@@ -51,7 +51,9 @@ export async function setupVite(app: Express, server: Server) {
             const ogTags = generateTrackOGMetaTags(
               track.title,
               track.artist || "Unknown Artist",
-              trackId
+              trackId,
+              track.coverArtUrl || undefined,
+              track.duration || undefined
             );
             template = template.replace("</head>", `${ogTags}</head>`);
           }
