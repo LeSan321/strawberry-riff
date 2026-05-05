@@ -756,6 +756,16 @@ const musicGenerationRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // DEBUG: Log input parameters
+      console.log("[Generate] Input received:", {
+        title: input.title,
+        vocalGender: input.vocalGender,
+        vocalArchetype: input.vocalArchetype,
+        vocalSpectrumValue: input.vocalSpectrumValue,
+        intensity: input.intensity,
+        referenceAudioUrl: input.referenceAudioUrl ? "[URL present]" : "[none]",
+      });
+
       // Validate: either prompt or reference audio must be provided
       if (!input.prompt && !input.referenceAudioUrl) {
         throw new TRPCError({

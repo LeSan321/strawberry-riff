@@ -565,3 +565,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Write Vitest tests for vocalSpectrumMapper and spectrum integration
 - [x] Test with all 8 vocal archetypes to verify spectrum guidance is applied correctly
 - [x] All tests passing
+
+
+## Phase 48: Debug Vocal Gender Selector Not Sending Value
+- [ ] Add frontend console.log to capture vocalGender state before mutation
+- [ ] Add backend logging to see what vocalGender value is received
+- [ ] Deploy to production and test through full pipeline
+- [ ] Verify vocal gender selector is updating state correctly
+- [ ] Confirm vocalGender is being sent in mutation payload
+- [ ] Fix any issues preventing gender selection from working

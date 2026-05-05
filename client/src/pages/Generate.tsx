@@ -792,6 +792,7 @@ export function GeneratePage() {
 
     setIsGenerating(true);
     try {
+      console.log("[Generate] About to send:", { vocalGender, vocalArchetype, vocalSpectrumValue });
       const result = await generateMutation.mutateAsync({
         title: title.trim(),
         prompt: prompt.trim(),
