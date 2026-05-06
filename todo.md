@@ -610,3 +610,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] All 206 tests passing
 - [ ] Deploy to production and test with Facebook Sharing Debugger
 - [ ] Verify og:url, og:type, music:duration all appear in crawler response
+
+## Phase 52: Cover Art Dimension Inference System
+- [x] Build Dimension Inference Engine (15-dimension framework: 5 Energy, 5 Emotion, 5 Culture)
+- [x] Create tRPC router with inferDimensionsForTrack and getDimensions procedures
+- [x] Write 35 comprehensive Vitest tests for dimension inference
+- [x] Wire auto-inference into track publish flow (call inferDimensionsForTrack when track is published)
+- [x] Write tests for auto-inference on track publish (8 tests, all passing)
+- [x] Apply database migration to add coverArtDimensions and musicGenerationId columns
+- [ ] Manual end-to-end testing: generate music → publish track → verify dimensions stored in DB
+- [ ] Display synthesis fingerprint in track details (shows what system inferred)
+- [ ] (Optional) Build refinement slider UI for users to fine-tune dimensions

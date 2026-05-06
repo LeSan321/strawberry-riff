@@ -1079,6 +1079,7 @@ const musicGenerationRouter = router({
       }
       const trackId = await createTrack({
         userId: ctx.user.id,
+        musicGenerationId: input.generationId,
         title: generation.title,
         artist: null,
         genre: null,
@@ -1091,6 +1092,37 @@ const musicGenerationRouter = router({
         gradient: "from-purple-500 to-pink-500",
         coverArtUrl: null,
       });
+
+      // Auto-infer cover art dimensions from the music generation
+      try {
+        const { inferDimensions, serializeDimensions } = await import('./coverArt/dimensionInference');
+        const { getDb } = await import('./db');
+        const { eq } = await import('drizzle-orm');
+        const { musicGenerations, tracks } = await import('../drizzle/schema');
+
+        const db = await getDb();
+        if (db) {
+          const genData = await db.select().from(musicGenerations).where(eq(musicGenerations.id, input.generationId)).limit(1);
+          if (genData[0]) {
+            const gen = genData[0];
+            const metadata = {
+              vocalSpectrum: gen.vocalSpectrumValue ?? 50,
+              visualBrief: gen.visualBrief ?? undefined,
+              prompt: gen.prompt,
+              moodTags: input.moodTags ?? [],
+              genre: undefined,
+              duration: generation.duration,
+              vocalGender: undefined,
+            };
+            const dimensions = inferDimensions(metadata);
+            const serialized = serializeDimensions(dimensions);
+            await db.update(tracks).set({ coverArtDimensions: serialized }).where(eq(tracks.id, trackId));
+          }
+        }
+      } catch (error) {
+        console.warn('[Dimension Inference] Failed to infer dimensions for track:', error);
+      }
+
       return getTrackById(trackId);
     }),
 
