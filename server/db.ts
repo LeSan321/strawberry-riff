@@ -949,3 +949,40 @@ export async function getPlaylistShareSettings(playlistId: number): Promise<{ sh
   
   return rows[0] ?? null;
 }
+
+
+// ─── Cover Art Dimensions ─────────────────────────────────────────────────────
+export async function updateTrackCoverArtDimensions(
+  trackId: number,
+  userId: number,
+  dimensions: string // JSON stringified DimensionInference
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db
+    .update(tracks)
+    .set({
+      coverArtDimensions: dimensions,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(tracks.id, trackId), eq(tracks.userId, userId)));
+
+  return (result as any)[0]?.affectedRows > 0;
+}
+
+export async function getTrackCoverArtDimensions(
+  trackId: number,
+  userId: number
+): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const rows = await db
+    .select({ coverArtDimensions: tracks.coverArtDimensions })
+    .from(tracks)
+    .where(and(eq(tracks.id, trackId), eq(tracks.userId, userId)))
+    .limit(1);
+
+  return rows[0]?.coverArtDimensions ?? null;
+}

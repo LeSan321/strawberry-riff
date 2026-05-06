@@ -74,6 +74,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { ogImageRouter } from "./routers/ogImage";
+import { coverArtRouter } from "./coverArt/router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
@@ -1409,6 +1410,7 @@ export const appRouter = router({
   styleLibrary: styleLibraryRouter,
   previewLinks: previewLinksRouter,
   ogImage: ogImageRouter,
+  coverArt: coverArtRouter,
 });
 
 export type AppRouter = typeof appRouter;

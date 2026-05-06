@@ -48,6 +48,7 @@ export type InsertProfile = typeof profiles.$inferInsert;
 export const tracks = mysqlTable("tracks", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  musicGenerationId: int("musicGenerationId"), // Link to source music generation
   title: varchar("title", { length: 200 }).notNull(),
   artist: varchar("artist", { length: 200 }),
   genre: varchar("genre", { length: 100 }),
@@ -63,6 +64,7 @@ export const tracks = mysqlTable("tracks", {
   plays: int("plays").default(0).notNull(),
   gradient: varchar("gradient", { length: 100 }).default("from-pink-400 to-purple-500"),
   coverArtUrl: text("coverArtUrl"),
+  coverArtDimensions: text("coverArtDimensions"), // JSON: DimensionInference object
   showLyricsOnShare: boolean("showLyricsOnShare").default(true).notNull(),
   allowRiffsOnShare: boolean("allowRiffsOnShare").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -101,6 +103,7 @@ export const playlists = mysqlTable("playlists", {
   visibility: mysqlEnum("visibility", ["private", "inner-circle", "public"]).default("private").notNull(),
   gradient: varchar("gradient", { length: 100 }).default("from-purple-400 to-pink-400"),
   coverArtUrl: text("coverArtUrl"),
+  coverArtDimensions: text("coverArtDimensions"), // JSON: DimensionInference object
   showLyricsOnShare: boolean("showLyricsOnShare").default(true).notNull(),
   allowRiffsOnShare: boolean("allowRiffsOnShare").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
