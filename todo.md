@@ -618,6 +618,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Wire auto-inference into track publish flow (call inferDimensionsForTrack when track is published)
 - [x] Write tests for auto-inference on track publish (8 tests, all passing)
 - [x] Apply database migration to add coverArtDimensions and musicGenerationId columns
+- [x] Update MINIMAX_API_KEY with fresh account credentials
+- [x] Deploy changes via checkpoint
 - [ ] Manual end-to-end testing: generate music → publish track → verify dimensions stored in DB
 - [ ] Display synthesis fingerprint in track details (shows what system inferred)
 - [ ] (Optional) Build refinement slider UI for users to fine-tune dimensions

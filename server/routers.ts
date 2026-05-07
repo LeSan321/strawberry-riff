@@ -859,6 +859,7 @@ const musicGenerationRouter = router({
 
       // Start generation in background (fire-and-forget)
       // Use prompt with intensity prefix, pass reference audio if provided
+      console.log('[Generate] Starting MiniMax generation with prompt:', promptWithIntensity.substring(0, 100));
       startMusicGeneration({
         prompt: promptWithIntensity,
         lyrics: input.lyrics,
@@ -866,6 +867,7 @@ const musicGenerationRouter = router({
         voiceReferenceUrl: input.voiceReferenceUrl,
       })
         .then(async (predictionId) => {
+          console.log('[Generate] Got prediction ID:', predictionId);
           const result = await pollMusicGeneration(predictionId);
           const audioBuffer = await fetchAudioBytes(result.audioUrl);
           const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
@@ -893,7 +895,9 @@ const musicGenerationRouter = router({
         })
         .catch(async (error: unknown) => {
           const raw = error instanceof Error ? error.message : String(error);
+          const stack = error instanceof Error ? error.stack : '';
           console.error(`[Music Generation] Failed for ID ${generationId}:`, raw);
+          console.error(`[Music Generation] Stack:`, stack);
           // Sanitize: never expose raw API errors (keys, credits, internal details) to users
           let userMessage = "Generation failed — the AI service encountered an issue. Please try again.";
           if (raw.toLowerCase().includes("insufficient credit") || raw.includes("402")) {
