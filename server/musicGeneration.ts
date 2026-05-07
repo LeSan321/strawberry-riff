@@ -10,7 +10,7 @@
  * API Docs: https://platform.minimax.io/docs/guides/music-generation
  */
 
-const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY;
+const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY2 || process.env.MINIMAX_API_KEY;
 const MINIMAX_API_BASE = "https://api.minimax.io/v1";
 
 // In-memory store for synchronous hex audio buffers (cleared after retrieval)
