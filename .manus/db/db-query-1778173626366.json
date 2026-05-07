@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, coverArtDimensions, createdAt FROM tracks WHERE userId = 1 ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, coverArtDimensions, createdAt FROM tracks WHERE userId = 1 ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1140001",
+      "title": "API Testing My Soul",
+      "coverArtDimensions": "{\"energyDirection\":\"balanced\",\"energyShape\":\"build\",\"energyTexture\":\"hybrid\",\"energyWeight\":\"heavy\",\"energyPace\":\"steady\",\"emotionStance\":\"joy\",\"emotionResolution\":\"ambiguous\",\"emotionIntensity\":\"subtle\",\"emotionTone\":\"neutral\",\"emotionMovement\":\"cyclical\",\"culturePosition\":\"alongside\",\"cultureAuthenticity\":\"hybrid\",\"cultureDensity\":\"sparse\",\"cultureTemporality\":\"contemporary\",\"cultureReference\":\"universal\",\"confidenceScores\":{\"energyDirection\":0.7,\"energyShape\":0.6,\"energyTexture\":0.65,\"energyWeight\":0.7,\"energyPace\":0.65,\"emotionStance\":0.75,\"emotionResolution\":0.6,\"emotionIntensity\":0.7,\"emotionTone\":0.65,\"emotionMovement\":0.6,\"culturePosition\":0.7,\"cultureAuthenticity\":0.65,\"cultureDensity\":0.6,\"cultureTemporality\":0.75,\"cultureReference\":0.65},\"synthesisFingerprint\":\"This is accessible, joyful music that feels both grounded and uplifting. The neutral presence is warm and inviting, creating a sense of shared celebration. The music maintains equilibrium between energy and ease, making space for both movement and rest.\"}",
+      "createdAt": "2026-05-07 16:56:22"
+    },
+    {
+      "id": "1080003",
+      "title": "Small Town Dreams",
+      "coverArtDimensions": "NULL",
+      "createdAt": "2026-05-04 01:04:01"
+    },
+    {
+      "id": "1080001",
+      "title": "Whisper in the Pines",
+      "coverArtDimensions": "NULL",
+      "createdAt": "2026-05-04 00:16:24"
+    },
+    {
+      "id": "1050001",
+      "title": "Snohomish a Waking Dream",
+      "coverArtDimensions": "NULL",
+      "createdAt": "2026-05-03 21:18:58"
+    },
+    {
+      "id": "1020007",
+      "title": "Snohomish Deep and Wide",
+      "coverArtDimensions": "NULL",
+      "createdAt": "2026-05-03 00:28:49"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tcoverArtDimensions\tcreatedAt\n1140001\tAPI Testing My Soul\t{\"energyDirection\":\"balanced\",\"energyShape\":\"build\",\"energyTexture\":\"hybrid\",\"energyWeight\":\"heavy\",\"energyPace\":\"steady\",\"emotionStance\":\"joy\",\"emotionResolution\":\"ambiguous\",\"emotionIntensity\":\"subtle\",\"emotionTone\":\"neutral\",\"emotionMovement\":\"cyclical\",\"culturePosition\":\"alongside\",\"cultureAuthenticity\":\"hybrid\",\"cultureDensity\":\"sparse\",\"cultureTemporality\":\"contemporary\",\"cultureReference\":\"universal\",\"confidenceScores\":{\"energyDirection\":0.7,\"energyShape\":0.6,\"energyTexture\":0.65,\"energyWeight\":0.7,\"energyPace\":0.65,\"emotionStance\":0.75,\"emotionResolution\":0.6,\"emotionIntensity\":0.7,\"emotionTone\":0.65,\"emotionMovement\":0.6,\"culturePosition\":0.7,\"cultureAuthenticity\":0.65,\"cultureDensity\":0.6,\"cultureTemporality\":0.75,\"cultureReference\":0.65},\"synthesisFingerprint\":\"This is accessible, joyful music that feels both grounded and uplifting. The neutral presence is warm and inviting, creating a sense of shared celebration. The music maintains equilibrium between energy and ease, making space for both movement and rest.\"}\t2026-05-07 16:56:22\n1080003\tSmall Town Dreams\tNULL\t2026-05-04 01:04:01\n1080001\tWhisper in the Pines\tNULL\t2026-05-04 00:16:24\n1050001\tSnohomish a Waking Dream\tNULL\t2026-05-03 21:18:58\n1020007\tSnohomish Deep and Wide\tNULL\t2026-05-03 00:28:49\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

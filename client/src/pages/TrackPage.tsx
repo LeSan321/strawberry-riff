@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
+import { CoverArtDimensionsPanel } from "@/components/CoverArtDimensionsPanel";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { motion } from "framer-motion";
 import {
@@ -281,6 +282,15 @@ export default function TrackPage() {
                     {tag}
                   </Badge>
                 ))}
+              </div>
+            )}
+
+            {/* Cover Art Dimensions */}
+            {fullTrack!.coverArtDimensions && (
+              <div className="mt-6">
+                <CoverArtDimensionsPanel
+                  dimensionsJson={fullTrack!.coverArtDimensions}
+                />
               </div>
             )}
 
