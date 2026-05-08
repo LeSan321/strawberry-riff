@@ -126,7 +126,7 @@ export function CoverArtDimensionsPanel({ dimensionsJson, className }: CoverArtD
           <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-semibold text-foreground">What the system inferred</span>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+            <p className="text-xs text-gray-700 mt-0.5 line-clamp-2">
               {dims.synthesisFingerprint}
             </p>
           </div>
@@ -223,7 +223,7 @@ export function CoverArtDimensionsPanel({ dimensionsJson, className }: CoverArtD
           </div>
 
           {/* Footer hint */}
-          <p className="text-xs text-muted-foreground text-center pt-1">
+          <p className="text-xs text-gray-700 text-center pt-1">
             15-dimension framework • Auto-inferred when track was published
           </p>
         </div>
@@ -265,14 +265,14 @@ function DimensionGroup({
           const score = scores?.[scoreKey] ?? scores?.[item.label.toLowerCase()] ?? null;
           return (
             <div key={item.label} className="flex items-start justify-between gap-2">
-              <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
+              <span className="text-xs text-gray-900 font-medium">{item.label}</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-foreground text-right capitalize">
+                <span className="text-xs font-medium text-gray-900 text-right capitalize">
                   {item.value}
                 </span>
                 {score !== null && (
-                  <div className="w-6 h-4 bg-white rounded-sm border border-gray-200 flex items-center justify-center">
-                    <span className="text-[10px] font-semibold text-gray-600">
+                  <div className="w-6 h-4 bg-white rounded-sm border border-gray-300 flex items-center justify-center">
+                    <span className="text-[10px] font-semibold text-gray-900">
                       {Math.round(score * 100)}%
                     </span>
                   </div>
