@@ -622,4 +622,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Deploy changes via checkpoint
 - [x] Manual end-to-end testing: generate music → publish track → verify dimensions stored in DB
 - [x] Display synthesis fingerprint in track details (shows what system inferred)
+- [x] Add track navigation from Discover to track detail page (CoverArtDimensionsPanel now accessible)
 - [ ] (Optional) Build refinement slider UI for users to fine-tune dimensions

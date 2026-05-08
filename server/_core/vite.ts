@@ -119,7 +119,7 @@ export function serveStatic(app: Express) {
           
           // Replace default OG tags with track-specific ones
           html = html.replace(
-            /(<meta property="og:[^"]*"[^>]*>\s*)*<meta property="og:title"/,
+            /(<meta property="og:[^"]*"[^>]*>\s*)*<meta property="og:title"/g,
             ogTags.trim() + '\n    <meta property="og:title"'
           );
           

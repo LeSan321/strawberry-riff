@@ -83,13 +83,14 @@ function TrackCard({ track, index, queue }: {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: (index % 6) * 0.07 }}
-      className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
-    >
+    <Link href={`/track/${track.id}`}>
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: (index % 6) * 0.07 }}
+        className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+      >
       {/* Cover art / gradient */}
       <div className={`h-40 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
         {track.coverArtUrl && (
@@ -186,7 +187,8 @@ function TrackCard({ track, index, queue }: {
           </div>
         </div>
       </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }
 
