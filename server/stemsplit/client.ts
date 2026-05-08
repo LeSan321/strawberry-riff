@@ -96,13 +96,40 @@ export async function getStemSplitStatus(jobId: string): Promise<StemSplitJob> {
 
 /**
  * Verify webhook signature from StemSplit
- * @param payload - Raw request body
- * @param signature - X-StemSplit-Signature header
+ * @param payload - Raw request body as string
+ * @param signature - X-Webhook-Signature header from StemSplit
  * @returns true if signature is valid
  */
 export function verifyWebhookSignature(payload: string, signature: string): boolean {
-  // TODO: Implement signature verification once StemSplit provides signing key
-  // For now, we'll accept all webhooks (not production-safe)
-  // In production, use HMAC-SHA256 with your webhook secret
-  return true;
+  const crypto = require("crypto");
+  const webhookSecret = process.env.STEMSPLIT_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error("[StemSplit] STEMSPLIT_WEBHOOK_SECRET not configured");
+    return false;
+  }
+
+  if (!signature) {
+    console.error("[StemSplit] No webhook signature provided");
+    return false;
+  }
+
+  try {
+    // Compute the expected signature using HMAC-SHA256
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    // Compare signatures using constant-time comparison to prevent timing attacks
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(expectedSignature),
+      Buffer.from(signature)
+    );
+
+    return isValid;
+  } catch (error) {
+    console.error("[StemSplit] Webhook signature verification failed:", error);
+    return false;
+  }
 }

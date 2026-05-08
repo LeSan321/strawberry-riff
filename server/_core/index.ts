@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../routers/stripe";
+import { handleStemSplitWebhook } from "../stemsplit/webhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -50,6 +51,26 @@ async function startServer() {
   );
 
   // Configure body parser with larger size limit for file uploads
+  // ⚠️ StemSplit webhook MUST use raw body — register BEFORE express.json()
+  app.post(
+    "/api/stemsplit/webhook",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      try {
+        const rawBody = req.body as Buffer;
+        // Create a modified request object with the raw body as string for signature verification
+        const modifiedReq = {
+          ...req,
+          body: rawBody.toString("utf-8"),
+        };
+        await handleStemSplitWebhook(modifiedReq as any, res);
+      } catch (err) {
+        console.error("[StemSplit Webhook] Error:", err);
+        res.status(400).json({ error: "Webhook error" });
+      }
+    }
+  );
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Storage proxy for /manus-storage/* paths
