@@ -165,14 +165,14 @@ export function CoverArtDimensionsPanel({ dimensionsJson, className }: CoverArtD
       {isOpen && (
         <div className="px-5 pb-5 space-y-4 border-t border-purple-100 pt-4">
           {/* Synthesis Fingerprint — full width highlight */}
-          <div className="bg-white/60 border border-purple-200/50 rounded-xl px-4 py-3.5">
+          <div className="bg-white border border-purple-200 rounded-xl px-4 py-3.5">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-purple-600" />
               <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide">
                 Synthesis Fingerprint
               </span>
             </div>
-            <p className="text-sm text-foreground leading-relaxed">
+            <p className="text-sm text-gray-900 leading-relaxed">
               {dims.synthesisFingerprint}
             </p>
           </div>

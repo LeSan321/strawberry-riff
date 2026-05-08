@@ -631,5 +631,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Changed dimension values from text-foreground to text-gray-900 for consistent visibility
 - [x] Updated synthesis fingerprint preview and footer text to text-gray-700
 - [x] Darkened confidence score percentages from text-gray-600 to text-gray-900
-- [x] All text now clearly visible against light pink/purple backgrounds
+- [x] **CRITICAL FIX**: Removed semi-transparent white overlay (`bg-white/60`) from synthesis fingerprint box
+- [x] Changed to solid opaque white background (`bg-white`) and solid border (`border-purple-200`)
+- [x] Updated synthesis fingerprint text to `text-gray-900` for maximum contrast
+- [x] All text now clearly visible against white and light pink/purple backgrounds
 - [x] Verified improvements on dev server with live track page
