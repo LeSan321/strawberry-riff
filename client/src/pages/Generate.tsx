@@ -22,6 +22,7 @@ import {
 import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
+import { StemSplitButton } from "@/components/StemSplitButton";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
@@ -340,7 +341,7 @@ function GenerationCard({
             )}
           </div>
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-1">
+          <div className="mt-2 grid grid-cols-4 gap-1">
             <Button
               size="sm"
               variant="outline"
@@ -368,6 +369,7 @@ function GenerationCard({
             >
               🔄 Vibe
             </Button>
+            <StemSplitButton trackId={gen.id} className="text-xs" />
           </div>
           {gen.visualBrief ? (
             isPremium ? (
