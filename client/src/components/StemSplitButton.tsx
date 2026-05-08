@@ -1,14 +1,16 @@
 /**
  * StemSplit Button Component
  * Initiates stem splitting for a track with loading state and progress animation
+ * Shows mini-mixer when stems are ready
  */
 
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Music, Loader2, Check, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { Music, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { StemMixer } from "./StemMixer";
 
 interface StemSplitButtonProps {
   trackId: number;
@@ -28,6 +30,8 @@ export function StemSplitButton({
   const [isLoading, setIsLoading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [showMixer, setShowMixer] = useState(false);
+  const [completedStems, setCompletedStems] = useState<any>(null);
 
   const startStemSplit = trpc.stemsplit.startStemSplit.useMutation();
   const getStemSplitStatus = trpc.stemsplit.getStemSplitStatus.useQuery(
@@ -48,6 +52,8 @@ export function StemSplitButton({
       setIsPolling(false);
       setIsLoading(false);
       setJobId(null);
+      setCompletedStems(status.stems);
+      setShowMixer(true);
       toast.success("Stem split complete! Your stems are ready.");
       onSplitComplete?.(status.stems);
     } else if (status.status === "failed") {
@@ -81,11 +87,11 @@ export function StemSplitButton({
   return (
     <div className="relative">
       <Button
-        onClick={handleStartSplit}
-        disabled={disabled || isProcessing}
+        onClick={completedStems && !isProcessing ? () => setShowMixer(!showMixer) : handleStartSplit}
+        disabled={disabled || (isProcessing && !completedStems)}
         variant="outline"
         size="sm"
-        className={`gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : ""} ${className}`}
+        className={`gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : completedStems ? "bg-green-500/10 border-green-500/30" : ""} ${className}`}
       >
         {isProcessing ? (
           <>
@@ -96,6 +102,12 @@ export function StemSplitButton({
               <Loader2 className="w-4 h-4" />
             </motion.div>
             <span className="hidden sm:inline">Splitting...</span>
+          </>
+        ) : completedStems ? (
+          <>
+            <Check className="w-4 h-4 text-green-600" />
+            <span className="hidden sm:inline">Mixer</span>
+            {showMixer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </>
         ) : (
           <>
@@ -114,6 +126,21 @@ export function StemSplitButton({
           transition={{ duration: 0.5 }}
         />
       )}
+
+      {/* Stem Mixer */}
+      <AnimatePresence>
+        {showMixer && completedStems && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-full left-0 right-0 mt-2 z-50 w-96 max-w-[calc(100vw-1rem)]"
+          >
+            <StemMixer stems={completedStems} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

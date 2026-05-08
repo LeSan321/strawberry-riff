@@ -657,8 +657,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Build webhook handler (server/stemsplit/webhook.ts) for completion notifications
 - [x] Integrate webhook route at /api/stemsplit/webhook in Express server
 - [x] Write comprehensive webhook handler tests (7 tests passing)
-- [ ] Build tRPC procedures for stem splitting (startStemSplit, getStemSplitStatus, getStemSplits)
-- [ ] Design simple UI flow: "Split into Stems" button with progress animation
-- [ ] Implement mini-mixer UI (mute/solo, basic volume controls)
+- [x] Build tRPC procedures for stem splitting (startStemSplit, getStemSplitStatus, getStemSplits, getTrackStemSplit)
+- [x] Design simple UI flow: "Split into Stems" button with progress animation
+- [x] Implement mini-mixer UI (mute/solo, basic volume controls, volume sliders, download buttons)
+- [x] Create StemMixer component with play/pause, mute, solo, volume, and download controls
+- [x] Integrate StemMixer into StemSplitButton with expandable dropdown
+- [x] Add "Split Stems" button to Generate page next to refinement controls
+- [x] Write 27 comprehensive vitest tests for StemMixer component
 - [ ] Add as optional/premium feature to avoid overwhelming core experience
 - [ ] Consider using isolated vocal stem as reference for music cover feature
