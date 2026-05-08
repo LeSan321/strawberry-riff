@@ -248,3 +248,27 @@ export const playlistShares = mysqlTable("playlist_shares", {
 
 export type PlaylistShare = typeof playlistShares.$inferSelect;
 export type InsertPlaylistShare = typeof playlistShares.$inferInsert;
+
+
+// ─── Stem Splits (audio stem separation jobs) ──────────────────────────────────
+export const stemSplits = mysqlTable("stem_splits", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  trackId: int("trackId").notNull(),
+  jobId: varchar("jobId", { length: 128 }).notNull().unique(), // StemSplit job ID
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  // Stem URLs (populated when job completes)
+  vocalUrl: text("vocalUrl"),
+  drumsUrl: text("drumsUrl"),
+  bassUrl: text("bassUrl"),
+  otherUrl: text("otherUrl"),
+  pianoUrl: text("pianoUrl"),
+  // Metadata
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  expiresAt: timestamp("expiresAt"), // stems may expire after N days
+});
+
+export type StemSplit = typeof stemSplits.$inferSelect;
+export type InsertStemSplit = typeof stemSplits.$inferInsert;

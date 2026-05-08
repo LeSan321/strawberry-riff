@@ -636,3 +636,25 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Updated synthesis fingerprint text to `text-gray-900` for maximum contrast
 - [x] All text now clearly visible against white and light pink/purple backgrounds
 - [x] Verified improvements on dev server with live track page
+
+
+## Backlog — CoverArtDimensionsPanel Visibility Issue (Deferred)
+- [ ] Investigate persistent text visibility issue in CoverArtDimensionsPanel despite contrast fixes
+- [ ] Check for additional CSS layers, inherited opacity, or theme-related issues
+- [ ] May require deeper DOM inspection or browser DevTools debugging
+- [ ] Deferred until full token credits available for thorough investigation
+
+## Phase 54: Stem Splitter Feature (In Progress)
+- [x] Research StemSplit API vs self-hosted Spleeter vs LALAL.AI
+- [x] Evaluate cost/benefit of adding stem separation to Studio
+- [x] Set up StemSplit API key (STEMSPLIT_API_KEY)
+- [x] Create database schema for stem_splits table with 5 stem columns
+- [x] Build StemSplit API client (server/stemsplit/client.ts) with startStemSplit and getStemSplitStatus
+- [x] Implement database helpers (server/stemsplit/db.ts) with full CRUD operations
+- [x] Write comprehensive vitest tests for database helpers (15 tests passing)
+- [ ] Build tRPC procedures for stem splitting (startStemSplit, getStemSplitStatus, getStemSplits)
+- [ ] Create webhook handler at /api/stemsplit/webhook for completion notifications
+- [ ] Design simple UI flow: "Split into Stems" button with progress animation
+- [ ] Implement mini-mixer UI (mute/solo, basic volume controls)
+- [ ] Add as optional/premium feature to avoid overwhelming core experience
+- [ ] Consider using isolated vocal stem as reference for music cover feature
