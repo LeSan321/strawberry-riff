@@ -157,6 +157,7 @@ export const stemsplitRouter = router({
       // Poll the StemSplit API for current status
       try {
         const jobStatus = await getStemSplitStatus(jobId);
+        console.log(`[StemSplit] Job ${jobId} status:`, jobStatus.status);
         
         // If job is complete, update database with stems
         if (jobStatus.status === "COMPLETED" && jobStatus.outputs) {
@@ -195,10 +196,10 @@ export const stemsplitRouter = router({
           };
         }
         
-        // Still processing
+        // Still processing - normalize status to lowercase
         return {
           jobId,
-          status: jobStatus.status,
+          status: jobStatus.status?.toLowerCase() || "processing",
         };
       } catch (error) {
         console.error("[StemSplit] Error getting status:", error);
