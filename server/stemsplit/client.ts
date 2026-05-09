@@ -3,7 +3,7 @@
  * Handles communication with StemSplit API for audio stem separation
  */
 
-const STEMSPLIT_API_BASE = "https://api.stemsplit.co/v1";
+const STEMSPLIT_API_BASE = "https://stemsplit.io/api/v1";
 const STEMSPLIT_API_KEY = process.env.STEMSPLIT_API_KEY;
 
 if (!STEMSPLIT_API_KEY) {
