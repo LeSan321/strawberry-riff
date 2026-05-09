@@ -11,9 +11,10 @@ import { toast } from "sonner";
 import { Music, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StemMixer } from "./StemMixer";
+import { eq } from "drizzle-orm";
 
 interface StemSplitButtonProps {
-  trackId: number;
+  generationId: number;
   onSplitStart?: () => void;
   onSplitComplete?: (stems: any) => void;
   disabled?: boolean;
@@ -21,7 +22,7 @@ interface StemSplitButtonProps {
 }
 
 export function StemSplitButton({
-  trackId,
+  generationId,
   onSplitStart,
   onSplitComplete,
   disabled = false,
@@ -67,7 +68,7 @@ export function StemSplitButton({
   const handleStartSplit = async () => {
     try {
       setIsLoading(true);
-      const result = await startStemSplit.mutateAsync({ trackId });
+      const result = await startStemSplit.mutateAsync({ generationId });
 
       if (result.success) {
         setJobId(result.jobId);

@@ -5,6 +5,7 @@
 
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
+
 import { startStemSplit, getStemSplitStatus } from "../stemsplit/client";
 import {
   createStemSplit,
@@ -23,40 +24,49 @@ export const stemsplitRouter = router({
   startStemSplit: protectedProcedure
     .input(
       z.object({
-        trackId: z.number().int().positive("Track ID must be a positive integer"),
+        generationId: z.number().int().positive("Generation ID must be a positive integer"),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { trackId } = input;
+      const { generationId } = input;
       const userId = ctx.user.id;
 
-      // Verify track exists and belongs to the user
-      const track = await getTrackById(trackId);
-      if (!track) {
-        throw new Error("Track not found");
+      // Verify generation exists and belongs to the user
+      const { getDb } = await import('../db');
+      const { musicGenerations } = await import('../../drizzle/schema');
+      const { eq } = await import('drizzle-orm');
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      const generation = await db
+        .select()
+        .from(musicGenerations)
+        .where(eq(musicGenerations.id, generationId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+
+      if (!generation) {
+        throw new Error("Generation not found");
       }
 
-      if (track.userId !== userId) {
-        throw new Error("You can only split stems for your own tracks");
+      if (generation.userId !== userId) {
+        throw new Error("You can only split stems for your own generations");
       }
 
-      // Check if a stem split is already in progress for this track
-      const existingSplit = await getTrackStemSplit(trackId);
-      if (existingSplit && existingSplit.status === "processing") {
-        throw new Error("A stem split is already in progress for this track");
+      if (generation.status !== "complete") {
+        throw new Error("Generation must be complete before splitting stems");
       }
 
-      // Get the track audio URL
-      if (!track.audioUrl) {
-        throw new Error("Track does not have an audio file");
+      // Get the generation audio URL
+      if (!generation.audioUrl) {
+        throw new Error("Generation does not have an audio file");
       }
 
       try {
         // Start the stem split via StemSplit API
-        const stemSplitJob = await startStemSplit(track.audioUrl);
+        const stemSplitJob = await startStemSplit(generation.audioUrl);
 
-        // Create database record
-        const dbRecord = await createStemSplit(userId, trackId, stemSplitJob.jobId);
+        // Create database record (use generationId as trackId for now)
+        const dbRecord = await createStemSplit(userId, generationId, stemSplitJob.jobId);
 
         return {
           success: true,
@@ -172,25 +182,36 @@ export const stemsplitRouter = router({
   getTrackStemSplit: protectedProcedure
     .input(
       z.object({
-        trackId: z.number().int().positive("Track ID must be a positive integer"),
+        generationId: z.number().int().positive("Generation ID must be a positive integer"),
       })
     )
     .query(async ({ input, ctx }) => {
-      const { trackId } = input;
+      const { generationId } = input;
       const userId = ctx.user.id;
 
-      // Verify track exists and belongs to the user
-      const track = await getTrackById(trackId);
-      if (!track) {
-        throw new Error("Track not found");
+      // Verify generation exists and belongs to the user
+      const { getDb } = await import('../db');
+      const { musicGenerations } = await import('../../drizzle/schema');
+      const { eq } = await import('drizzle-orm');
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      const generation = await db
+        .select()
+        .from(musicGenerations)
+        .where(eq(musicGenerations.id, generationId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+
+      if (!generation) {
+        throw new Error("Generation not found");
       }
 
-      if (track.userId !== userId) {
-        throw new Error("You do not have permission to view this track's stem splits");
+      if (generation.userId !== userId) {
+        throw new Error("You do not have permission to view this generation's stem splits");
       }
 
       try {
-        const stemSplit = await getTrackStemSplit(trackId);
+        const stemSplit = await getTrackStemSplit(generationId);
 
         if (!stemSplit) {
           return null;

@@ -369,7 +369,7 @@ function GenerationCard({
             >
               🔄 Vibe
             </Button>
-            <StemSplitButton trackId={gen.id} className="text-xs" />
+            <StemSplitButton generationId={gen.id} className="text-xs" />
           </div>
           {gen.visualBrief ? (
             isPremium ? (
