@@ -157,6 +157,45 @@ export const stemsplitRouter = router({
       // Poll the StemSplit API for current status
       try {
         const jobStatus = await getStemSplitStatus(jobId);
+        
+        // If job is complete, update database with stems
+        if (jobStatus.status === "COMPLETED" && jobStatus.outputs) {
+          const { updateStemSplitStems, updateStemSplitStatus } = await import('../stemsplit/db');
+          await updateStemSplitStems(jobId, {
+            vocalUrl: jobStatus.outputs.vocals?.url,
+            drumsUrl: jobStatus.outputs.drums?.url,
+            bassUrl: jobStatus.outputs.bass?.url,
+            otherUrl: jobStatus.outputs.other?.url,
+            pianoUrl: jobStatus.outputs.piano?.url,
+          });
+          await updateStemSplitStatus(jobId, "completed");
+          
+          return {
+            jobId,
+            status: "completed",
+            stems: {
+              vocalUrl: jobStatus.outputs.vocals?.url,
+              drumsUrl: jobStatus.outputs.drums?.url,
+              bassUrl: jobStatus.outputs.bass?.url,
+              otherUrl: jobStatus.outputs.other?.url,
+              pianoUrl: jobStatus.outputs.piano?.url,
+            },
+            completedAt: new Date(),
+          };
+        }
+        
+        // If job failed, update database
+        if (jobStatus.status === "FAILED") {
+          const { updateStemSplitStatus } = await import('../stemsplit/db');
+          await updateStemSplitStatus(jobId, "failed");
+          return {
+            jobId,
+            status: "failed",
+            error: jobStatus.errorMessage || "Job failed",
+          };
+        }
+        
+        // Still processing
         return {
           jobId,
           status: jobStatus.status,
