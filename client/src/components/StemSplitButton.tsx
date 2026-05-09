@@ -77,7 +77,7 @@ export function StemSplitButton({
         setJobId(result.jobId);
         setIsPolling(true);
         setShowUpgradePrompt(false);
-        toast.loading("Splitting stems... This may take a few minutes.");
+        toast.info("Splitting stems... This may take a few minutes.");
         onSplitStart?.();
       } else if (result.error === "LIMIT_EXCEEDED") {
         setIsLoading(false);
@@ -153,7 +153,7 @@ export function StemSplitButton({
         />
       )}
 
-      {/* Stem Mixer */}
+      {/* Stem Mixer - Render below button with full width */}
       <AnimatePresence>
         {showMixer && completedStems && (
           <motion.div
@@ -161,7 +161,7 @@ export function StemSplitButton({
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -10, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 w-96 max-w-[calc(100vw-1rem)]"
+            className="mt-3 w-full"
           >
             <StemMixer stems={completedStems} />
           </motion.div>
