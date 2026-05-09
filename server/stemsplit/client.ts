@@ -1,6 +1,7 @@
 /**
  * StemSplit API Client
  * Handles communication with StemSplit API for audio stem separation
+ * API Docs: https://stemsplit.io/api/v1
  */
 
 const STEMSPLIT_API_BASE = "https://stemsplit.io/api/v1";
@@ -12,46 +13,51 @@ if (!STEMSPLIT_API_KEY) {
 
 export interface StemSplitJob {
   id: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  audio_url?: string;
-  stems?: {
-    vocals?: string;
-    drums?: string;
-    bass?: string;
-    other?: string;
-    piano?: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "EXPIRED";
+  progress: number;
+  createdAt: string;
+  completedAt?: string;
+  input?: {
+    fileName: string;
+    durationSeconds: number;
+    fileSizeBytes: number;
   };
-  error?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StemSplitRequest {
-  audio_url: string;
-  stems?: string[]; // e.g., ["vocals", "drums", "bass", "other", "piano"]
-  webhook_url?: string;
+  options?: {
+    outputType: "VOCALS" | "INSTRUMENTAL" | "BOTH" | "FOUR_STEMS" | "SIX_STEMS";
+    quality: "FAST" | "BALANCED" | "BEST";
+    outputFormat: "MP3" | "WAV" | "FLAC";
+  };
+  outputs?: {
+    vocals?: { url: string; expiresAt: string };
+    instrumental?: { url: string; expiresAt: string };
+    drums?: { url: string; expiresAt: string };
+    bass?: { url: string; expiresAt: string };
+    other?: { url: string; expiresAt: string };
+    piano?: { url: string; expiresAt: string };
+    guitar?: { url: string; expiresAt: string };
+    fullAudio?: { url: string; expiresAt: string };
+  };
+  creditsRequired?: number;
+  creditsCharged?: number;
+  errorMessage?: string;
 }
 
 /**
  * Start a stem split job
  * @param audioUrl - URL to the audio file to split
- * @param webhookUrl - Optional webhook URL for completion notifications
  * @returns Job ID and initial status
  */
 export async function startStemSplit(
-  audioUrl: string,
-  webhookUrl?: string
+  audioUrl: string
 ): Promise<{ jobId: string; status: string }> {
-  const payload: StemSplitRequest = {
-    audio_url: audioUrl,
-    stems: ["vocals", "drums", "bass", "other", "piano"],
+  const payload = {
+    sourceUrl: audioUrl,
+    outputType: "FOUR_STEMS", // vocals, drums, bass, other
+    quality: "BALANCED",
+    outputFormat: "MP3",
   };
 
-  if (webhookUrl) {
-    payload.webhook_url = webhookUrl;
-  }
-
-  const response = await fetch(`${STEMSPLIT_API_BASE}/split`, {
+  const response = await fetch(`${STEMSPLIT_API_BASE}/jobs`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${STEMSPLIT_API_KEY}`,
@@ -78,7 +84,7 @@ export async function startStemSplit(
  * @returns Current job status and stems (if completed)
  */
 export async function getStemSplitStatus(jobId: string): Promise<StemSplitJob> {
-  const response = await fetch(`${STEMSPLIT_API_BASE}/split/${jobId}`, {
+  const response = await fetch(`${STEMSPLIT_API_BASE}/jobs/${jobId}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${STEMSPLIT_API_KEY}`,
@@ -95,41 +101,30 @@ export async function getStemSplitStatus(jobId: string): Promise<StemSplitJob> {
 }
 
 /**
- * Verify webhook signature from StemSplit
- * @param payload - Raw request body as string
- * @param signature - X-Webhook-Signature header from StemSplit
- * @returns true if signature is valid
+ * Get credit balance
+ * @returns Current credit balance in seconds and formatted string
  */
-export function verifyWebhookSignature(payload: string, signature: string): boolean {
-  const crypto = require("crypto");
-  const webhookSecret = process.env.STEMSPLIT_WEBHOOK_SECRET;
+export async function getCreditBalance(): Promise<{
+  balanceSeconds: number;
+  balanceMinutes: number;
+  balanceFormatted: string;
+}> {
+  const response = await fetch(`${STEMSPLIT_API_BASE}/balance`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${STEMSPLIT_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+  });
 
-  if (!webhookSecret) {
-    console.error("[StemSplit] STEMSPLIT_WEBHOOK_SECRET not configured");
-    return false;
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`StemSplit API error: ${response.status} - ${error}`);
   }
 
-  if (!signature) {
-    console.error("[StemSplit] No webhook signature provided");
-    return false;
-  }
-
-  try {
-    // Compute the expected signature using HMAC-SHA256
-    const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(payload)
-      .digest("hex");
-
-    // Compare signatures using constant-time comparison to prevent timing attacks
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature),
-      Buffer.from(signature)
-    );
-
-    return isValid;
-  } catch (error) {
-    console.error("[StemSplit] Webhook signature verification failed:", error);
-    return false;
-  }
+  return (await response.json()) as {
+    balanceSeconds: number;
+    balanceMinutes: number;
+    balanceFormatted: string;
+  };
 }
