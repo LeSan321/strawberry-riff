@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Music, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StemMixer } from "./StemMixer";
-import { eq } from "drizzle-orm";
+import { StemSplitUpgradePrompt } from "./StemSplitUpgradePrompt";
 
 interface StemSplitButtonProps {
   generationId: number;
@@ -33,6 +33,9 @@ export function StemSplitButton({
   const [isPolling, setIsPolling] = useState(false);
   const [showMixer, setShowMixer] = useState(false);
   const [completedStems, setCompletedStems] = useState<any>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
+  const [remainingLimit, setRemainingLimit] = useState(0);
 
   const startStemSplit = trpc.stemsplit.startStemSplit.useMutation();
   const getStemSplitStatus = trpc.stemsplit.getStemSplitStatus.useQuery(
@@ -73,8 +76,15 @@ export function StemSplitButton({
       if (result.success) {
         setJobId(result.jobId);
         setIsPolling(true);
+        setShowUpgradePrompt(false);
         toast.loading("Splitting stems... This may take a few minutes.");
         onSplitStart?.();
+      } else if (result.error === "LIMIT_EXCEEDED") {
+        setIsLoading(false);
+        setUpgradeMessage(result.message || "You've reached your monthly stem split limit.");
+        setRemainingLimit(result.remainingThisMonth || 0);
+        setShowUpgradePrompt(true);
+        toast.error("Free tier limit reached");
       }
     } catch (error) {
       setIsLoading(false);
@@ -83,12 +93,27 @@ export function StemSplitButton({
     }
   };
 
+  const handleUpgradeClick = () => {
+    // Navigate to pricing page or open upgrade modal
+    window.location.href = "/pricing";
+  };
+
   const isProcessing = isLoading || isPolling;
 
   return (
     <div className="relative">
+      {showUpgradePrompt && (
+        <div className="mb-3">
+          <StemSplitUpgradePrompt
+            message={upgradeMessage}
+            remainingThisMonth={remainingLimit}
+            onUpgradeClick={handleUpgradeClick}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        </div>
+      )}
       <Button
-        onClick={completedStems && !isProcessing ? () => setShowMixer(!showMixer) : handleStartSplit}
+        onClick={completedStems && !isProcessing ? () => setShowMixer(!showMixer) : () => handleStartSplit()}
         disabled={disabled || (isProcessing && !completedStems)}
         variant="outline"
         size="sm"

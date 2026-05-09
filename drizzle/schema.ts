@@ -272,3 +272,18 @@ export const stemSplits = mysqlTable("stem_splits", {
 
 export type StemSplit = typeof stemSplits.$inferSelect;
 export type InsertStemSplit = typeof stemSplits.$inferInsert;
+
+
+// ─── Stem Split Usage Tracking (for premium gating) ────────────────────────────
+export const stemSplitUsage = mysqlTable("stem_split_usage", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  year: int("year").notNull(), // YYYY
+  month: int("month").notNull(), // 1-12
+  count: int("count").default(0).notNull(), // number of splits this month
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StemSplitUsage = typeof stemSplitUsage.$inferSelect;
+export type InsertStemSplitUsage = typeof stemSplitUsage.$inferInsert;

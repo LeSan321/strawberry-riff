@@ -14,6 +14,7 @@ import {
   getUserStemSplits,
   getTrackStemSplit,
 } from "../stemsplit/db";
+import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
 import { getTrackById } from "../db";
 
 export const stemsplitRouter = router({
@@ -30,6 +31,20 @@ export const stemsplitRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { generationId } = input;
       const userId = ctx.user.id;
+
+      // Check premium gating
+      const premiumCheck = await canPerformStemSplit(userId);
+      if (!premiumCheck.allowed) {
+      return {
+        success: false,
+        error: "LIMIT_EXCEEDED",
+        message: premiumCheck.message,
+        remainingThisMonth: premiumCheck.remainingThisMonth,
+        isPremium: premiumCheck.isPremium,
+        jobId: null,
+        status: null,
+      };
+      }
 
       // Verify generation exists and belongs to the user
       const { getDb } = await import('../db');
@@ -68,12 +83,21 @@ export const stemsplitRouter = router({
         // Create database record (use generationId as trackId for now)
         const dbRecord = await createStemSplit(userId, generationId, stemSplitJob.jobId);
 
-        return {
-          success: true,
-          jobId: stemSplitJob.jobId,
-          status: "pending",
-          message: "Stem split job started",
-        };
+        // Increment usage counter
+        await incrementStemSplitUsage(userId);
+
+        // Get remaining splits for this month
+        const remaining = await getRemainingMonthlyLimit(userId);
+
+      return {
+        success: true,
+        jobId: stemSplitJob.jobId,
+        status: "pending",
+        message: "Stem split job started",
+        remainingThisMonth: remaining,
+        isPremium: premiumCheck.isPremium,
+        error: null,
+      };
       } catch (error) {
         console.error("[StemSplit] Error starting stem split:", error);
         throw new Error("Failed to start stem split: " + (error as Error).message);
@@ -174,6 +198,8 @@ export const stemsplitRouter = router({
       throw new Error("Failed to get stem splits: " + (error as Error).message);
     }
   }),
+
+
 
   /**
    * Get stem split for a specific track
