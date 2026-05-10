@@ -126,3 +126,17 @@ export async function deleteStemSplit(id: number) {
   if (!db) throw new Error("Database connection failed");
   return await db.delete(stemSplits).where(eq(stemSplits.id, id));
 }
+
+/**
+ * Mark a music generation as split
+ */
+export async function markGenerationAsSplit(generationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { musicGenerations } = await import("../../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  return await db
+    .update(musicGenerations)
+    .set({ isSplit: true })
+    .where(eq(musicGenerations.id, generationId));
+}

@@ -666,3 +666,26 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Write 27 comprehensive vitest tests for StemMixer component
 - [ ] Add as optional/premium feature to avoid overwhelming core experience
 - [ ] Consider using isolated vocal stem as reference for music cover feature
+
+
+## Phase 70: Dedicated Stems Studio Page
+
+- [x] Add `is_split` boolean flag to music_generations table (default false)
+- [x] Run migration to add is_split column
+- [x] Create `client/src/pages/StemsStudio.tsx` — full-screen page with theme inheritance
+- [x] Implement theme inheritance: fetch user's studioTheme and apply colors/backgrounds
+- [x] Build Master Mix player (all stems combined, play/pause, volume, progress)
+- [x] Build 5-stem grid layout (Vocals, Drums, Bass, Other, Piano) with individual controls
+- [x] Add individual stem controls: play/pause, volume slider, mute/solo, download button
+- [ ] Implement "Download All as ZIP" functionality with proper file naming
+- [x] Build Past Splits sidebar (collapsible, shows history with dates and track names)
+- [ ] Add click-to-load functionality for past splits (load stems into main view)
+- [x] Add placeholder containers for future Remix and Stem Pack features
+- [x] Add "🚪 Back to Generate" button with door icon
+- [ ] Update Generate page to show "✓ Already Split" badge on generations with is_split=true
+- [x] Update StemSplitButton to set is_split=true when split completes
+- [x] Add route `/stems/:generationId` to App.tsx
+- [x] Wire "View Stems" button from Generate page to navigate to StemsStudio
+- [ ] Test theme inheritance across all four Studio themes (Forest, Cozy Den, Workshop, Rock Room)
+- [ ] Test end-to-end: generate → split → navigate to StemsStudio → verify theme matches
+- [ ] All tests passing

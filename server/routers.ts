@@ -853,6 +853,7 @@ const musicGenerationRouter = router({
         voiceReferenceUrl: input.voiceReferenceUrl ?? null,
         vocalSpectrumValue: input.vocalSpectrumValue ?? 50,
         visualBrief: null,
+        isSplit: false,
       });
       if (!generationId) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });;
@@ -999,6 +1000,7 @@ const musicGenerationRouter = router({
         voiceReferenceUrl: original.voiceReferenceUrl,
         vocalSpectrumValue: input.vocalSpectrumValue ?? original.vocalSpectrumValue ?? 50,
         visualBrief: null,
+        isSplit: false,
       });
       if (!generationId) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });

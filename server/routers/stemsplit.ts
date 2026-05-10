@@ -13,9 +13,10 @@ import {
   getStemSplitById,
   getUserStemSplits,
   getTrackStemSplit,
+  markGenerationAsSplit,
 } from "../stemsplit/db";
 import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
-import { getTrackById } from "../db";
+
 
 export const stemsplitRouter = router({
   /**
@@ -170,6 +171,9 @@ export const stemsplitRouter = router({
             pianoUrl: jobStatus.outputs.piano?.url,
           });
           await updateStemSplitStatus(jobId, "completed");
+          
+          // Mark the generation as split
+          await markGenerationAsSplit(stemSplit.trackId);
           
           return {
             jobId,

@@ -157,6 +157,7 @@ export const musicGenerations = mysqlTable("music_generations", {
   voiceReferenceUrl: text("voiceReferenceUrl"), // Optional voice reference audio URL
   vocalSpectrumValue: int("vocalSpectrumValue").default(50), // 0-100 spectrum slider (0=left endpoint, 100=right endpoint)
   visualBrief: text("visualBrief"), // JSON: auto-generated visual brief (camera, lighting, color, emotion, scene)
+  isSplit: boolean("isSplit").default(false).notNull(), // Track if stems have been split
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

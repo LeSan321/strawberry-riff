@@ -1,0 +1,1 @@
+ALTER TABLE `music_generations` ADD `isSplit` boolean DEFAULT false NOT NULL;

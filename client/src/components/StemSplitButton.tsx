@@ -5,16 +5,18 @@
  */
 
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Music, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Music, Loader2, Check, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StemMixer } from "./StemMixer";
 import { StemSplitUpgradePrompt } from "./StemSplitUpgradePrompt";
 
 interface StemSplitButtonProps {
   generationId: number;
+  isSplit?: boolean;
   onSplitStart?: () => void;
   onSplitComplete?: (stems: any) => void;
   disabled?: boolean;
@@ -23,11 +25,13 @@ interface StemSplitButtonProps {
 
 export function StemSplitButton({
   generationId,
+  isSplit = false,
   onSplitStart,
   onSplitComplete,
   disabled = false,
   className = "",
 }: StemSplitButtonProps) {
+  const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
@@ -100,6 +104,10 @@ export function StemSplitButton({
 
   const isProcessing = isLoading || isPolling;
 
+  const handleViewStems = () => {
+    navigate(`/stems/${generationId}`);
+  };
+
   return (
     <div className="relative">
       {showUpgradePrompt && (
@@ -112,36 +120,50 @@ export function StemSplitButton({
           />
         </div>
       )}
-      <Button
-        onClick={completedStems && !isProcessing ? () => setShowMixer(!showMixer) : () => handleStartSplit()}
-        disabled={disabled || (isProcessing && !completedStems)}
-        variant="outline"
-        size="sm"
-        className={`gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : completedStems ? "bg-green-500/10 border-green-500/30" : ""} ${className}`}
-      >
-        {isProcessing ? (
-          <>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Loader2 className="w-4 h-4" />
-            </motion.div>
-            <span className="hidden sm:inline">Splitting...</span>
-          </>
-        ) : completedStems ? (
-          <>
-            <Check className="w-4 h-4 text-green-600" />
-            <span className="hidden sm:inline">Mixer</span>
-            {showMixer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </>
-        ) : (
-          <>
-            <Music className="w-4 h-4" />
-            <span className="hidden sm:inline">Split Stems</span>
-          </>
-        )}
-      </Button>
+      {/* If already split, show View Stems button instead */}
+      {isSplit && !isProcessing && !completedStems ? (
+        <Button
+          onClick={handleViewStems}
+          variant="outline"
+          size="sm"
+          className={`gap-2 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 ${className}`}
+        >
+          <Check className="w-4 h-4 text-emerald-600" />
+          <span className="hidden sm:inline">View Stems</span>
+          <ArrowRight className="w-3 h-3" />
+        </Button>
+      ) : (
+        <Button
+          onClick={completedStems && !isProcessing ? () => setShowMixer(!showMixer) : () => handleStartSplit()}
+          disabled={disabled || (isProcessing && !completedStems)}
+          variant="outline"
+          size="sm"
+          className={`gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : completedStems ? "bg-green-500/10 border-green-500/30" : ""} ${className}`}
+        >
+          {isProcessing ? (
+            <>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Loader2 className="w-4 h-4" />
+              </motion.div>
+              <span className="hidden sm:inline">Splitting...</span>
+            </>
+          ) : completedStems ? (
+            <>
+              <Check className="w-4 h-4 text-green-600" />
+              <span className="hidden sm:inline">Mixer</span>
+              {showMixer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </>
+          ) : (
+            <>
+              <Music className="w-4 h-4" />
+              <span className="hidden sm:inline">Split Stems</span>
+            </>
+          )}
+        </Button>
+      )}
 
       {/* Progress indicator */}
       {isProcessing && (

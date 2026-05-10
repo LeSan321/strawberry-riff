@@ -6,7 +6,7 @@
 
 import { Request, Response } from "express";
 import { createHmac } from "crypto";
-import { getStemSplitByJobId, updateStemSplitStems, updateStemSplitStatus } from "./db";
+import { getStemSplitByJobId, updateStemSplitStems, updateStemSplitStatus, markGenerationAsSplit } from "./db";
 
 const STEMSPLIT_WEBHOOK_SECRET = process.env.STEMSPLIT_WEBHOOK_SECRET;
 
@@ -121,6 +121,9 @@ export async function handleStemSplitWebhook(req: Request, res: Response) {
       // Update database with stem URLs
       await updateStemSplitStems(data.jobId, stems);
       await updateStemSplitStatus(data.jobId, "completed");
+      
+      // Mark the generation as split
+      await markGenerationAsSplit(stemSplit.trackId);
 
       console.log(`[StemSplit Webhook] ✓ Stems saved for job ${data.jobId}`);
       return res.json({ verified: true, status: "completed" });

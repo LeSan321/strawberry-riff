@@ -24,12 +24,14 @@ import Studio from "./pages/Studio";
 import { StyleLibrary } from "./pages/StyleLibrary";
 import PreviewPage from "./pages/PreviewPage";
 import SharedPlaylistPage from "./pages/SharedPlaylistPage";
+import { StemsStudio } from "./pages/StemsStudio";
 
 function Router() {
   return (
     <Switch>
-      {/* Studio, Style Library, Preview, and Shared Playlist are full-screen — outside AppLayout */}
+      {/* Studio, Style Library, Preview, Shared Playlist, and Stems Studio are full-screen — outside AppLayout */}
       <Route path="/studio" component={Studio} />
+      <Route path="/stems/:generationId" component={StemsStudio} />
       <Route path="/style-library" component={StyleLibrary} />
       <Route path="/preview/:token" component={PreviewPage} />
       <Route path="/shared/playlists/:token" component={SharedPlaylistPage} />
