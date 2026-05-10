@@ -21,6 +21,7 @@ import {
   Check,
   Library,
   Home,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -184,8 +185,8 @@ function StudioSidebar({
   onOpenThemePicker,
   onOpenFusions,
 }: {
-  activeTool: "generate" | "lyrics" | "styles";
-  onToolChange: (t: "generate" | "lyrics" | "styles") => void;
+  activeTool: "generate" | "lyrics" | "styles" | "stems";
+  onToolChange: (t: "generate" | "lyrics" | "styles" | "stems") => void;
   theme: typeof STUDIO_THEMES[0];
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
@@ -199,6 +200,7 @@ function StudioSidebar({
     { id: "generate" as const, label: "Generate", icon: Music, desc: "AI music creation" },
     { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Writer's Bible" },
     { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
+    { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
   ];
 
   return (
@@ -334,7 +336,7 @@ function StudioContextPanel({
   onClose,
 }: {
   theme: typeof STUDIO_THEMES[0];
-  activeTool: "generate" | "lyrics" | "styles";
+  activeTool: "generate" | "lyrics" | "styles" | "stems";
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -539,7 +541,7 @@ function StudioHeader({
 // ─── Main Studio Page ──────────────────────────────────────────────────────────
 export default function Studio() {
   const { user, isAuthenticated } = useAuth();
-  const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles">("generate");
+  const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles" | "stems">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
@@ -662,8 +664,15 @@ export default function Studio() {
                 <GeneratePage />
               ) : activeTool === "lyrics" ? (
                 <LyricsGeneratorPage />
-              ) : (
+              ) : activeTool === "styles" ? (
                 <StyleLibrary />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Download className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">My Stems coming soon</p>
+                  </div>
+                </div>
               )}
             </motion.div>
           </AnimatePresence>

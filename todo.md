@@ -689,3 +689,41 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test theme inheritance across all four Studio themes (Forest, Cozy Den, Workshop, Rock Room)
 - [ ] Test end-to-end: generate → split → navigate to StemsStudio → verify theme matches
 - [ ] All tests passing
+
+
+## Phase 71: Fix StemSplitButton and Add Track Detail Page
+
+### UI Fixes
+- [x] Fix StemSplitButton text truncation — expand button width or use icon-only on small screens
+- [x] Query isSplit flag from database on Generate page load to persist "View Stems" button across refreshes
+- [x] Add tRPC procedure to fetch musicGeneration by ID with isSplit flag
+- [x] Update StemSplitButton to check database isSplit status on mount
+
+### Track Detail Page
+- [x] Create `client/src/pages/TrackDetail.tsx` page showing:
+  - Full track title and metadata
+  - Full lyrics display
+  - Music Style Prompt details
+  - Playback controls (player from right column)
+  - Stems section (if isSplit=true, show StemsStudio-like view)
+  - Edit/Re-generate/Publish buttons
+  - Share button
+- [x] Add route `/track-detail/:generationId` to App.tsx
+- [x] Make track title in Generate page clickable → navigate to `/track-detail/:generationId`
+- [x] Make track title in right column card clickable → navigate to `/track-detail/:generationId`
+
+### My Stems Sidebar
+- [x] Add "My Stems" button to left sidebar (after "My Styles")
+- [ ] Create `client/src/pages/MyStemsSidebar.tsx` or modal showing:
+  - List of all past splits with dates
+  - Track title and thumbnail
+  - Quick play button
+  - Click to navigate to Stems Studio page
+- [ ] Add route `/my-stems` to App.tsx
+- [ ] Add tRPC procedure to fetch all musicGenerations where isSplit=true for current user
+
+### Testing
+- [ ] Test StemSplitButton persistence after page refresh
+- [ ] Test all three access points: right column button, sidebar, track detail
+- [ ] Test theme inheritance on Track Detail page
+- [ ] Verify isSplit flag updates correctly after split completes

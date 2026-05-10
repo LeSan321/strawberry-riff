@@ -130,7 +130,8 @@ export function StemSplitButton({
         >
           <Check className="w-4 h-4 text-emerald-600" />
           <span className="hidden sm:inline">View Stems</span>
-          <ArrowRight className="w-3 h-3" />
+          <span className="sm:hidden">Stems</span>
+          <ArrowRight className="w-3 h-3 hidden sm:inline" />
         </Button>
       ) : (
         <Button
@@ -149,17 +150,20 @@ export function StemSplitButton({
                 <Loader2 className="w-4 h-4" />
               </motion.div>
               <span className="hidden sm:inline">Splitting...</span>
+              <span className="sm:hidden text-xs">...</span>
             </>
           ) : completedStems ? (
             <>
               <Check className="w-4 h-4 text-green-600" />
               <span className="hidden sm:inline">Mixer</span>
+              <span className="sm:hidden">Mix</span>
               {showMixer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </>
           ) : (
             <>
               <Music className="w-4 h-4" />
               <span className="hidden sm:inline">Split Stems</span>
+              <span className="sm:hidden">Split</span>
             </>
           )}
         </Button>

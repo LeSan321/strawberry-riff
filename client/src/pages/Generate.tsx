@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -197,8 +198,9 @@ function GenerationCard({
         ) : (
           <button
             className="font-medium truncate flex-1 text-left group flex items-center gap-1 hover:text-pink-600 transition-colors"
-            onClick={() => { setTitleDraft(gen.title); setEditingTitle(true); }}
-            title="Click to rename"
+            onClick={() => navigate(`/track-detail/${gen.id}`)}
+            onDoubleClick={() => { setTitleDraft(gen.title); setEditingTitle(true); }}
+            title="Click to view details, double-click to rename"
           >
             <span className="truncate">{titleDraft !== gen.title ? titleDraft : gen.title}</span>
             <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
@@ -369,7 +371,7 @@ function GenerationCard({
             >
               🔄 Vibe
             </Button>
-            <StemSplitButton generationId={gen.id} className="text-xs" />
+            <StemSplitButton generationId={gen.id} isSplit={gen.isSplit ?? false} className="text-xs" />
           </div>
           {gen.visualBrief ? (
             isPremium ? (
