@@ -13,14 +13,12 @@ import {
   Volume2,
   Download,
   Music,
-  Clock,
-  ChevronDown,
-  ChevronUp,
   Loader,
   AlertCircle,
-  Volume1,
-  Volume,
+  ArrowLeft,
+  Clock,
 } from "lucide-react";
+import WaveSurfer from "wavesurfer.js";
 
 // ─── Studio Theme Definitions (mirrored from Studio.tsx) ─────────────────────
 const STUDIO_THEMES = [
@@ -79,28 +77,30 @@ interface StemData {
   emoji: string;
   url?: string;
   color: string;
-  gradient: string;
-}
-
-interface StemPlayerState {
-  [key: string]: {
-    isPlaying: boolean;
-    volume: number;
-    isMuted: boolean;
-    isSolo: boolean;
-  };
+  description: string;
+  waveformColor: string;
 }
 
 export function StemsStudio() {
   const { generationId } = useParams<{ generationId: string }>();
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const [isPlayingMaster, setIsPlayingMaster] = useState(false);
+
+  // Waveform refs
+  const masterWaveRef = useRef<HTMLDivElement>(null);
+  const stemWaveRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const waveSurferInstances = useRef<{ [key: string]: WaveSurfer | null }>({});
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
+
+  // State
   const [masterVolume, setMasterVolume] = useState(100);
-  const [showPastSplits, setShowPastSplits] = useState(false);
-  const [stemStates, setStemStates] = useState<StemPlayerState>({});
-  const masterAudioRef = useRef<HTMLAudioElement>(null);
-  const stemAudioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
+  const [stemVolumes, setStemVolumes] = useState<{ [key: string]: number }>({
+    Vocals: 100,
+    Drums: 100,
+    Bass: 100,
+    Other: 100,
+    Piano: 100,
+  });
 
   // Get user's theme preference
   const { data: studioPrefs } = trpc.studio.getPreferences.useQuery();
@@ -117,24 +117,125 @@ export function StemsStudio() {
     id: parseInt(generationId || "0"),
   });
 
-  // Get user's stem splits history
-  const { data: stemSplits } = trpc.stemsplit.getUserStemSplits.useQuery();
+  // Build stem data array
+  const stems: StemData[] = [
+    {
+      name: "Vocals",
+      emoji: "🎤",
+      url: stemSplit?.stems?.vocalUrl || undefined,
+      color: "from-pink-500 to-rose-500",
+      description: "Isolated voice track",
+      waveformColor: "#ec4899",
+    },
+    {
+      name: "Instrumental",
+      emoji: "🎸",
+      url: stemSplit?.stems?.otherUrl || undefined,
+      color: "from-green-500 to-emerald-500",
+      description: "Music without vocals",
+      waveformColor: "#10b981",
+    },
+    {
+      name: "Drums",
+      emoji: "🥁",
+      url: stemSplit?.stems?.drumsUrl || undefined,
+      color: "from-orange-500 to-yellow-500",
+      description: "Percussion and rhythm",
+      waveformColor: "#f97316",
+    },
+    {
+      name: "Bass",
+      emoji: "🎹",
+      url: stemSplit?.stems?.bassUrl || undefined,
+      color: "from-purple-500 to-indigo-500",
+      description: "Bass guitar and low frequencies",
+      waveformColor: "#a855f7",
+    },
+    {
+      name: "Other",
+      emoji: "🎺",
+      url: stemSplit?.stems?.pianoUrl || undefined,
+      color: "from-cyan-500 to-blue-500",
+      description: "Remaining instruments",
+      waveformColor: "#06b6d4",
+    },
+  ];
 
-  // Initialize stem states
+  // Initialize waveforms
   useEffect(() => {
-    if (stemSplit?.stems) {
-      const initialStates: StemPlayerState = {};
-      ["Vocals", "Drums", "Bass", "Other", "Piano"].forEach((name) => {
-        initialStates[name] = {
-          isPlaying: false,
-          volume: 100,
-          isMuted: false,
-          isSolo: false,
-        };
+    if (!stemSplit?.stems) return;
+
+    stems.forEach((stem) => {
+      if (!stem.url) return;
+
+      const container = stemWaveRefs.current[stem.name];
+      if (!container || waveSurferInstances.current[stem.name]) return;
+
+      const waveSurfer = WaveSurfer.create({
+        container: container,
+        waveColor: stem.waveformColor,
+        progressColor: "#ffffff",
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+        height: 60,
+        normalize: true,
+        cursorColor: "#ffffff",
+        cursorWidth: 2,
       });
-      setStemStates(initialStates);
+
+      waveSurfer.load(stem.url);
+      waveSurferInstances.current[stem.name] = waveSurfer;
+
+      // Sync volume
+      waveSurfer.setVolume(stemVolumes[stem.name] / 100);
+    });
+
+    return () => {
+      Object.values(waveSurferInstances.current).forEach((ws) => {
+        if (ws) ws.destroy();
+      });
+      waveSurferInstances.current = {};
+    };
+  }, [stemSplit?.stems]);
+
+  // Update volumes
+  useEffect(() => {
+    Object.entries(stemVolumes).forEach(([stemName, volume]) => {
+      const ws = waveSurferInstances.current[stemName];
+      if (ws) {
+        ws.setVolume(volume / 100);
+      }
+    });
+  }, [stemVolumes]);
+
+  const handleDownloadAll = async () => {
+    if (!generation) return;
+    try {
+      await downloadAllStems(parseInt(generationId || "0"), generation.title);
+    } catch (error) {
+      toast.error("Failed to download stems");
     }
-  }, [stemSplit]);
+  };
+
+  const handleStemPlay = (stemName: string) => {
+    const ws = waveSurferInstances.current[stemName];
+    if (ws) {
+      ws.playPause();
+    }
+  };
+
+  // Calculate expiration date (30 days from creation)
+  const calculateExpiration = () => {
+    if (!generation?.createdAt) return null;
+    const createdDate = new Date(generation.createdAt);
+    const expirationDate = new Date(createdDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const daysRemaining = Math.ceil((expirationDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+    return { expirationDate, daysRemaining };
+  };
+
+  const expiration = calculateExpiration();
 
   if (!user) {
     return (
@@ -176,409 +277,173 @@ export function StemsStudio() {
     );
   }
 
-  // Build stem data array
-  const stems: StemData[] = [
-    {
-      name: "Vocals",
-      emoji: "🎤",
-      url: stemSplit.stems?.vocalUrl || undefined,
-      color: "from-pink-500 to-rose-500",
-      gradient: "bg-gradient-to-br from-pink-500/20 to-rose-500/20",
-    },
-    {
-      name: "Drums",
-      emoji: "🥁",
-      url: stemSplit.stems?.drumsUrl || undefined,
-      color: "from-orange-500 to-yellow-500",
-      gradient: "bg-gradient-to-br from-orange-500/20 to-yellow-500/20",
-    },
-    {
-      name: "Bass",
-      emoji: "🎸",
-      url: stemSplit.stems?.bassUrl || undefined,
-      color: "from-purple-500 to-indigo-500",
-      gradient: "bg-gradient-to-br from-purple-500/20 to-indigo-500/20",
-    },
-    {
-      name: "Other",
-      emoji: "🎹",
-      url: stemSplit.stems?.otherUrl || undefined,
-      color: "from-cyan-500 to-blue-500",
-      gradient: "bg-gradient-to-br from-cyan-500/20 to-blue-500/20",
-    },
-    {
-      name: "Piano",
-      emoji: "🎺",
-      url: stemSplit.stems?.pianoUrl || undefined,
-      color: "from-green-500 to-emerald-500",
-      gradient: "bg-gradient-to-br from-green-500/20 to-emerald-500/20",
-    },
-  ];
-
-  const handleMasterPlay = () => {
-    if (masterAudioRef.current) {
-      if (isPlayingMaster) {
-        masterAudioRef.current.pause();
-      } else {
-        masterAudioRef.current.play();
-      }
-      setIsPlayingMaster(!isPlayingMaster);
-    }
-  };
-
-  const handleStemPlay = (stemName: string) => {
-    const audio = stemAudioRefs.current[stemName];
-    if (audio) {
-      if (audio.paused) {
-        audio.play();
-        setStemStates((prev) => ({
-          ...prev,
-          [stemName]: { ...prev[stemName], isPlaying: true },
-        }));
-      } else {
-        audio.pause();
-        setStemStates((prev) => ({
-          ...prev,
-          [stemName]: { ...prev[stemName], isPlaying: false },
-        }));
-      }
-    }
-  };
-
-  const handleStemVolume = (stemName: string, volume: number) => {
-    const audio = stemAudioRefs.current[stemName];
-    if (audio) {
-      audio.volume = volume / 100;
-      setStemStates((prev) => ({
-        ...prev,
-        [stemName]: { ...prev[stemName], volume },
-      }));
-    }
-  };
-
-  const handleStemMute = (stemName: string) => {
-    const audio = stemAudioRefs.current[stemName];
-    if (audio) {
-      const isMuted = !stemStates[stemName]?.isMuted;
-      audio.muted = isMuted;
-      setStemStates((prev) => ({
-        ...prev,
-        [stemName]: { ...prev[stemName], isMuted },
-      }));
-    }
-  };
-
-  const handleDownloadStem = (stem: StemData) => {
-    if (!stem.url) {
-      toast.error("Stem URL not available");
-      return;
-    }
-
-    const link = document.createElement("a");
-    link.href = stem.url;
-    link.download = `${stem.name}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Downloaded ${stem.name}`);
-  };
-
-  const handleDownloadAll = async () => {
-    if (!generationId) {
-      toast.error("Generation ID not found");
-      return;
-    }
-
-    try {
-      toast.info("Creating ZIP file...");
-      await downloadAllStems(parseInt(generationId), trpc);
-      toast.success("Stems downloaded as ZIP!");
-    } catch (error) {
-      console.error("Download error:", error);
-      toast.error("Failed to download stems");
-    }
-  };
-
   return (
     <div className={`min-h-screen ${theme.canvasBg} text-foreground`}>
       {/* Header */}
-      <div className="border-b border-white/10 bg-black/40 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+      <div className="border-b border-white/10 p-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Music className={`w-8 h-8 ${theme.textAccent}`} />
-            <h1 className="text-3xl font-bold">Stems Studio</h1>
+            <Music className="w-6 h-6" />
+            <h1 className="text-2xl font-bold">Stems Studio</h1>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("/studio")}
-            className="text-foreground hover:bg-white/10"
+            className="gap-2"
           >
-            🚪 Back to Generate
+            <ArrowLeft className="w-4 h-4" />
+            Back to Generate
           </Button>
         </div>
+        <p className="text-sm text-foreground/70">{generation?.title || "Untitled Track"}</p>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Master Mix Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
-          <Card
-            className={`p-8 border ${theme.borderAccent} bg-white/5 backdrop-blur-sm`}
+      {/* Retention Notice */}
+      {expiration && expiration.daysRemaining > 0 && (
+        <div className="p-6 max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-3"
           >
-            <div className="flex items-center gap-4 mb-6">
-              <Music className={`w-6 h-6 ${theme.textAccent}`} />
-              <h2 className="text-2xl font-bold">Master Mix</h2>
+            <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-100 mb-1">Download your files to start the 30-day retention period</p>
+              <p className="text-sm text-amber-100/70">
+                Your stems will be automatically deleted on {expiration.expirationDate.toLocaleDateString()} ({expiration.daysRemaining} days remaining). Download them now to keep forever.
+              </p>
             </div>
+          </motion.div>
+        </div>
+      )}
 
-            <div className="flex items-center gap-6 flex-wrap">
+      {/* Main Content */}
+      <div className="p-6 max-w-6xl mx-auto">
+        {/* Master Mix Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Music className="w-5 h-5" />
+            Master Mix
+          </h2>
+          <Card className={`p-6 ${theme.canvasBg} border-white/10`}>
+            <div className="flex items-center gap-4">
               <Button
-                size="lg"
-                onClick={handleMasterPlay}
-                className={`${theme.buttonAccent} text-white`}
+                variant="default"
+                size="icon"
+                className={`${theme.buttonAccent} rounded-lg`}
               >
-                {isPlayingMaster ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5" />
-                )}
+                <Play className="w-5 h-5" />
               </Button>
-
-              <div className="flex-1 min-w-[200px]">
+              <div className="flex-1">
+                <div className="h-12 bg-white/5 rounded-lg mb-2" />
+                <div className="flex justify-between text-xs text-foreground/60">
+                  <span>0:00</span>
+                  <span>3:10</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4" />
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={masterVolume}
-                  onChange={(e) => {
-                    const vol = parseInt(e.target.value);
-                    setMasterVolume(vol);
-                    if (masterAudioRef.current) {
-                      masterAudioRef.current.volume = vol / 100;
-                    }
-                  }}
-                  className="w-full"
+                  onChange={(e) => setMasterVolume(Number(e.target.value))}
+                  className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
                 />
+                <span className="text-xs w-8 text-right">{masterVolume}%</span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Volume2 className="w-5 h-5" />
-                <span className="text-sm font-medium w-12 text-right">{masterVolume}%</span>
-              </div>
-
               <Button
-                variant="outline"
+                variant="default"
+                size="sm"
                 onClick={handleDownloadAll}
-                className="border-white/20 hover:bg-white/10"
+                className={`gap-2 ${theme.buttonAccent}`}
               >
-                <Download className="w-4 h-4 mr-2" />
-                Download All
+                <Download className="w-4 h-4" />
+                Download All as ZIP
               </Button>
             </div>
-
-            <audio
-              ref={masterAudioRef}
-              src={stemSplit.stems?.vocalUrl || ""}
-              onEnded={() => setIsPlayingMaster(false)}
-            />
           </Card>
-        </motion.div>
+        </div>
 
-        {/* Individual Stems Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-bold mb-6">Individual Stems</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {stems.map((stem) => {
-              const state = stemStates[stem.name] || {
-                isPlaying: false,
-                volume: 100,
-                isMuted: false,
-              };
+        {/* Individual Stems Section */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Individual Stems</h2>
+          <div className="grid grid-cols-1 gap-6">
+            {stems.map((stem) => (
+              <Card
+                key={stem.name}
+                className={`p-6 ${theme.canvasBg} border-white/10 hover:border-white/20 transition`}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="text-3xl">{stem.emoji}</div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{stem.name}</h3>
+                    <p className="text-sm text-foreground/60">{stem.description}</p>
+                  </div>
+                </div>
 
-              return (
-                <motion.div
-                  key={stem.name}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Card
-                    className={`p-6 border ${theme.borderAccent} ${stem.gradient} backdrop-blur-sm transition-all hover:border-white/30`}
+                {/* Waveform */}
+                <div
+                  ref={(el) => {
+                    if (el) stemWaveRefs.current[stem.name] = el;
+                  }}
+                  className="mb-4 rounded-lg overflow-hidden bg-black/20"
+                />
+
+                {/* Timeline and Controls */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="default"
+                    size="icon"
+                    onClick={() => handleStemPlay(stem.name)}
+                    className={`${theme.buttonAccent} rounded-lg`}
                   >
-                    <div className="text-4xl mb-3">{stem.emoji}</div>
-                    <h3 className="font-bold text-lg mb-4">{stem.name}</h3>
+                    <Play className="w-4 h-4" />
+                  </Button>
 
-                    <div className="space-y-3">
-                      {/* Play Button */}
-                      <Button
-                        size="sm"
-                        className={`w-full justify-center text-white ${
-                          state.isPlaying
-                            ? theme.buttonAccent
-                            : "bg-white/10 hover:bg-white/20"
-                        }`}
-                        onClick={() => handleStemPlay(stem.name)}
-                      >
-                        {state.isPlaying ? (
-                          <Pause className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Play className="w-4 h-4 mr-2" />
-                        )}
-                        {state.isPlaying ? "Playing" : "Play"}
-                      </Button>
-
-                      {/* Volume Slider */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span>Volume</span>
-                          <span>{state.volume}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={state.volume}
-                          onChange={(e) =>
-                            handleStemVolume(stem.name, parseInt(e.target.value))
-                          }
-                          className="w-full"
-                        />
-                      </div>
-
-                      {/* Mute Button */}
-                      <Button
-                        size="sm"
-                        variant={state.isMuted ? "default" : "outline"}
-                        className={`w-full ${
-                          state.isMuted
-                            ? "bg-red-600 hover:bg-red-700 border-red-600"
-                            : "border-white/20 hover:bg-white/10"
-                        }`}
-                        onClick={() => handleStemMute(stem.name)}
-                      >
-                        {state.isMuted ? (
-                          <Volume className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Volume1 className="w-4 h-4 mr-2" />
-                        )}
-                        {state.isMuted ? "Muted" : "Mute"}
-                      </Button>
-
-                      {/* Download Button */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full border-white/20 hover:bg-white/10"
-                        onClick={() => handleDownloadStem(stem)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
-
-                    <audio
-                      ref={(el) => {
-                        if (el) stemAudioRefs.current[stem.name] = el;
-                      }}
-                      src={stem.url || ""}
-                      onEnded={() => {
-                        setStemStates((prev) => ({
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Volume2 className="w-4 h-4" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={stemVolumes[stem.name]}
+                      onChange={(e) =>
+                        setStemVolumes((prev) => ({
                           ...prev,
-                          [stem.name]: { ...prev[stem.name], isPlaying: false },
-                        }));
-                      }}
+                          [stem.name]: Number(e.target.value),
+                        }))
+                      }
+                      className="w-24 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
                     />
-                  </Card>
-                </motion.div>
-              );
-            })}
+                    <span className="text-xs w-8 text-right">
+                      {stemVolumes[stem.name]}%
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      const url = stem.url;
+                      if (url) {
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${generation?.title || "stem"}_${stem.name.toLowerCase()}.mp3`;
+                        a.click();
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
-        </motion.div>
-
-        {/* Past Splits Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card
-            className={`p-6 border ${theme.borderAccent} bg-white/5 backdrop-blur-sm cursor-pointer`}
-            onClick={() => setShowPastSplits(!showPastSplits)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Clock className={`w-5 h-5 ${theme.textAccent}`} />
-                <h3 className="font-bold text-lg">Past Splits</h3>
-              </div>
-              {showPastSplits ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
-            </div>
-
-            {showPastSplits && (
-              <div className="mt-6 space-y-3 max-h-64 overflow-y-auto">
-                {stemSplits && stemSplits.length > 0 ? (
-                  stemSplits.map((split) => (
-                    <div
-                      key={split.id}
-                      className="p-3 bg-white/5 rounded border border-white/10 hover:border-white/20 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-sm">
-                            {split.createdAt
-                              ? new Date(split.createdAt).toLocaleDateString()
-                              : "Unknown date"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Status: {split.status}
-                          </p>
-                        </div>
-                        {split.status === "completed" && (
-                          <Music className={`w-4 h-4 ${theme.textAccent}`} />
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No past splits yet</p>
-                )}
-              </div>
-            )}
-          </Card>
-        </motion.div>
-
-        {/* Placeholder Sections for Future Features */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card
-            className={`p-8 border-dashed border-2 ${theme.borderAccent} bg-white/5 backdrop-blur-sm`}
-          >
-            <div className="text-center">
-              <Music className={`w-8 h-8 ${theme.textAccent} mx-auto mb-3 opacity-50`} />
-              <h3 className="font-bold text-lg mb-2 opacity-50">Remix Studio</h3>
-              <p className="text-sm text-muted-foreground">Coming soon</p>
-            </div>
-          </Card>
-
-          <Card
-            className={`p-8 border-dashed border-2 ${theme.borderAccent} bg-white/5 backdrop-blur-sm`}
-          >
-            <div className="text-center">
-              <Music className={`w-8 h-8 ${theme.textAccent} mx-auto mb-3 opacity-50`} />
-              <h3 className="font-bold text-lg mb-2 opacity-50">Stem Packs</h3>
-              <p className="text-sm text-muted-foreground">Coming soon</p>
-            </div>
-          </Card>
         </div>
       </div>
     </div>

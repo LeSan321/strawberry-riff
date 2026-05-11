@@ -761,3 +761,21 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] This forces React Query to re-fetch generation data with updated isSplit flag
 - [ ] Test: Generate track → Split stems → Verify button changes to "View Stems" immediately
 - [ ] Test: Verify green checkmark appears without page refresh
+
+
+## Phase 75: StemsStudio Redesign with Waveforms & Retention
+
+- [x] Install wavesurfer.js library
+- [x] Redesign StemsStudio layout to match StemSplit design
+- [x] Add waveform visualization for Master Mix
+- [x] Add individual waveform visualizations for each stem
+- [x] Implement timeline scrubbing with proper playback control
+- [x] Add volume control for each stem
+- [x] Add individual download button for each stem
+- [x] Add 30-day retention notice with countdown
+- [x] Calculate expiration date from createdAt timestamp
+- [x] Show days remaining until automatic deletion
+- [ ] Build My Stems Browser with expiration badges
+- [ ] Add click-to-load functionality for past splits
+- [ ] Test waveform rendering on different stem types
+- [ ] Test retention notice displays correctly
