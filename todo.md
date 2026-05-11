@@ -779,3 +779,19 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Add click-to-load functionality for past splits
 - [ ] Test waveform rendering on different stem types
 - [ ] Test retention notice displays correctly
+
+
+## Phase 76: My Stems Browser Implementation
+
+- [x] Create tRPC procedure `getPastSplits` to fetch all past splits for current user
+- [x] Build MyStemsBrowser page component with list layout
+- [x] Add expiration countdown badges (green/yellow/red based on days remaining)
+- [x] Display track title, date, duration, and expiration info
+- [x] Add click-to-navigate to Stems Studio page for each split
+- [x] Add back button to return to Studio
+- [x] Add empty state with link to Generate page
+- [x] Add route `/my-stems` to App.tsx
+- [ ] Test MyStemsBrowser displays all past splits correctly
+- [ ] Test expiration badges show correct countdown
+- [ ] Test navigation to Stems Studio page works
+- [ ] Test back button returns to Studio

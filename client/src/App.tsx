@@ -26,6 +26,7 @@ import PreviewPage from "./pages/PreviewPage";
 import SharedPlaylistPage from "./pages/SharedPlaylistPage";
 import { StemsStudio } from "./pages/StemsStudio";
 import TrackDetail from "./pages/TrackDetail";
+import MyStemsBrowser from "./pages/MyStemsBrowser";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/studio" component={Studio} />
       <Route path="/stems/:generationId" component={StemsStudio} />
       <Route path="/track-detail/:generationId" component={TrackDetail} />
+      <Route path="/my-stems" component={MyStemsBrowser} />
       <Route path="/style-library" component={StyleLibrary} />
       <Route path="/preview/:token" component={PreviewPage} />
       <Route path="/shared/playlists/:token" component={SharedPlaylistPage} />
