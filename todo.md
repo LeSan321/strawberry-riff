@@ -737,3 +737,17 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Implement handleDownloadAll to bundle all 5 stems into ZIP
 - [x] Add proper error handling and toast notifications
 - [x] Test ZIP download functionality
+
+
+## Phase 73: Critical Bug Fixes - CORS and ZIP Download
+
+- [x] Identified CORS issue blocking stem file downloads from Cloudflare R2
+- [x] Created server-side ZIP download endpoint at `/api/stems/download-zip`
+- [x] Implemented server-side stem fetching to bypass CORS restrictions
+- [x] Updated downloadUtils.ts to use server endpoint instead of client-side fetch
+- [x] Updated StemsStudio.tsx to call new downloadAllStems with generationId
+- [x] Added proper authentication and authorization checks to ZIP endpoint
+- [x] Fixed TypeScript errors in stemsplit router and server core
+- [ ] Test ZIP download with actual stem files
+- [ ] Verify ZIP contains all 5 stems with correct filenames
+- [ ] Test on deployed version at strawberryriff.com

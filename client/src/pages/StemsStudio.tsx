@@ -284,23 +284,14 @@ export function StemsStudio() {
   };
 
   const handleDownloadAll = async () => {
-    if (!stemSplit?.stems) {
-      toast.error("Stems not available");
+    if (!generationId) {
+      toast.error("Generation ID not found");
       return;
     }
 
     try {
       toast.info("Creating ZIP file...");
-      await downloadAllStems(
-        {
-          vocals: stemSplit.stems.vocalUrl,
-          drums: stemSplit.stems.drumsUrl,
-          bass: stemSplit.stems.bassUrl,
-          other: stemSplit.stems.otherUrl,
-          piano: stemSplit.stems.pianoUrl,
-        },
-        generation?.title || "stems"
-      );
+      await downloadAllStems(parseInt(generationId), trpc);
       toast.success("Stems downloaded as ZIP!");
     } catch (error) {
       console.error("Download error:", error);

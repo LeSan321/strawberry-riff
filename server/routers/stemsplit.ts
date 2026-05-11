@@ -246,6 +246,71 @@ export const stemsplitRouter = router({
 
 
   /**
+   * Download all stems as a ZIP file
+   * Server-side ZIP creation to avoid CORS issues
+   */
+  downloadStemsZip: protectedProcedure
+    .input(
+      z.object({
+        generationId: z.number().int().positive("Generation ID must be a positive integer"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { generationId } = input;
+      const userId = ctx.user.id;
+
+      // Verify generation exists and belongs to the user
+      const { getDb } = await import('../db');
+      const { musicGenerations } = await import('../../drizzle/schema');
+      const { eq } = await import('drizzle-orm');
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      const generation = await db
+        .select()
+        .from(musicGenerations)
+        .where(eq(musicGenerations.id, generationId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+
+      if (!generation) {
+        throw new Error("Generation not found");
+      }
+
+      if (generation.userId !== userId) {
+        throw new Error("You do not have permission to download these stems");
+      }
+
+      try {
+        const stemSplit = await getTrackStemSplit(generationId);
+
+        if (!stemSplit || stemSplit.status !== "completed") {
+          throw new Error("Stems not ready for download");
+        }
+
+        // Check that at least one stem URL exists
+        if (!stemSplit.vocalUrl && !stemSplit.drumsUrl && !stemSplit.bassUrl && !stemSplit.otherUrl && !stemSplit.pianoUrl) {
+          throw new Error("No stem URLs available");
+        }
+
+        // Return stem URLs for server-side processing
+        return {
+          success: true,
+          stems: {
+            vocalUrl: stemSplit.vocalUrl,
+            drumsUrl: stemSplit.drumsUrl,
+            bassUrl: stemSplit.bassUrl,
+            otherUrl: stemSplit.otherUrl,
+            pianoUrl: stemSplit.pianoUrl,
+          },
+          trackTitle: generation.title || "stems",
+        };
+      } catch (error) {
+        console.error("[StemSplit] Error preparing stems for download:", error);
+        throw new Error("Failed to prepare stems for download: " + (error as Error).message);
+      }
+    }),
+
+  /**
    * Get stem split for a specific track
    * Returns the most recent stem split for a track
    */

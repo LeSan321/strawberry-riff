@@ -109,6 +109,101 @@ async function startServer() {
       res.status(500).json({ error: "Failed to generate default OG image" });
     }
   });
+  // Stems ZIP download endpoint
+  app.post("/api/stems/download-zip", async (req, res) => {
+    try {
+      const { generationId } = req.body;
+      if (!generationId) {
+        return res.status(400).json({ message: "Missing generationId" });
+      }
+
+      // Get auth context from request
+      const { sdk } = await import("./sdk");
+      let user = null;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch (error) {
+        // Continue - user will be null
+      }
+
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get stem split data
+      const { getTrackStemSplit } = await import("../stemsplit/db");
+      const { getDb } = await import("../db");
+      const { musicGenerations } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+
+      const generation = await db
+        .select()
+        .from(musicGenerations)
+        .where(eq(musicGenerations.id, generationId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+
+      if (!generation || generation.userId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to download these stems" });
+      }
+
+      const stemSplit = await getTrackStemSplit(generationId);
+      if (!stemSplit || stemSplit.status !== "completed") {
+        return res.status(400).json({ message: "Stems not ready for download" });
+      }
+
+      // Create ZIP with stems
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const stemFolder = zip.folder("stems");
+      if (!stemFolder) throw new Error("Failed to create ZIP folder");
+
+      // Sanitize track title
+      const sanitizedTitle = (generation.title || "stems")
+        .replace(/[^a-z0-9]/gi, "_")
+        .replace(/_+/g, "_")
+        .toLowerCase();
+
+      // Fetch and add each stem to ZIP
+      const stemMappings: Array<[string, string | null]> = [
+        ["vocals", stemSplit.vocalUrl],
+        ["drums", stemSplit.drumsUrl],
+        ["bass", stemSplit.bassUrl],
+        ["other", stemSplit.otherUrl],
+        ["piano", stemSplit.pianoUrl],
+      ];
+
+      for (const [displayName, url] of stemMappings) {
+        if (!url) continue;
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            const filename = `${sanitizedTitle}_${displayName}.mp3`;
+            stemFolder.file(filename, buffer);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch ${displayName} stem:`, error);
+          // Continue with other stems
+        }
+      }
+
+      // Generate ZIP and send
+      const zipBlob = await zip.generateAsync({ type: "nodebuffer" });
+      const filename = `${sanitizedTitle}_stems.zip`;
+
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", zipBlob.length);
+      res.send(zipBlob);
+    } catch (error) {
+      console.error("[Stems ZIP] Error:", error);
+      res.status(500).json({ message: "Failed to create ZIP file" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",
