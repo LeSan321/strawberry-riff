@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Music, Loader2, Check, ArrowRight } from "lucide-react";
+import { Music, Loader2, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { StemSplitUpgradePrompt } from "./StemSplitUpgradePrompt";
 
@@ -108,19 +108,17 @@ export function StemSplitButton({
     navigate(`/stems/${generationId}`);
   };
 
-  // If split just completed or already split, show View Stems button
+  // If split just completed or already split, show Stems button with checkmark
   if ((isSplit || splitJustCompleted) && !isProcessing) {
     return (
       <Button
         onClick={handleViewStems}
         variant="outline"
         size="sm"
-        className={`gap-2 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 whitespace-nowrap ${className}`}
+        className={`gap-2 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 ${className}`}
       >
         <Check className="w-4 h-4 text-emerald-600" />
-        <span className="hidden md:inline">View Stems</span>
-        <span className="md:hidden">Stems</span>
-        <ArrowRight className="w-3 h-3 hidden md:inline" />
+        <span>Stems</span>
       </Button>
     );
   }
