@@ -727,3 +727,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test all three access points: right column button, sidebar, track detail
 - [ ] Test theme inheritance on Track Detail page
 - [ ] Verify isSplit flag updates correctly after split completes
+
+
+## Phase 72: Download All as ZIP Feature
+
+- [x] Install jszip dependency
+- [x] Create `client/src/lib/downloadUtils.ts` with downloadAllStems function
+- [x] Add Download All button to Stems Studio page
+- [x] Implement handleDownloadAll to bundle all 5 stems into ZIP
+- [x] Add proper error handling and toast notifications
+- [x] Test ZIP download functionality

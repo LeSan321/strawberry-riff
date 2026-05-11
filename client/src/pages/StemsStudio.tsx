@@ -1,6 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { downloadAllStems } from "@/lib/downloadUtils";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -109,6 +110,11 @@ export function StemsStudio() {
   // Get the stem split for this generation
   const { data: stemSplit, isLoading } = trpc.stemsplit.getTrackStemSplit.useQuery({
     generationId: parseInt(generationId || "0"),
+  });
+
+  // Get generation details for title
+  const { data: generation } = trpc.musicGeneration.getById.useQuery({
+    id: parseInt(generationId || "0"),
   });
 
   // Get user's stem splits history
@@ -278,7 +284,28 @@ export function StemsStudio() {
   };
 
   const handleDownloadAll = async () => {
-    toast.info("Download All as ZIP coming soon!");
+    if (!stemSplit?.stems) {
+      toast.error("Stems not available");
+      return;
+    }
+
+    try {
+      toast.info("Creating ZIP file...");
+      await downloadAllStems(
+        {
+          vocals: stemSplit.stems.vocalUrl,
+          drums: stemSplit.stems.drumsUrl,
+          bass: stemSplit.stems.bassUrl,
+          other: stemSplit.stems.otherUrl,
+          piano: stemSplit.stems.pianoUrl,
+        },
+        generation?.title || "stems"
+      );
+      toast.success("Stems downloaded as ZIP!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download stems");
+    }
   };
 
   return (
