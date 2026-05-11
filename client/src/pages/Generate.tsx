@@ -133,13 +133,14 @@ function GenerationCard({
   onToggleFavorite,
   isPremium,
 }: {
-  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean; visualBrief?: string | null };
+  gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean; visualBrief?: string | null; isSplit?: boolean };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
   onDelete: (id: number) => void;
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
   onToggleFavorite: (id: number) => void;
   isPremium?: boolean;
 }) {
+  const [, navigate] = useLocation();
   const [publishOpen, setPublishOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saveLibraryOpen, setSaveLibraryOpen] = useState(false);
@@ -548,7 +549,7 @@ export function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
-  const [vocalArchetype, setVocalArchetype] = useState<string>("intimate-bedroom");
+  const [vocalArchetype, setVocalArchetype] = useState<"intimate-bedroom" | "raw-emotional" | "soulful-belter" | "gritty-rock" | "confident-pop" | "lo-fi-whisper" | "powerful-anthem" | "storyteller-folk">("intimate-bedroom");
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [vocalSpectrumValue, setVocalSpectrumValue] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -904,7 +905,7 @@ export function GeneratePage() {
               {/* Vocal Archetype */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Vocal Character</label>
-                <Select value={vocalArchetype} onValueChange={setVocalArchetype} disabled={isGenerating}>
+                <Select value={vocalArchetype} onValueChange={(v) => setVocalArchetype(v as typeof vocalArchetype)} disabled={isGenerating}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

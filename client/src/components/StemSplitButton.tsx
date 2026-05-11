@@ -126,12 +126,12 @@ export function StemSplitButton({
           onClick={handleViewStems}
           variant="outline"
           size="sm"
-          className={`gap-2 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 ${className}`}
+          className={`gap-2 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 whitespace-nowrap ${className}`}
         >
           <Check className="w-4 h-4 text-emerald-600" />
-          <span className="hidden sm:inline">View Stems</span>
-          <span className="sm:hidden">Stems</span>
-          <ArrowRight className="w-3 h-3 hidden sm:inline" />
+          <span className="hidden md:inline">View Stems</span>
+          <span className="md:hidden">Stems</span>
+          <ArrowRight className="w-3 h-3 hidden md:inline" />
         </Button>
       ) : (
         <Button
