@@ -41,6 +41,7 @@ export function StemSplitButton({
   const [upgradeMessage, setUpgradeMessage] = useState("");
   const [remainingLimit, setRemainingLimit] = useState(0);
 
+  const utils = trpc.useUtils();
   const startStemSplit = trpc.stemsplit.startStemSplit.useMutation();
   const getStemSplitStatus = trpc.stemsplit.getStemSplitStatus.useQuery(
     { jobId: jobId || "" },
@@ -62,6 +63,8 @@ export function StemSplitButton({
       setJobId(null);
       setCompletedStems(status.stems);
       setShowMixer(true);
+      // Invalidate the generation query to force re-fetch of isSplit flag
+      utils.musicGeneration.getById.invalidate({ id: generationId });
       toast.success("Stem split complete! Your stems are ready.");
       onSplitComplete?.(status.stems);
     } else if (status.status === "failed") {

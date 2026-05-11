@@ -751,3 +751,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test ZIP download with actual stem files
 - [ ] Verify ZIP contains all 5 stems with correct filenames
 - [ ] Test on deployed version at strawberryriff.com
+
+
+## Phase 74: Fix StemSplitButton Dropdown Menu Issue
+
+- [x] Identified issue: Button not updating to "View Stems" after split completes
+- [x] Root cause: Component not invalidating generation query after split completes
+- [x] Solution: Added `utils.musicGeneration.getById.invalidate()` after split completes
+- [x] This forces React Query to re-fetch generation data with updated isSplit flag
+- [ ] Test: Generate track → Split stems → Verify button changes to "View Stems" immediately
+- [ ] Test: Verify green checkmark appears without page refresh
