@@ -163,9 +163,8 @@ export function StemsStudio() {
           normalize: true,
           cursorColor: "#ffffff",
           cursorWidth: 2,
-          fetchParams: {
-            credentials: "include",
-          },
+          // Master audio is on CloudFront (public), no credentials needed
+          // Credentials would conflict with CORS wildcard (*) policy
         });
 
         masterWaveSurfer.on("error", (error) => {
