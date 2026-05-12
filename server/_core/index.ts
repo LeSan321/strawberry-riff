@@ -208,6 +208,9 @@ async function startServer() {
   app.get("/api/stems/audio/:generationId/:stemType", async (req, res) => {
     try {
       const { generationId, stemType } = req.params;
+      console.log(`[Stem Audio Proxy] Request: generationId=${generationId}, stemType=${stemType}`);
+      console.log(`[Stem Audio Proxy] Cookies: ${req.headers.cookie}`);
+      
       if (!generationId || !stemType) {
         return res.status(400).json({ message: "Missing generationId or stemType" });
       }
@@ -217,11 +220,14 @@ async function startServer() {
       let user = null;
       try {
         user = await sdk.authenticateRequest(req);
+        console.log(`[Stem Audio Proxy] Auth successful: user=${user?.id}`);
       } catch (error) {
+        console.error(`[Stem Audio Proxy] Auth failed:`, error);
         // Continue - user will be null
       }
 
       if (!user) {
+        console.error(`[Stem Audio Proxy] No user authenticated`);
         return res.status(401).json({ message: "Unauthorized" });
       }
 
@@ -260,6 +266,7 @@ async function startServer() {
       };
 
       const stemUrl = stemUrlMap[stemType];
+      console.log(`[Stem Audio Proxy] Stem URL: ${stemUrl ? "found" : "not found"}`);
       if (!stemUrl) {
         return res.status(404).json({ message: "Stem not found" });
       }

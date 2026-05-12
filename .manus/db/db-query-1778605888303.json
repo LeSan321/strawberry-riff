@@ -1,0 +1,45 @@
+{
+  "query": "SELECT mg.id, mg.title, mg.audioUrl, ss.jobId, ss.status FROM music_generations mg LEFT JOIN stem_splits ss ON mg.id = ss.trackId WHERE ss.id IS NOT NULL ORDER BY ss.createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT mg.id, mg.title, mg.audioUrl, ss.jobId, ss.status FROM music_generations mg LEFT JOIN stem_splits ss ON mg.id = ss.trackId WHERE ss.id IS NOT NULL ORDER BY ss.createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1890001",
+      "title": "strawberry riff peer 2 peer music sharing app got a new stem female",
+      "audioUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1890001-OGgw01qW.mp3",
+      "jobId": "cmp1mvovm0359f8yvsgz46gdt",
+      "status": "completed"
+    },
+    {
+      "id": "1860004",
+      "title": "strawberry riff peer 2 peer music sharing app got a new stem female",
+      "audioUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860004-FRd79T6N.mp3",
+      "jobId": "cmp1ij9dy02vsf8yvmd8jwch1",
+      "status": "completed"
+    },
+    {
+      "id": "1860003",
+      "title": "strawberry riff peer 2 peer music sharing app got a new stem female",
+      "audioUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860003-tHWiA0W7.mp3",
+      "jobId": "cmp1i3s1q02utf8yveipax4te",
+      "status": "completed"
+    },
+    {
+      "id": "1860002",
+      "title": "strawberry riff peer 2 peer music sharing app got a new stem female",
+      "audioUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860002-g1i4LGvU.mp3",
+      "jobId": "cmp1hjh3o02taf8yvjalthhvx",
+      "status": "completed"
+    },
+    {
+      "id": "1860001",
+      "title": "strawberry riff peer 2 peer music sharing app got a new stem female",
+      "audioUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860001-TBdneyh2.mp3",
+      "jobId": "cmp1gpihm02rmf8yv2l4hfo0v",
+      "status": "completed"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\taudioUrl\tjobId\tstatus\n1890001\tstrawberry riff peer 2 peer music sharing app got a new stem female\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1890001-OGgw01qW.mp3\tcmp1mvovm0359f8yvsgz46gdt\tcompleted\n1860004\tstrawberry riff peer 2 peer music sharing app got a new stem female\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860004-FRd79T6N.mp3\tcmp1ij9dy02vsf8yvmd8jwch1\tcompleted\n1860003\tstrawberry riff peer 2 peer music sharing app got a new stem female\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860003-tHWiA0W7.mp3\tcmp1i3s1q02utf8yveipax4te\tcompleted\n1860002\tstrawberry riff peer 2 peer music sharing app got a new stem female\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860002-g1i4LGvU.mp3\tcmp1hjh3o02taf8yvjalthhvx\tcompleted\n1860001\tstrawberry riff peer 2 peer music sharing app got a new stem female\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/music/1/1860001-TBdneyh2.mp3\tcmp1gpihm02rmf8yv2l4hfo0v\tcompleted\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}

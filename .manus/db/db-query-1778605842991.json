@@ -1,0 +1,75 @@
+{
+  "query": "SELECT id, userId, trackId, jobId, status, vocalUrl, drumsUrl, bassUrl, otherUrl, pianoUrl, createdAt FROM stem_splits ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, userId, trackId, jobId, status, vocalUrl, drumsUrl, bassUrl, otherUrl, pianoUrl, createdAt FROM stem_splits ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "210011",
+      "userId": "999",
+      "trackId": "899",
+      "jobId": "test-job-1778605264030-6ccxszfa4",
+      "status": "completed",
+      "vocalUrl": "https://cdn.example.com/vocals.mp3",
+      "drumsUrl": "https://cdn.example.com/drums.mp3",
+      "bassUrl": "NULL",
+      "otherUrl": "NULL",
+      "pianoUrl": "NULL",
+      "createdAt": "2026-05-12 17:01:04"
+    },
+    {
+      "id": "210012",
+      "userId": "999",
+      "trackId": "900",
+      "jobId": "test-job-1778605264062-ws1ypu9h4",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "otherUrl": "NULL",
+      "pianoUrl": "NULL",
+      "createdAt": "2026-05-12 17:01:04"
+    },
+    {
+      "id": "210005",
+      "userId": "999",
+      "trackId": "893",
+      "jobId": "test-job-1778605263771-uohqe34it",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "otherUrl": "NULL",
+      "pianoUrl": "NULL",
+      "createdAt": "2026-05-12 17:01:03"
+    },
+    {
+      "id": "210006",
+      "userId": "999",
+      "trackId": "894",
+      "jobId": "test-job-1778605263817-wngno58ls",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "otherUrl": "NULL",
+      "pianoUrl": "NULL",
+      "createdAt": "2026-05-12 17:01:03"
+    },
+    {
+      "id": "210001",
+      "userId": "999",
+      "trackId": "889",
+      "jobId": "test-job-1778605263352-h1an88f3f",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "otherUrl": "NULL",
+      "pianoUrl": "NULL",
+      "createdAt": "2026-05-12 17:01:03"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\ttrackId\tjobId\tstatus\tvocalUrl\tdrumsUrl\tbassUrl\totherUrl\tpianoUrl\tcreatedAt\n210011\t999\t899\ttest-job-1778605264030-6ccxszfa4\tcompleted\thttps://cdn.example.com/vocals.mp3\thttps://cdn.example.com/drums.mp3\tNULL\tNULL\tNULL\t2026-05-12 17:01:04\n210012\t999\t900\ttest-job-1778605264062-ws1ypu9h4\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-05-12 17:01:04\n210005\t999\t893\ttest-job-1778605263771-uohqe34it\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-05-12 17:01:03\n210006\t999\t894\ttest-job-1778605263817-wngno58ls\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-05-12 17:01:03\n210001\t999\t889\ttest-job-1778605263352-h1an88f3f\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-05-12 17:01:03\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}
