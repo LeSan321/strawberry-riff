@@ -187,13 +187,19 @@ export function StemsStudio() {
         normalize: true,
         cursorColor: "#ffffff",
         cursorWidth: 2,
+        fetchParams: {
+          credentials: 'include',
+        },
       });
 
       waveSurfer.load(stem.url);
       waveSurferInstances.current[stem.name] = waveSurfer;
 
-      // Sync volume
-      waveSurfer.setVolume(stemVolumes[stem.name] / 100);
+      // Sync volume with error handling for NaN
+      const volume = stemVolumes[stem.name] / 100;
+      if (!isNaN(volume) && isFinite(volume)) {
+        waveSurfer.setVolume(volume);
+      }
     });
 
     return () => {
@@ -208,8 +214,10 @@ export function StemsStudio() {
   useEffect(() => {
     Object.entries(stemVolumes).forEach(([stemName, volume]) => {
       const ws = waveSurferInstances.current[stemName];
-      if (ws) {
-        ws.setVolume(volume / 100);
+      if (!ws) return;
+      const normalizedVolume = volume / 100;
+      if (!isNaN(normalizedVolume) && isFinite(normalizedVolume)) {
+        ws.setVolume(normalizedVolume);
       }
     });
   }, [stemVolumes]);
