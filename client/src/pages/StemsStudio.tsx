@@ -12,63 +12,50 @@ import {
   Pause,
   Volume2,
   Download,
-  Music,
-  Loader,
-  AlertCircle,
-  ArrowLeft,
-  Clock,
+  ChevronLeft,
 } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 
-// ─── Studio Theme Definitions (mirrored from Studio.tsx) ─────────────────────
-const STUDIO_THEMES = [
+const STEM_THEMES = [
   {
-    id: "forest-studio",
-    name: "Forest Studio",
-    image: "/manus-storage/studio-header-forest-studio_81baaef0.jpg",
-    accent: "from-emerald-600 to-teal-700",
-    sidebarBg: "bg-[#0a1f14]",
-    canvasBg: "bg-[#0a1f14]",
-    textAccent: "text-emerald-400",
-    raspberryAccent: "text-rose-400",
-    borderAccent: "border-emerald-900/50",
-    buttonAccent: "bg-emerald-700 hover:bg-emerald-600",
+    name: "Vocals",
+    emoji: "🎤",
+    color: "from-pink-500 to-rose-500",
+    description: "Isolated voice track",
+    waveformColor: "#ec4899",
+    buttonAccent: "bg-pink-700 hover:bg-pink-600",
   },
   {
-    id: "cozy-den",
-    name: "Cozy Den",
-    image: "/manus-storage/studio-header-cozy-den_20475e46.jpg",
-    accent: "from-amber-600 to-orange-700",
-    sidebarBg: "bg-[#1f1208]",
-    canvasBg: "bg-[#1f1208]",
-    textAccent: "text-amber-400",
-    raspberryAccent: "text-amber-300",
-    borderAccent: "border-amber-900/50",
-    buttonAccent: "bg-amber-700 hover:bg-amber-600",
+    name: "Instrumental",
+    emoji: "🎸",
+    color: "from-green-500 to-emerald-500",
+    description: "Music without vocals",
+    waveformColor: "#10b981",
+    buttonAccent: "bg-green-700 hover:bg-green-600",
   },
   {
-    id: "producer-workshop",
-    name: "Producer's Workshop",
-    image: "/manus-storage/studio-header-producer-workshop_df572a47.jpg",
-    accent: "from-indigo-700 to-purple-800",
-    sidebarBg: "bg-[#0d0a1f]",
-    canvasBg: "bg-[#0d0a1f]",
-    textAccent: "text-indigo-400",
-    raspberryAccent: "text-indigo-300",
-    borderAccent: "border-indigo-900/50",
-    buttonAccent: "bg-indigo-700 hover:bg-indigo-600",
+    name: "Drums",
+    emoji: "🥁",
+    color: "from-orange-500 to-yellow-500",
+    description: "Percussion and rhythm",
+    waveformColor: "#f97316",
+    buttonAccent: "bg-orange-700 hover:bg-orange-600",
   },
   {
-    id: "rock-room",
-    name: "Rock Room",
-    image: "/manus-storage/studio-header-rock-room_606b6222.jpg",
-    accent: "from-rose-700 to-red-800",
-    sidebarBg: "bg-[#1f0a0a]",
-    canvasBg: "bg-[#1f0a0a]",
-    textAccent: "text-rose-400",
-    raspberryAccent: "text-rose-300",
-    borderAccent: "border-rose-900/50",
-    buttonAccent: "bg-rose-700 hover:bg-rose-600",
+    name: "Bass",
+    emoji: "🎹",
+    color: "from-purple-500 to-indigo-500",
+    description: "Bass guitar and low frequencies",
+    waveformColor: "#a855f7",
+    buttonAccent: "bg-purple-700 hover:bg-purple-600",
+  },
+  {
+    name: "Other",
+    emoji: "🎺",
+    color: "from-cyan-500 to-blue-500",
+    description: "Remaining instruments",
+    waveformColor: "#06b6d4",
+    buttonAccent: "bg-cyan-700 hover:bg-cyan-600",
   },
 ];
 
@@ -85,44 +72,37 @@ export function StemsStudio() {
   const { generationId } = useParams<{ generationId: string }>();
   const [, navigate] = useLocation();
   const { user } = useAuth();
-
-  // Waveform refs
-  const masterWaveRef = useRef<HTMLDivElement>(null);
-  const stemWaveRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const waveSurferInstances = useRef<{ [key: string]: WaveSurfer | null }>({});
-  const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
-
-  // State
-  const [masterVolume, setMasterVolume] = useState(100);
-  const [stemVolumes, setStemVolumes] = useState<{ [key: string]: number }>({
+  const [stemVolumes, setStemVolumes] = useState<Record<string, number>>({
     Vocals: 100,
+    Instrumental: 100,
     Drums: 100,
     Bass: 100,
     Other: 100,
-    Piano: 100,
   });
 
-  // Get user's theme preference
-  const { data: studioPrefs } = trpc.studio.getPreferences.useQuery();
-  const themeId = studioPrefs?.studioTheme || "forest-studio";
-  const theme = STUDIO_THEMES.find((t) => t.id === themeId) || STUDIO_THEMES[0];
+  const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
 
-  // Get the stem split for this generation
-  const { data: stemSplit, isLoading } = trpc.stemsplit.getTrackStemSplit.useQuery({
+  // Fetch stem split data
+  const { data: stemSplit } = trpc.stemsplit.getTrackStemSplit.useQuery({
     generationId: parseInt(generationId || "0"),
   });
 
-  // Get generation details for title
   const { data: generation } = trpc.musicGeneration.getById.useQuery({
     id: parseInt(generationId || "0"),
   });
 
-  // Build stem data array with direct R2 URLs
+  // Build stem data array with proxy URLs to bypass CORS
+  const buildProxyUrl = (stemType: string) => {
+    if (!generationId || !stemSplit?.stems) return undefined;
+    return `/api/stems/audio/${generationId}/${stemType}`;
+  };
+
   const stems: StemData[] = [
     {
       name: "Vocals",
       emoji: "🎤",
-      url: stemSplit?.stems?.vocalUrl,
+      url: stemSplit?.stems?.vocalUrl ? buildProxyUrl("vocals") : undefined,
       color: "from-pink-500 to-rose-500",
       description: "Isolated voice track",
       waveformColor: "#ec4899",
@@ -130,7 +110,7 @@ export function StemsStudio() {
     {
       name: "Instrumental",
       emoji: "🎸",
-      url: stemSplit?.stems?.otherUrl,
+      url: stemSplit?.stems?.otherUrl ? buildProxyUrl("other") : undefined,
       color: "from-green-500 to-emerald-500",
       description: "Music without vocals",
       waveformColor: "#10b981",
@@ -138,7 +118,7 @@ export function StemsStudio() {
     {
       name: "Drums",
       emoji: "🥁",
-      url: stemSplit?.stems?.drumsUrl,
+      url: stemSplit?.stems?.drumsUrl ? buildProxyUrl("drums") : undefined,
       color: "from-orange-500 to-yellow-500",
       description: "Percussion and rhythm",
       waveformColor: "#f97316",
@@ -146,7 +126,7 @@ export function StemsStudio() {
     {
       name: "Bass",
       emoji: "🎹",
-      url: stemSplit?.stems?.bassUrl,
+      url: stemSplit?.stems?.bassUrl ? buildProxyUrl("bass") : undefined,
       color: "from-purple-500 to-indigo-500",
       description: "Bass guitar and low frequencies",
       waveformColor: "#a855f7",
@@ -154,7 +134,7 @@ export function StemsStudio() {
     {
       name: "Other",
       emoji: "🎺",
-      url: stemSplit?.stems?.pianoUrl,
+      url: stemSplit?.stems?.pianoUrl ? buildProxyUrl("piano") : undefined,
       color: "from-cyan-500 to-blue-500",
       description: "Remaining instruments",
       waveformColor: "#06b6d4",
@@ -183,16 +163,16 @@ export function StemsStudio() {
         cursorColor: "#ffffff",
         cursorWidth: 2,
         fetchParams: {
-          credentials: 'include',
+          credentials: "include",
         },
       });
 
       // Add error handling for waveform loading
-      waveSurfer.on('error', (error) => {
+      waveSurfer.on("error", (error) => {
         console.error(`[WaveSurfer] Error loading ${stem.name}:`, error);
       });
 
-      waveSurfer.on('ready', () => {
+      waveSurfer.on("ready", () => {
         console.log(`[WaveSurfer] Waveform ready for ${stem.name}`);
       });
 
@@ -243,134 +223,91 @@ export function StemsStudio() {
     }
   };
 
-  // Calculate expiration date (30 days from creation)
-  const calculateExpiration = () => {
-    if (!generation?.createdAt) return null;
-    const createdDate = new Date(generation.createdAt);
-    const expirationDate = new Date(createdDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const now = new Date();
-    const daysRemaining = Math.ceil((expirationDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
-    return { expirationDate, daysRemaining };
+  const handleDownloadStem = (stemName: string) => {
+    const stem = stems.find((s) => s.name === stemName);
+    if (!stem?.url) return;
+
+    const link = document.createElement("a");
+    link.href = stem.url;
+    link.download = `${generation?.title || "stem"}_${stemName.toLowerCase()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const expiration = calculateExpiration();
-
-  if (!user) {
-    return (
-      <div className={`min-h-screen ${theme.canvasBg} flex items-center justify-center`}>
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <p className="text-foreground">Please log in to view stems.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className={`min-h-screen ${theme.canvasBg} flex items-center justify-center`}>
-        <div className="text-center">
-          <Loader className="w-12 h-12 mx-auto mb-4 animate-spin text-foreground" />
-          <p className="text-foreground">Loading stems...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!stemSplit || stemSplit.status !== "completed") {
-    return (
-      <div className={`min-h-screen ${theme.canvasBg} flex items-center justify-center`}>
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
-          <p className="text-foreground">Stems not ready yet. Please try again in a moment.</p>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/studio")}
-            className="mt-4 border-white/20 hover:bg-white/10"
-          >
-            Back to Generate
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const theme = STEM_THEMES.find((t) => t.name === "Vocals") || STEM_THEMES[0];
 
   return (
-    <div className={`min-h-screen ${theme.canvasBg} text-foreground`}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       {/* Header */}
-      <div className="border-b border-white/10 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Music className="w-6 h-6" />
-            <h1 className="text-2xl font-bold">Stems Studio</h1>
+      <div className="border-b border-slate-800">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/generate")}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  🎵 Stems Studio
+                </h1>
+                <p className="text-sm text-slate-400 mt-1">
+                  {generation?.title || "Untitled"}
+                </p>
+              </div>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/studio")}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Generate
-          </Button>
         </div>
-        <p className="text-sm text-foreground/70">{generation?.title || "Untitled Track"}</p>
       </div>
 
-      {/* Retention Notice */}
-      {expiration && expiration.daysRemaining > 0 && (
-        <div className="p-6 max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-3"
-          >
-            <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-amber-100 mb-1">Download your files to start the 30-day retention period</p>
-              <p className="text-sm text-amber-100/70">
-                Your stems will be automatically deleted on {expiration.expirationDate.toLocaleDateString()} ({expiration.daysRemaining} days remaining). Download them now to keep forever.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       {/* Main Content */}
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Download Warning */}
+        {stemSplit?.status === "completed" && (
+          <Card className="border-amber-900/50 bg-amber-950/20 p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⏱️</span>
+              <div>
+                <h3 className="font-semibold text-amber-200">
+                  Download your files to start the 30-day retention period
+                </h3>
+                <p className="text-sm text-amber-300/80 mt-1">
+                  Your stems will be automatically deleted on{" "}
+                  {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}{" "}
+                  (30 days remaining). Download them now to keep forever.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Master Mix Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Music className="w-5 h-5" />
-            Master Mix
+        <div>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            🎵 Master Mix
           </h2>
-          <Card className={`p-6 ${theme.canvasBg} border-white/10`}>
-            <div className="flex items-center gap-4">
+          <Card className="border-slate-800 bg-slate-900/50 p-6">
+            <div className="flex items-center justify-between gap-4">
               <Button
-                variant="default"
-                size="icon"
-                className={`${theme.buttonAccent} rounded-lg`}
+                size="lg"
+                className={`rounded-full ${theme.buttonAccent}`}
+                onClick={() => handleStemPlay("Master")}
               >
                 <Play className="w-5 h-5" />
               </Button>
-              <div className="flex-1">
-                <div className="h-12 bg-white/5 rounded-lg mb-2" />
-                <div className="flex justify-between text-xs text-foreground/60">
-                  <span>0:00</span>
-                  <span>3:10</span>
-                </div>
-              </div>
+              <div
+                ref={(el) => {
+                  if (el) stemWaveRefs.current["Master"] = el;
+                }}
+                className="flex-1"
+              />
               <div className="flex items-center gap-2">
-                <Volume2 className="w-4 h-4" />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={masterVolume}
-                  onChange={(e) => setMasterVolume(Number(e.target.value))}
-                  className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
-                />
-                <span className="text-xs w-8 text-right">{masterVolume}%</span>
+                <Volume2 className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium">100%</span>
               </div>
               <Button
                 variant="default"
@@ -387,80 +324,87 @@ export function StemsStudio() {
 
         {/* Individual Stems Section */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">Individual Stems</h2>
-          <div className="grid grid-cols-1 gap-6">
-            {stems.map((stem) => (
-              <Card
-                key={stem.name}
-                className={`p-6 ${theme.canvasBg} border-white/10 hover:border-white/20 transition`}
-              >
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="text-3xl">{stem.emoji}</div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{stem.name}</h3>
-                    <p className="text-sm text-foreground/60">{stem.description}</p>
-                  </div>
-                </div>
+          <h2 className="text-xl font-bold mb-4">Individual Stems</h2>
+          <div className="space-y-4">
+            {stems.map((stem) => {
+              const stemTheme = STEM_THEMES.find((t) => t.name === stem.name);
+              if (!stemTheme) return null;
 
-                {/* Waveform */}
-                <div
-                  ref={(el) => {
-                    if (el) stemWaveRefs.current[stem.name] = el;
-                  }}
-                  className="mb-4 rounded-lg overflow-hidden bg-black/20"
-                />
+              return (
+                <motion.div
+                  key={stem.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="border-slate-800 bg-gradient-to-r from-slate-900/50 to-slate-800/30 p-6 hover:border-slate-700 transition-colors">
+                    <div className="space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold flex items-center gap-2">
+                            <span className="text-2xl">{stem.emoji}</span>
+                            {stem.name}
+                          </h3>
+                          <p className="text-sm text-slate-400 mt-1">
+                            {stem.description}
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Timeline and Controls */}
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="default"
-                    size="icon"
-                    onClick={() => handleStemPlay(stem.name)}
-                    className={`${theme.buttonAccent} rounded-lg`}
-                  >
-                    <Play className="w-4 h-4" />
-                  </Button>
+                      {/* Waveform and Controls */}
+                      <div className="flex items-center justify-between gap-4">
+                        <Button
+                          size="sm"
+                          className={`rounded-full ${stemTheme.buttonAccent}`}
+                          onClick={() => handleStemPlay(stem.name)}
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
 
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Volume2 className="w-4 h-4" />
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={stemVolumes[stem.name]}
-                      onChange={(e) =>
-                        setStemVolumes((prev) => ({
-                          ...prev,
-                          [stem.name]: Number(e.target.value),
-                        }))
-                      }
-                      className="w-24 h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
-                    />
-                    <span className="text-xs w-8 text-right">
-                      {stemVolumes[stem.name]}%
-                    </span>
-                  </div>
+                        <div
+                          ref={(el) => {
+                            if (el) stemWaveRefs.current[stem.name] = el;
+                          }}
+                          className="flex-1 min-h-[60px]"
+                        />
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => {
-                      const url = stem.url;
-                      if (url) {
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `${generation?.title || "stem"}_${stem.name.toLowerCase()}.mp3`;
-                        a.click();
-                      }
-                    }}
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <Volume2 className="w-4 h-4 text-slate-400" />
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={stemVolumes[stem.name]}
+                              onChange={(e) =>
+                                setStemVolumes({
+                                  ...stemVolumes,
+                                  [stem.name]: parseInt(e.target.value),
+                                })
+                              }
+                              className="w-20 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-sm font-medium w-10">
+                              {stemVolumes[stem.name]}%
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadStem(stem.name)}
+                            className="gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -176,6 +176,7 @@ async function startServer() {
         ["piano", stemSplit.pianoUrl],
       ];
 
+      // Use Node.js fetch which bypasses CORS (built-in for Node 18+)
       for (const [displayName, url] of stemMappings) {
         if (!url) {
           console.log(`[Stems ZIP] Skipping ${displayName} - no URL`);
@@ -183,15 +184,22 @@ async function startServer() {
         }
         try {
           console.log(`[Stems ZIP] Fetching ${displayName} from R2...`);
-          const response = await fetch(url);
-          if (response.ok) {
-            const buffer = await response.arrayBuffer();
-            const filename = `${sanitizedTitle}_${displayName}.mp3`;
-            stemFolder.file(filename, buffer);
-            console.log(`[Stems ZIP] Added ${filename} (${buffer.byteLength} bytes)`);
-          } else {
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': 'Strawberry Riff Stems Downloader/1.0',
+            },
+          });
+          
+          if (!response.ok) {
             console.warn(`[Stems ZIP] Failed to fetch ${displayName}: ${response.status} ${response.statusText}`);
+            continue;
           }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const filename = `${sanitizedTitle}_${displayName}.mp3`;
+          stemFolder.file(filename, buffer);
+          console.log(`[Stems ZIP] Added ${filename} (${buffer.length} bytes)`);
         } catch (error) {
           console.error(`[Stems ZIP] Error fetching ${displayName} stem:`, error);
           // Continue with other stems
