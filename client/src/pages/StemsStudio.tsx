@@ -14,6 +14,8 @@ import {
   Download,
   ChevronLeft,
   Loader2,
+  Volume,
+  VolumeX,
 } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 
@@ -82,6 +84,7 @@ export function StemsStudio() {
   });
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [mutedStems, setMutedStems] = useState<Set<string>>(new Set());
 
   const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
@@ -206,24 +209,17 @@ export function StemsStudio() {
         },
       });
 
-      // Add error handling for waveform loading
       waveSurfer.on("error", (error) => {
         console.error(`[WaveSurfer] Error loading ${stem.name}:`, error);
       });
 
       waveSurfer.on("ready", () => {
-        console.log(`[WaveSurfer] Waveform ready for ${stem.name}`);
+        console.log(`[WaveSurfer] ${stem.name} waveform ready`);
       });
 
-      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
+      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url.substring(0, 100));
       waveSurfer.load(stem.url);
       waveSurferInstances.current[stem.name] = waveSurfer;
-
-      // Sync volume with error handling for NaN
-      const volume = stemVolumes[stem.name] / 100;
-      if (!isNaN(volume) && isFinite(volume)) {
-        waveSurfer.setVolume(volume);
-      }
     });
 
     return () => {
@@ -234,7 +230,7 @@ export function StemsStudio() {
     };
   }, [stemSplit?.stems, generation?.audioUrl]);
 
-  // Update volumes
+  // Update volumes when slider changes
   useEffect(() => {
     Object.entries(stemVolumes).forEach(([stemName, volume]) => {
       const ws = waveSurferInstances.current[stemName];
@@ -273,11 +269,36 @@ export function StemsStudio() {
     }
   };
 
+  const handleToggleMute = (stemName: string) => {
+    setMutedStems((prev) => {
+      const next = new Set(Array.from(prev));
+      if (next.has(stemName)) {
+        next.delete(stemName);
+        // Restore volume when unmuting
+        const ws = waveSurferInstances.current[stemName];
+        if (ws) {
+          const volume = stemVolumes[stemName] / 100;
+          if (!isNaN(volume) && isFinite(volume)) {
+            ws.setVolume(volume);
+          }
+        }
+      } else {
+        next.add(stemName);
+        // Mute by setting volume to 0
+        const ws = waveSurferInstances.current[stemName];
+        if (ws) {
+          ws.setVolume(0);
+        }
+      }
+      return next;
+    });
+  };
+
   const handleDownloadStem = async (stemName: string) => {
     const stem = stems.find((s) => s.name === stemName);
     if (!stem?.url) return;
 
-      setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
+    setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
     try {
       const link = document.createElement("a");
       link.href = stem.url;
@@ -347,7 +368,7 @@ export function StemsStudio() {
           </Card>
         )}
 
-        {/* Master Mix Section */}
+        {/* Master Mix */}
         <div>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             🎵 Master Mix
@@ -444,18 +465,41 @@ export function StemsStudio() {
                               min="0"
                               max="100"
                               value={stemVolumes[stem.name]}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const newVolume = parseInt(e.target.value);
                                 setStemVolumes({
                                   ...stemVolumes,
-                                  [stem.name]: parseInt(e.target.value),
-                                })
-                              }
+                                  [stem.name]: newVolume,
+                                });
+                                if (!mutedStems.has(stem.name)) {
+                                  const ws = waveSurferInstances.current[stem.name];
+                                  if (ws) {
+                                    const volume = newVolume / 100;
+                                    if (!isNaN(volume) && isFinite(volume)) {
+                                      ws.setVolume(volume);
+                                    }
+                                  }
+                                }
+                              }}
                               className="w-20 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="text-sm font-medium w-10">
-                              {stemVolumes[stem.name]}%
+                              {mutedStems.has(stem.name) ? "0" : stemVolumes[stem.name]}%
                             </span>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleMute(stem.name)}
+                            className={mutedStems.has(stem.name) ? "bg-slate-700 border-slate-600" : ""}
+                            title={mutedStems.has(stem.name) ? "Unmute" : "Mute"}
+                          >
+                            {mutedStems.has(stem.name) ? (
+                              <VolumeX className="w-4 h-4" />
+                            ) : (
+                              <Volume className="w-4 h-4" />
+                            )}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
