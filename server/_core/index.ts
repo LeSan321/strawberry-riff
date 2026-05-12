@@ -142,7 +142,7 @@ async function startServer() {
       const generation = await db
         .select()
         .from(musicGenerations)
-        .where(eq(musicGenerations.id, generationId))
+        .where(eq(musicGenerations.id, parseInt(generationId, 10)))
         .limit(1)
         .then((rows: any[]) => rows[0]);
 
@@ -150,7 +150,7 @@ async function startServer() {
         return res.status(403).json({ message: "Not authorized to download these stems" });
       }
 
-      const stemSplit = await getTrackStemSplit(generationId);
+      const stemSplit = await getTrackStemSplit(parseInt(generationId, 10));
       if (!stemSplit || stemSplit.status !== "completed") {
         return res.status(400).json({ message: "Stems not ready for download" });
       }
@@ -202,6 +202,86 @@ async function startServer() {
     } catch (error) {
       console.error("[Stems ZIP] Error:", error);
       res.status(500).json({ message: "Failed to create ZIP file" });
+    }
+  });
+  // Stem audio proxy endpoint to bypass CORS
+  app.get("/api/stems/audio/:generationId/:stemType", async (req, res) => {
+    try {
+      const { generationId, stemType } = req.params;
+      if (!generationId || !stemType) {
+        return res.status(400).json({ message: "Missing generationId or stemType" });
+      }
+
+      // Get auth context from request
+      const { sdk } = await import("./sdk");
+      let user = null;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch (error) {
+        // Continue - user will be null
+      }
+
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get stem split data
+      const { getTrackStemSplit } = await import("../stemsplit/db");
+      const { getDb } = await import("../db");
+      const { musicGenerations } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+
+      const generation = await db
+        .select()
+        .from(musicGenerations)
+        .where(eq(musicGenerations.id, parseInt(generationId, 10)))
+        .limit(1)
+        .then((rows: any[]) => rows[0]);
+
+      if (!generation || generation.userId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to access this stem" });
+      }
+
+      const stemSplit = await getTrackStemSplit(parseInt(generationId, 10));
+      if (!stemSplit || stemSplit.status !== "completed") {
+        return res.status(400).json({ message: "Stems not ready" });
+      }
+
+      // Map stem type to URL
+      const stemUrlMap: Record<string, string | null> = {
+        vocals: stemSplit.vocalUrl,
+        drums: stemSplit.drumsUrl,
+        bass: stemSplit.bassUrl,
+        other: stemSplit.otherUrl,
+        piano: stemSplit.pianoUrl,
+      };
+
+      const stemUrl = stemUrlMap[stemType];
+      if (!stemUrl) {
+        return res.status(404).json({ message: "Stem not found" });
+      }
+
+      // Fetch the stem from R2
+      const response = await fetch(stemUrl);
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Failed to fetch stem" });
+      }
+
+      // Stream the audio with CORS headers
+      res.setHeader("Content-Type", response.headers.get("content-type") || "audio/mpeg");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error("[Stem Audio Proxy] Error:", error);
+      res.status(500).json({ message: "Failed to proxy stem audio" });
     }
   });
   // tRPC API

@@ -117,12 +117,17 @@ export function StemsStudio() {
     id: parseInt(generationId || "0"),
   });
 
-  // Build stem data array
+  // Build stem data array with proxy URLs
+  const buildProxyUrl = (stemType: string) => {
+    if (!generationId) return undefined;
+    return `/api/stems/audio/${generationId}/${stemType}`;
+  };
+
   const stems: StemData[] = [
     {
       name: "Vocals",
       emoji: "🎤",
-      url: stemSplit?.stems?.vocalUrl || undefined,
+      url: stemSplit?.stems?.vocalUrl ? buildProxyUrl("vocals") : undefined,
       color: "from-pink-500 to-rose-500",
       description: "Isolated voice track",
       waveformColor: "#ec4899",
@@ -130,7 +135,7 @@ export function StemsStudio() {
     {
       name: "Instrumental",
       emoji: "🎸",
-      url: stemSplit?.stems?.otherUrl || undefined,
+      url: stemSplit?.stems?.otherUrl ? buildProxyUrl("other") : undefined,
       color: "from-green-500 to-emerald-500",
       description: "Music without vocals",
       waveformColor: "#10b981",
@@ -138,7 +143,7 @@ export function StemsStudio() {
     {
       name: "Drums",
       emoji: "🥁",
-      url: stemSplit?.stems?.drumsUrl || undefined,
+      url: stemSplit?.stems?.drumsUrl ? buildProxyUrl("drums") : undefined,
       color: "from-orange-500 to-yellow-500",
       description: "Percussion and rhythm",
       waveformColor: "#f97316",
@@ -146,7 +151,7 @@ export function StemsStudio() {
     {
       name: "Bass",
       emoji: "🎹",
-      url: stemSplit?.stems?.bassUrl || undefined,
+      url: stemSplit?.stems?.bassUrl ? buildProxyUrl("bass") : undefined,
       color: "from-purple-500 to-indigo-500",
       description: "Bass guitar and low frequencies",
       waveformColor: "#a855f7",
@@ -154,7 +159,7 @@ export function StemsStudio() {
     {
       name: "Other",
       emoji: "🎺",
-      url: stemSplit?.stems?.pianoUrl || undefined,
+      url: stemSplit?.stems?.pianoUrl ? buildProxyUrl("piano") : undefined,
       color: "from-cyan-500 to-blue-500",
       description: "Remaining instruments",
       waveformColor: "#06b6d4",
