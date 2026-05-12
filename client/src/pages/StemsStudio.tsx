@@ -187,6 +187,16 @@ export function StemsStudio() {
         },
       });
 
+      // Add error handling for waveform loading
+      waveSurfer.on('error', (error) => {
+        console.error(`[WaveSurfer] Error loading ${stem.name}:`, error);
+      });
+
+      waveSurfer.on('ready', () => {
+        console.log(`[WaveSurfer] Waveform ready for ${stem.name}`);
+      });
+
+      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
       waveSurfer.load(stem.url);
       waveSurferInstances.current[stem.name] = waveSurfer;
 

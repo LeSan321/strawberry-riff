@@ -177,16 +177,23 @@ async function startServer() {
       ];
 
       for (const [displayName, url] of stemMappings) {
-        if (!url) continue;
+        if (!url) {
+          console.log(`[Stems ZIP] Skipping ${displayName} - no URL`);
+          continue;
+        }
         try {
+          console.log(`[Stems ZIP] Fetching ${displayName} from R2...`);
           const response = await fetch(url);
           if (response.ok) {
             const buffer = await response.arrayBuffer();
             const filename = `${sanitizedTitle}_${displayName}.mp3`;
             stemFolder.file(filename, buffer);
+            console.log(`[Stems ZIP] Added ${filename} (${buffer.byteLength} bytes)`);
+          } else {
+            console.warn(`[Stems ZIP] Failed to fetch ${displayName}: ${response.status} ${response.statusText}`);
           }
         } catch (error) {
-          console.warn(`Failed to fetch ${displayName} stem:`, error);
+          console.error(`[Stems ZIP] Error fetching ${displayName} stem:`, error);
           // Continue with other stems
         }
       }
