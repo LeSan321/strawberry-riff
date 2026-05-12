@@ -13,6 +13,7 @@ import {
   Volume2,
   Download,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 
@@ -79,6 +80,8 @@ export function StemsStudio() {
     Bass: 100,
     Other: 100,
   });
+  const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
@@ -143,6 +146,43 @@ export function StemsStudio() {
 
   // Initialize waveforms
   useEffect(() => {
+    if (!stemSplit?.stems && !generation?.audioUrl) return;
+
+    // Initialize master mix waveform
+    if (generation?.audioUrl) {
+      const masterContainer = stemWaveRefs.current["Master"];
+      if (masterContainer && !waveSurferInstances.current["Master"]) {
+        const masterWaveSurfer = WaveSurfer.create({
+          container: masterContainer,
+          waveColor: "#a78bfa",
+          progressColor: "#ffffff",
+          barWidth: 2,
+          barGap: 1,
+          barRadius: 2,
+          height: 60,
+          normalize: true,
+          cursorColor: "#ffffff",
+          cursorWidth: 2,
+          fetchParams: {
+            credentials: "include",
+          },
+        });
+
+        masterWaveSurfer.on("error", (error) => {
+          console.error("[WaveSurfer] Error loading Master:", error);
+        });
+
+        masterWaveSurfer.on("ready", () => {
+          console.log("[WaveSurfer] Master waveform ready");
+        });
+
+        console.log("[WaveSurfer] Loading Master from:", generation.audioUrl.substring(0, 100));
+        masterWaveSurfer.load(generation.audioUrl);
+        waveSurferInstances.current["Master"] = masterWaveSurfer;
+      }
+    }
+
+    // Initialize stem waveforms
     if (!stemSplit?.stems) return;
 
     stems.forEach((stem) => {
@@ -193,7 +233,7 @@ export function StemsStudio() {
       });
       waveSurferInstances.current = {};
     };
-  }, [stemSplit?.stems]);
+  }, [stemSplit?.stems, generation?.audioUrl]);
 
   // Update volumes
   useEffect(() => {
@@ -209,10 +249,14 @@ export function StemsStudio() {
 
   const handleDownloadAll = async () => {
     if (!generation) return;
+    setDownloadingAll(true);
     try {
       await downloadAllStems(parseInt(generationId || "0"), generation.title);
+      toast.success("Stems downloaded successfully!");
     } catch (error) {
       toast.error("Failed to download stems");
+    } finally {
+      setDownloadingAll(false);
     }
   };
 
@@ -223,16 +267,35 @@ export function StemsStudio() {
     }
   };
 
-  const handleDownloadStem = (stemName: string) => {
+  const handleMasterPlay = () => {
+    const ws = waveSurferInstances.current["Master"];
+    if (ws) {
+      ws.playPause();
+    }
+  };
+
+  const handleDownloadStem = async (stemName: string) => {
     const stem = stems.find((s) => s.name === stemName);
     if (!stem?.url) return;
 
-    const link = document.createElement("a");
-    link.href = stem.url;
-    link.download = `${generation?.title || "stem"}_${stemName.toLowerCase()}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
+    try {
+      const link = document.createElement("a");
+      link.href = stem.url;
+      link.download = `${generation?.title || "stem"}_${stemName.toLowerCase()}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`${stemName} downloaded!`);
+    } catch (error) {
+      toast.error(`Failed to download ${stemName}`);
+    } finally {
+      setDownloadingStems((prev) => {
+        const next = new Set(Array.from(prev));
+        next.delete(stemName);
+        return next;
+      });
+    }
   };
 
   const theme = STEM_THEMES.find((t) => t.name === "Vocals") || STEM_THEMES[0];
@@ -295,7 +358,7 @@ export function StemsStudio() {
               <Button
                 size="lg"
                 className={`rounded-full ${theme.buttonAccent}`}
-                onClick={() => handleStemPlay("Master")}
+                onClick={handleMasterPlay}
               >
                 <Play className="w-5 h-5" />
               </Button>
@@ -313,10 +376,15 @@ export function StemsStudio() {
                 variant="default"
                 size="sm"
                 onClick={handleDownloadAll}
+                disabled={downloadingAll}
                 className={`gap-2 ${theme.buttonAccent}`}
               >
-                <Download className="w-4 h-4" />
-                Download All as ZIP
+                {downloadingAll ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {downloadingAll ? "Downloading..." : "Download All as ZIP"}
               </Button>
             </div>
           </Card>
@@ -393,10 +461,15 @@ export function StemsStudio() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDownloadStem(stem.name)}
+                            disabled={downloadingStems.has(stem.name)}
                             className="gap-2"
                           >
-                            <Download className="w-4 h-4" />
-                            Download
+                            {downloadingStems.has(stem.name) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                            {downloadingStems.has(stem.name) ? "Downloading..." : "Download"}
                           </Button>
                         </div>
                       </div>
