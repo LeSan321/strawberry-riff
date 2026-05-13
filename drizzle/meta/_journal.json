@@ -155,13 +155,6 @@
       "when": 1778441970468,
       "tag": "0021_next_switch",
       "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "5",
-      "when": 1778639513794,
-      "tag": "0022_faulty_proemial_gods",
-      "breakpoints": true
     }
   ]
 }

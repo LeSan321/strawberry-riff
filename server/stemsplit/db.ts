@@ -12,14 +12,14 @@ import { eq } from "drizzle-orm";
  */
 export async function createStemSplit(
   userId: number,
-  generationId: number,
+  trackId: number,
   jobId: string
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   const result = await db.insert(stemSplits).values({
     userId,
-    generationId,
+    trackId,
     jobId,
     status: "pending",
   });
@@ -56,12 +56,12 @@ export async function getUserStemSplits(userId: number) {
 }
 
 /**
- * Get stem split for a specific generation
+ * Get stem split for a specific track
  */
-export async function getTrackStemSplit(generationId: number) {
+export async function getTrackStemSplit(trackId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(stemSplits).where(eq(stemSplits.generationId, generationId));
+  const result = await db.select().from(stemSplits).where(eq(stemSplits.trackId, trackId));
   return result[0] || null;
 }
 

@@ -34,7 +34,6 @@ export const stemsplitRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { generationId } = input;
       const userId = ctx.user.id;
-      console.log('[StemSplit] startStemSplit called with generationId:', generationId, 'type:', typeof generationId);
 
       // Check premium gating
       const premiumCheck = await canPerformStemSplit(userId);
@@ -176,7 +175,7 @@ export const stemsplitRouter = router({
           await updateStemSplitStatus(jobId, "completed");
           
           // Mark the generation as split
-          await markGenerationAsSplit(stemSplit.generationId);
+          await markGenerationAsSplit(stemSplit.trackId);
           
           return {
             jobId,
@@ -227,7 +226,7 @@ export const stemsplitRouter = router({
       return stemSplits.map((split) => ({
         id: split.id,
         jobId: split.jobId,
-        generationId: split.generationId,
+        trackId: split.trackId,
         status: split.status,
         createdAt: split.createdAt,
         completedAt: split.completedAt,
