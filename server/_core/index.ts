@@ -262,7 +262,14 @@ async function startServer() {
         .limit(1)
         .then((rows: any[]) => rows[0]);
 
-      if (!generation || generation.userId !== user.id) {
+      if (!generation) {
+        console.error(`[Stem Audio Proxy] Generation not found: ${generationId}`);
+        return res.status(404).json({ message: "Generation not found" });
+      }
+      
+      console.log(`[Stem Audio Proxy] Generation found: userId=${generation.userId}, user.id=${user.id}`);
+      if (generation.userId !== user.id) {
+        console.error(`[Stem Audio Proxy] User ID mismatch: generation.userId=${generation.userId} !== user.id=${user.id}`);
         return res.status(403).json({ message: "Not authorized to access this stem" });
       }
 
