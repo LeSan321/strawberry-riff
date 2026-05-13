@@ -96,7 +96,7 @@ export async function mixStems(stems: StemInput[]): Promise<string> {
 
     filterComplex = `${volumeFilters};${mixFilter}`;
 
-    const command = `ffmpeg -y ${inputArgs} -filter_complex "${filterComplex}" -map "[out]" -q:a 5 "${outputFile}"`;
+    const command = `/usr/bin/ffmpeg -y ${inputArgs} -filter_complex "${filterComplex}" -map "[out]" -q:a 5 "${outputFile}"`;
 
     console.log(`[Mixer] Running ffmpeg command with ${downloadedStems.length} stems...`);
     console.log(`[Mixer] Mixing: ${downloadedStems.map((s) => `${s.name}(${Math.round(s.volume * 100)}%)`).join(", ")}`);
