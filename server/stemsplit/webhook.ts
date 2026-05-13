@@ -123,7 +123,7 @@ export async function handleStemSplitWebhook(req: Request, res: Response) {
       await updateStemSplitStatus(data.jobId, "completed");
       
       // Mark the generation as split
-      await markGenerationAsSplit(stemSplit.trackId);
+      await markGenerationAsSplit(stemSplit.generationId);
 
       console.log(`[StemSplit Webhook] ✓ Stems saved for job ${data.jobId}`);
       return res.json({ verified: true, status: "completed" });

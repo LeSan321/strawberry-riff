@@ -795,3 +795,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test expiration badges show correct countdown
 - [ ] Test navigation to Stems Studio page works
 - [ ] Test back button returns to Studio
+
+
+## BUG: Stem Split Schema Mismatch
+- [ ] Add generationId column to stem_splits table (currently uses trackId which doesn't exist in music_generations)
+- [ ] Update getTrackStemSplit to query by generationId instead of trackId
+- [ ] Create database migration for schema change
+- [ ] Fix stem split creation to use generationId from music_generations

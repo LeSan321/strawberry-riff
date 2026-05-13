@@ -255,7 +255,7 @@ export type InsertPlaylistShare = typeof playlistShares.$inferInsert;
 export const stemSplits = mysqlTable("stem_splits", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  trackId: int("trackId").notNull(),
+  generationId: int("generationId").notNull(), // Link to music_generations
   jobId: varchar("jobId", { length: 128 }).notNull().unique(), // StemSplit job ID
   status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
   errorMessage: text("errorMessage"),

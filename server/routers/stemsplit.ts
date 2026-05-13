@@ -175,7 +175,7 @@ export const stemsplitRouter = router({
           await updateStemSplitStatus(jobId, "completed");
           
           // Mark the generation as split
-          await markGenerationAsSplit(stemSplit.trackId);
+          await markGenerationAsSplit(stemSplit.generationId);
           
           return {
             jobId,
@@ -226,7 +226,7 @@ export const stemsplitRouter = router({
       return stemSplits.map((split) => ({
         id: split.id,
         jobId: split.jobId,
-        trackId: split.trackId,
+        generationId: split.generationId,
         status: split.status,
         createdAt: split.createdAt,
         completedAt: split.completedAt,
