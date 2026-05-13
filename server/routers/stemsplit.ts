@@ -430,13 +430,31 @@ export const stemsplitRouter = router({
           throw new Error("Stems not ready for export");
         }
 
+        // Refresh stem URLs from StemSplit API to get fresh presigned URLs
+        console.log(`[Export] Refreshing stem URLs from StemSplit API...`);
+        const { getStemSplitStatus } = await import("../stemsplit/client");
+        let freshStemUrls = stemSplit;
+        try {
+          const freshJobData = await getStemSplitStatus(stemSplit.jobId);
+          freshStemUrls = {
+            ...stemSplit,
+            vocalUrl: freshJobData.outputs?.vocals?.url || stemSplit.vocalUrl,
+            drumsUrl: freshJobData.outputs?.drums?.url || stemSplit.drumsUrl,
+            bassUrl: freshJobData.outputs?.bass?.url || stemSplit.bassUrl,
+            otherUrl: freshJobData.outputs?.other?.url || stemSplit.otherUrl,
+            pianoUrl: freshJobData.outputs?.piano?.url || stemSplit.pianoUrl,
+          };
+        } catch (refreshError) {
+          console.warn(`[Export] Failed to refresh URLs, using cached`);
+        }
+
         // Build stems array with volumes - filter out null URLs
         const allStems = [
-          stemSplit.vocalUrl ? { url: stemSplit.vocalUrl, volume: stemVolumes.Vocals, name: "Vocals" } : null,
-          stemSplit.drumsUrl ? { url: stemSplit.drumsUrl, volume: stemVolumes.Drums, name: "Drums" } : null,
-          stemSplit.bassUrl ? { url: stemSplit.bassUrl, volume: stemVolumes.Bass, name: "Bass" } : null,
-          stemSplit.otherUrl ? { url: stemSplit.otherUrl, volume: stemVolumes.Instrumental, name: "Instrumental" } : null,
-          stemSplit.pianoUrl ? { url: stemSplit.pianoUrl, volume: stemVolumes.Other, name: "Other" } : null,
+          freshStemUrls.vocalUrl ? { url: freshStemUrls.vocalUrl, volume: stemVolumes.Vocals, name: "Vocals" } : null,
+          freshStemUrls.drumsUrl ? { url: freshStemUrls.drumsUrl, volume: stemVolumes.Drums, name: "Drums" } : null,
+          freshStemUrls.bassUrl ? { url: freshStemUrls.bassUrl, volume: stemVolumes.Bass, name: "Bass" } : null,
+          freshStemUrls.otherUrl ? { url: freshStemUrls.otherUrl, volume: stemVolumes.Instrumental, name: "Instrumental" } : null,
+          freshStemUrls.pianoUrl ? { url: freshStemUrls.pianoUrl, volume: stemVolumes.Other, name: "Other" } : null,
         ];
         const stemsToMix = allStems.filter((stem): stem is { url: string; volume: number; name: string } => stem !== null && stem.volume > 0);
 
