@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, generationId, status, createdAt FROM stem_splits WHERE status = 'completed' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, generationId, status, createdAt FROM stem_splits WHERE status = 'completed' LIMIT 5;",
+  "rows": [
+    {
+      "id": "20",
+      "generationId": "0",
+      "status": "completed",
+      "createdAt": "2026-05-08 19:25:48"
+    },
+    {
+      "id": "22",
+      "generationId": "0",
+      "status": "completed",
+      "createdAt": "2026-05-08 19:25:48"
+    },
+    {
+      "id": "23",
+      "generationId": "0",
+      "status": "completed",
+      "createdAt": "2026-05-08 19:25:48"
+    },
+    {
+      "id": "32",
+      "generationId": "0",
+      "status": "completed",
+      "createdAt": "2026-05-08 19:26:09"
+    },
+    {
+      "id": "34",
+      "generationId": "0",
+      "status": "completed",
+      "createdAt": "2026-05-08 19:26:09"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tgenerationId\tstatus\tcreatedAt\n20\t0\tcompleted\t2026-05-08 19:25:48\n22\t0\tcompleted\t2026-05-08 19:25:48\n23\t0\tcompleted\t2026-05-08 19:25:48\n32\t0\tcompleted\t2026-05-08 19:26:09\n34\t0\tcompleted\t2026-05-08 19:26:09\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

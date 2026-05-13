@@ -1,0 +1,120 @@
+{
+  "query": "SELECT id, generationId, jobId, status, vocalUrl, drumsUrl, bassUrl, pianoUrl, otherUrl FROM stem_splits ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, generationId, jobId, status, vocalUrl, drumsUrl, bassUrl, pianoUrl, otherUrl FROM stem_splits ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "300004",
+      "generationId": "1980027",
+      "jobId": "cmp3gp2l800a1zzyv6qna3fsf",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "300003",
+      "generationId": "1980027",
+      "jobId": "cmp3gch7u009yzzyvt3m570vw",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "300002",
+      "generationId": "0",
+      "jobId": "cmp3fy5jh009mzzyvupelz4k4",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "300001",
+      "generationId": "0",
+      "jobId": "cmp3fhtmx008zzzyvbzmh96jq",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270026",
+      "generationId": "0",
+      "jobId": "cmp3ex02f008ozzyv4jff2nm4",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270025",
+      "generationId": "0",
+      "jobId": "cmp3ep61j008kzzyvcmlc5k5h",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270017",
+      "generationId": "0",
+      "jobId": "test-job-1778633562153-l0l11ryye",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270019",
+      "generationId": "0",
+      "jobId": "test-job-1778633562256-5b051z60d",
+      "status": "processing",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270018",
+      "generationId": "0",
+      "jobId": "test-job-1778633562188-dwdhap46s",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    },
+    {
+      "id": "270013",
+      "generationId": "0",
+      "jobId": "test-job-1778633561745-1hkslkjes",
+      "status": "pending",
+      "vocalUrl": "NULL",
+      "drumsUrl": "NULL",
+      "bassUrl": "NULL",
+      "pianoUrl": "NULL",
+      "otherUrl": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tgenerationId\tjobId\tstatus\tvocalUrl\tdrumsUrl\tbassUrl\tpianoUrl\totherUrl\n300004\t1980027\tcmp3gp2l800a1zzyv6qna3fsf\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n300003\t1980027\tcmp3gch7u009yzzyvt3m570vw\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n300002\t0\tcmp3fy5jh009mzzyvupelz4k4\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n300001\t0\tcmp3fhtmx008zzzyvbzmh96jq\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n270026\t0\tcmp3ex02f008ozzyv4jff2nm4\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n270025\t0\tcmp3ep61j008kzzyvcmlc5k5h\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n270017\t0\ttest-job-1778633562153-l0l11ryye\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n270019\t0\ttest-job-1778633562256-5b051z60d\tprocessing\tNULL\tNULL\tNULL\tNULL\tNULL\n270018\t0\ttest-job-1778633562188-dwdhap46s\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n270013\t0\ttest-job-1778633561745-1hkslkjes\tpending\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

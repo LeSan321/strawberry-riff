@@ -34,6 +34,7 @@ export const stemsplitRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { generationId } = input;
       const userId = ctx.user.id;
+      console.log('[StemSplit] startStemSplit called with generationId:', generationId, 'type:', typeof generationId);
 
       // Check premium gating
       const premiumCheck = await canPerformStemSplit(userId);
