@@ -16,8 +16,6 @@ import {
   markGenerationAsSplit,
 } from "../stemsplit/db";
 import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
-import { mixStems, cleanupFile } from "../stemsplit/mixer";
-import { storagePut } from "../storage";
 
 
 export const stemsplitRouter = router({
@@ -372,128 +370,6 @@ export const stemsplitRouter = router({
       } catch (error) {
         console.error("[StemSplit] Error getting track stem split:", error);
         throw new Error("Failed to get track stem split: " + (error as Error).message);
-      }
-    }),
-
-  /**
-   * Export a custom mix with user-adjusted stem volumes
-   * Mixes stems server-side using ffmpeg and uploads to S3
-   */
-  exportCustomMix: protectedProcedure
-    .input(
-      z.object({
-        generationId: z.number().int().positive("Generation ID must be a positive integer"),
-        stemVolumes: z.object({
-          Vocals: z.number().min(0).max(100),
-          Instrumental: z.number().min(0).max(100),
-          Drums: z.number().min(0).max(100),
-          Bass: z.number().min(0).max(100),
-          Other: z.number().min(0).max(100),
-        }),
-        mixName: z.string().min(1).max(100).optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const { generationId, stemVolumes, mixName } = input;
-      const userId = ctx.user.id;
-
-      console.log(`[Export] User ${userId} exporting custom mix for generation ${generationId}`);
-      console.log(`[Export] Stem volumes:`, stemVolumes);
-
-      // Verify generation exists and belongs to the user
-      const { getDb } = await import("../db");
-      const { musicGenerations } = await import("../../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-      const db = await getDb();
-      if (!db) throw new Error("Database connection failed");
-
-      const generation = await db
-        .select()
-        .from(musicGenerations)
-        .where(eq(musicGenerations.id, generationId))
-        .limit(1)
-        .then((rows: any[]) => rows[0]);
-
-      if (!generation) {
-        throw new Error("Generation not found");
-      }
-
-      if (generation.userId !== userId) {
-        throw new Error("You do not have permission to export this mix");
-      }
-
-      try {
-        // Get stem split data
-        const stemSplit = await getTrackStemSplit(generationId);
-
-        if (!stemSplit || stemSplit.status !== "completed") {
-          throw new Error("Stems not ready for export");
-        }
-
-        // Refresh stem URLs from StemSplit API to get fresh presigned URLs
-        console.log(`[Export] Refreshing stem URLs from StemSplit API...`);
-        const { getStemSplitStatus } = await import("../stemsplit/client");
-        let freshStemUrls = stemSplit;
-        try {
-          const freshJobData = await getStemSplitStatus(stemSplit.jobId);
-          freshStemUrls = {
-            ...stemSplit,
-            vocalUrl: freshJobData.outputs?.vocals?.url || stemSplit.vocalUrl,
-            drumsUrl: freshJobData.outputs?.drums?.url || stemSplit.drumsUrl,
-            bassUrl: freshJobData.outputs?.bass?.url || stemSplit.bassUrl,
-            otherUrl: freshJobData.outputs?.other?.url || stemSplit.otherUrl,
-            pianoUrl: freshJobData.outputs?.piano?.url || stemSplit.pianoUrl,
-          };
-        } catch (refreshError) {
-          console.warn(`[Export] Failed to refresh URLs, using cached`);
-        }
-
-        // Build stems array with volumes - filter out null URLs
-        const allStems = [
-          freshStemUrls.vocalUrl ? { url: freshStemUrls.vocalUrl, volume: stemVolumes.Vocals, name: "Vocals" } : null,
-          freshStemUrls.drumsUrl ? { url: freshStemUrls.drumsUrl, volume: stemVolumes.Drums, name: "Drums" } : null,
-          freshStemUrls.bassUrl ? { url: freshStemUrls.bassUrl, volume: stemVolumes.Bass, name: "Bass" } : null,
-          freshStemUrls.otherUrl ? { url: freshStemUrls.otherUrl, volume: stemVolumes.Instrumental, name: "Instrumental" } : null,
-          freshStemUrls.pianoUrl ? { url: freshStemUrls.pianoUrl, volume: stemVolumes.Other, name: "Other" } : null,
-        ];
-        const stemsToMix = allStems.filter((stem): stem is { url: string; volume: number; name: string } => stem !== null && stem.volume > 0);
-
-        if (stemsToMix.length === 0) {
-          throw new Error("All stems are muted - nothing to mix");
-        }
-
-        console.log(`[Export] Mixing ${stemsToMix.length} stems...`);
-
-        // Mix stems using ffmpeg
-        const mixedFilePath = await mixStems(stemsToMix);
-
-        try {
-          // Read the mixed file
-          const { readFile } = await import("fs/promises");
-          const audioBuffer = await readFile(mixedFilePath);
-
-          // Upload to S3
-          const fileName = `${generation.title || "mix"}_${mixName || "custom"}_${Date.now()}.mp3`;
-          const fileKey = `custom-mixes/${userId}/${fileName}`;
-
-          console.log(`[Export] Uploading mix to S3: ${fileKey}`);
-          const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
-
-          console.log(`[Export] Mix exported successfully: ${url}`);
-
-          return {
-            success: true,
-            url,
-            fileName,
-            message: "Mix exported successfully",
-          };
-        } finally {
-          // Cleanup the temporary mixed file
-          await cleanupFile(mixedFilePath);
-        }
-      } catch (error) {
-        console.error("[Export] Error exporting custom mix:", error);
-        throw new Error(`Failed to export custom mix: ${(error as Error).message}`);
       }
     }),
 });

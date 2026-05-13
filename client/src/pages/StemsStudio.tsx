@@ -14,8 +14,6 @@ import {
   Download,
   ChevronLeft,
   Loader2,
-  Volume,
-  VolumeX,
 } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 
@@ -84,11 +82,6 @@ export function StemsStudio() {
   });
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
-  const [mutedStems, setMutedStems] = useState<Set<string>>(new Set());
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [exportMixName, setExportMixName] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
-  const exportMutation = trpc.stemsplit.exportCustomMix.useMutation();
 
   const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
@@ -213,17 +206,24 @@ export function StemsStudio() {
         },
       });
 
+      // Add error handling for waveform loading
       waveSurfer.on("error", (error) => {
         console.error(`[WaveSurfer] Error loading ${stem.name}:`, error);
       });
 
       waveSurfer.on("ready", () => {
-        console.log(`[WaveSurfer] ${stem.name} waveform ready`);
+        console.log(`[WaveSurfer] Waveform ready for ${stem.name}`);
       });
 
-      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url.substring(0, 100));
+      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
       waveSurfer.load(stem.url);
       waveSurferInstances.current[stem.name] = waveSurfer;
+
+      // Sync volume with error handling for NaN
+      const volume = stemVolumes[stem.name] / 100;
+      if (!isNaN(volume) && isFinite(volume)) {
+        waveSurfer.setVolume(volume);
+      }
     });
 
     return () => {
@@ -234,7 +234,7 @@ export function StemsStudio() {
     };
   }, [stemSplit?.stems, generation?.audioUrl]);
 
-  // Update volumes when slider changes
+  // Update volumes
   useEffect(() => {
     Object.entries(stemVolumes).forEach(([stemName, volume]) => {
       const ws = waveSurferInstances.current[stemName];
@@ -273,60 +273,11 @@ export function StemsStudio() {
     }
   };
 
-  const handleToggleMute = (stemName: string) => {
-    setMutedStems((prev) => {
-      const next = new Set(Array.from(prev));
-      if (next.has(stemName)) {
-        next.delete(stemName);
-        // Restore volume when unmuting
-        const ws = waveSurferInstances.current[stemName];
-        if (ws) {
-          const volume = stemVolumes[stemName] / 100;
-          if (!isNaN(volume) && isFinite(volume)) {
-            ws.setVolume(volume);
-          }
-        }
-      } else {
-        next.add(stemName);
-        // Mute by setting volume to 0
-        const ws = waveSurferInstances.current[stemName];
-        if (ws) {
-          ws.setVolume(0);
-        }
-      }
-      return next;
-    });
-  };
-
-  const handleExportMix = async () => {
-    if (!generation) return;
-    setIsExporting(true);
-    try {
-      const result = await exportMutation.mutateAsync({
-        generationId: parseInt(generationId || "0"),
-        stemVolumes: stemVolumes as { Vocals: number; Instrumental: number; Drums: number; Bass: number; Other: number },
-        mixName: exportMixName || undefined,
-      });
-      
-      if (result.success) {
-        toast.success(`Mix exported: ${result.fileName}`);
-        // Optionally open the download link
-        window.open(result.url, "_blank");
-        setShowExportDialog(false);
-        setExportMixName("");
-      }
-    } catch (error) {
-      toast.error(`Failed to export mix: ${(error as Error).message}`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const handleDownloadStem = async (stemName: string) => {
     const stem = stems.find((s) => s.name === stemName);
     if (!stem?.url) return;
 
-    setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
+      setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
     try {
       const link = document.createElement("a");
       link.href = stem.url;
@@ -396,7 +347,7 @@ export function StemsStudio() {
           </Card>
         )}
 
-        {/* Master Mix */}
+        {/* Master Mix Section */}
         <div>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             🎵 Master Mix
@@ -434,71 +385,9 @@ export function StemsStudio() {
                 )}
                 {downloadingAll ? "Downloading..." : "Download All as ZIP"}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowExportDialog(true)}
-                className="gap-2"
-              >
-                <span>🎚️</span>
-                Export Custom Mix
-              </Button>
             </div>
           </Card>
         </div>
-
-        {/* Export Custom Mix Dialog */}
-        {showExportDialog && (
-          <Card className="border-slate-800 bg-slate-900/50 p-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold">Export Custom Mix</h3>
-              <p className="text-sm text-slate-400">
-                Your current stem volumes will be mixed into a single audio file.
-              </p>
-              <div>
-                <label className="block text-sm font-medium mb-2">Mix Name (optional)</label>
-                <input
-                  type="text"
-                  value={exportMixName}
-                  onChange={(e) => setExportMixName(e.target.value)}
-                  placeholder="e.g., Vocals Heavy, Drums Only"
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-slate-600"
-                />
-              </div>
-              <div className="bg-slate-800/50 p-3 rounded-lg text-sm text-slate-300">
-                <p className="font-medium mb-2">Current Mix:</p>
-                <ul className="space-y-1">
-                  {Object.entries(stemVolumes).map(([name, volume]) => (
-                    <li key={name}>
-                      {name}: {mutedStems.has(name) ? "0" : volume}%
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowExportDialog(false)}
-                  disabled={isExporting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleExportMix}
-                  disabled={isExporting}
-                  className={`gap-2 ${theme.buttonAccent}`}
-                >
-                  {isExporting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <span>🎚️</span>
-                  )}
-                  {isExporting ? "Exporting..." : "Export Mix"}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
 
         {/* Individual Stems Section */}
         <div>
@@ -555,41 +444,18 @@ export function StemsStudio() {
                               min="0"
                               max="100"
                               value={stemVolumes[stem.name]}
-                              onChange={(e) => {
-                                const newVolume = parseInt(e.target.value);
+                              onChange={(e) =>
                                 setStemVolumes({
                                   ...stemVolumes,
-                                  [stem.name]: newVolume,
-                                });
-                                if (!mutedStems.has(stem.name)) {
-                                  const ws = waveSurferInstances.current[stem.name];
-                                  if (ws) {
-                                    const volume = newVolume / 100;
-                                    if (!isNaN(volume) && isFinite(volume)) {
-                                      ws.setVolume(volume);
-                                    }
-                                  }
-                                }
-                              }}
+                                  [stem.name]: parseInt(e.target.value),
+                                })
+                              }
                               className="w-20 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="text-sm font-medium w-10">
-                              {mutedStems.has(stem.name) ? "0" : stemVolumes[stem.name]}%
+                              {stemVolumes[stem.name]}%
                             </span>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleMute(stem.name)}
-                            className={mutedStems.has(stem.name) ? "bg-slate-700 border-slate-600" : ""}
-                            title={mutedStems.has(stem.name) ? "Unmute" : "Mute"}
-                          >
-                            {mutedStems.has(stem.name) ? (
-                              <VolumeX className="w-4 h-4" />
-                            ) : (
-                              <Volume className="w-4 h-4" />
-                            )}
-                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
