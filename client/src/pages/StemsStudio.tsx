@@ -85,6 +85,10 @@ export function StemsStudio() {
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [mutedStems, setMutedStems] = useState<Set<string>>(new Set());
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportMixName, setExportMixName] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const exportMutation = trpc.stemsplit.exportCustomMix.useMutation();
 
   const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
@@ -294,6 +298,30 @@ export function StemsStudio() {
     });
   };
 
+  const handleExportMix = async () => {
+    if (!generation) return;
+    setIsExporting(true);
+    try {
+      const result = await exportMutation.mutateAsync({
+        generationId: parseInt(generationId || "0"),
+        stemVolumes: stemVolumes as { Vocals: number; Instrumental: number; Drums: number; Bass: number; Other: number },
+        mixName: exportMixName || undefined,
+      });
+      
+      if (result.success) {
+        toast.success(`Mix exported: ${result.fileName}`);
+        // Optionally open the download link
+        window.open(result.url, "_blank");
+        setShowExportDialog(false);
+        setExportMixName("");
+      }
+    } catch (error) {
+      toast.error(`Failed to export mix: ${(error as Error).message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleDownloadStem = async (stemName: string) => {
     const stem = stems.find((s) => s.name === stemName);
     if (!stem?.url) return;
@@ -406,9 +434,71 @@ export function StemsStudio() {
                 )}
                 {downloadingAll ? "Downloading..." : "Download All as ZIP"}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowExportDialog(true)}
+                className="gap-2"
+              >
+                <span>🎚️</span>
+                Export Custom Mix
+              </Button>
             </div>
           </Card>
         </div>
+
+        {/* Export Custom Mix Dialog */}
+        {showExportDialog && (
+          <Card className="border-slate-800 bg-slate-900/50 p-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold">Export Custom Mix</h3>
+              <p className="text-sm text-slate-400">
+                Your current stem volumes will be mixed into a single audio file.
+              </p>
+              <div>
+                <label className="block text-sm font-medium mb-2">Mix Name (optional)</label>
+                <input
+                  type="text"
+                  value={exportMixName}
+                  onChange={(e) => setExportMixName(e.target.value)}
+                  placeholder="e.g., Vocals Heavy, Drums Only"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-slate-600"
+                />
+              </div>
+              <div className="bg-slate-800/50 p-3 rounded-lg text-sm text-slate-300">
+                <p className="font-medium mb-2">Current Mix:</p>
+                <ul className="space-y-1">
+                  {Object.entries(stemVolumes).map(([name, volume]) => (
+                    <li key={name}>
+                      {name}: {mutedStems.has(name) ? "0" : volume}%
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowExportDialog(false)}
+                  disabled={isExporting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleExportMix}
+                  disabled={isExporting}
+                  className={`gap-2 ${theme.buttonAccent}`}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>🎚️</span>
+                  )}
+                  {isExporting ? "Exporting..." : "Export Mix"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Individual Stems Section */}
         <div>
