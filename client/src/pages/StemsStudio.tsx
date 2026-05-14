@@ -145,33 +145,41 @@ export function StemsStudio() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationId, stemSplit?.stems?.vocalUrl, stemSplit?.stems?.drumsUrl, stemSplit?.stems?.bassUrl, stemSplit?.stems?.otherUrl, stemSplit?.stems?.pianoUrl]);
 
-  // Initialize master waveform
+  // Initialize master waveform — deferred to ensure DOM ref is attached after render
   useEffect(() => {
     if (!generation?.audioUrl) return;
-    const masterContainer = stemWaveRefs.current["Master"];
-    if (!masterContainer || waveSurferInstances.current["Master"]) return;
 
-    const masterWaveSurfer = WaveSurfer.create({
-      container: masterContainer,
-      waveColor: "#a78bfa",
-      progressColor: "#ffffff",
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2,
-      height: 60,
-      normalize: true,
-      cursorColor: "#ffffff",
-      cursorWidth: 2,
-    });
-    masterWaveSurfer.on("error", (error) => console.error("[WaveSurfer] Error loading Master:", error));
-    masterWaveSurfer.on("ready", () => console.log("[WaveSurfer] Master waveform ready"));
-    console.log("[WaveSurfer] Loading Master from:", generation.audioUrl.substring(0, 100));
-    masterWaveSurfer.load(generation.audioUrl);
-    waveSurferInstances.current["Master"] = masterWaveSurfer;
+    const timer = setTimeout(() => {
+      const masterContainer = stemWaveRefs.current["Master"];
+      if (!masterContainer || waveSurferInstances.current["Master"]) return;
+
+      const audioUrl = generation.audioUrl;
+      const masterWaveSurfer = WaveSurfer.create({
+        container: masterContainer,
+        waveColor: "#a78bfa",
+        progressColor: "#ffffff",
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+        height: 60,
+        normalize: true,
+        cursorColor: "#ffffff",
+        cursorWidth: 2,
+      });
+      masterWaveSurfer.on("error", (error) => console.error("[WaveSurfer] Error loading Master:", error));
+      masterWaveSurfer.on("ready", () => console.log("[WaveSurfer] Master waveform ready"));
+      console.log("[WaveSurfer] Loading Master from:", audioUrl.substring(0, 100));
+      masterWaveSurfer.load(audioUrl);
+      waveSurferInstances.current["Master"] = masterWaveSurfer;
+    }, 150);
 
     return () => {
-      masterWaveSurfer.destroy();
-      waveSurferInstances.current["Master"] = null;
+      clearTimeout(timer);
+      const instance = waveSurferInstances.current["Master"];
+      if (instance) {
+        instance.destroy();
+        waveSurferInstances.current["Master"] = null;
+      }
     };
   }, [generation?.audioUrl]);
 
