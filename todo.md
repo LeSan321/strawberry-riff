@@ -795,3 +795,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Test expiration badges show correct countdown
 - [ ] Test navigation to Stems Studio page works
 - [ ] Test back button returns to Studio
+
+## Custom Mix Export (Isolated Path - v2)
+
+- [x] Install ffmpeg-static and @types/fluent-ffmpeg npm packages
+- [x] Create server/mixer/ directory with isolated mixer.ts utility (no imports from stemsplit/)
+- [x] Create server/routers/mixer.ts with exportCustomMix procedure (read-only stem URL access)
+- [x] Register mixer router in main routers.ts as trpc.mixer.*
+- [x] Add custom mix export UI to StemsStudio page (volume sliders per stem + Export button)
+- [x] Test custom mix export end-to-end without affecting stem splitting

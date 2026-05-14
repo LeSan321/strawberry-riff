@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
+import { StemMixer } from "@/components/StemMixer";
 
 const STEM_THEMES = [
   {
@@ -388,6 +389,24 @@ export function StemsStudio() {
             </div>
           </Card>
         </div>
+
+        {/* Custom Mix Export Section */}
+        {stemSplit?.status === "completed" && stemSplit?.stems && stemSplit.id && (
+          <div>
+            <h2 className="text-xl font-bold mb-4">🎛️ Custom Mix Export</h2>
+            <StemMixer
+              stems={{
+                vocalUrl: stemSplit.stems.vocalUrl,
+                drumsUrl: stemSplit.stems.drumsUrl,
+                bassUrl: stemSplit.stems.bassUrl,
+                otherUrl: stemSplit.stems.otherUrl,
+                pianoUrl: stemSplit.stems.pianoUrl,
+              }}
+              stemSplitId={stemSplit.id}
+              trackTitle={generation?.title || "Track"}
+            />
+          </div>
+        )}
 
         {/* Individual Stems Section */}
         <div>

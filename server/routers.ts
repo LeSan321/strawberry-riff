@@ -73,6 +73,7 @@ import {
 import { systemRouter } from "./_core/systemRouter";
 import { stripeRouter } from "./routers/stripe";
 import { stemsplitRouter } from "./routers/stemsplit";
+import { mixerRouter } from "./routers/mixer";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { ogImageRouter } from "./routers/ogImage";
 import { coverArtRouter } from "./coverArt/router";
@@ -1451,6 +1452,7 @@ export const appRouter = router({
   creators: creatorsRouter,
   stripe: stripeRouter,
   stemsplit: stemsplitRouter,
+  mixer: mixerRouter,
   vibePresets: vibePresetsRouter,
   musicGeneration: musicGenerationRouter,
   lyrics: lyricsRouter,

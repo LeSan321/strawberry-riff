@@ -5,9 +5,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Volume1, VolumeX, Music, Download, Play, Pause } from "lucide-react";
+import { Volume2, Volume1, VolumeX, Music, Download, Play, Pause, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface Stem {
   name: "vocals" | "drums" | "bass" | "other" | "piano";
@@ -25,11 +26,12 @@ interface StemMixerProps {
     otherUrl?: string | null;
     pianoUrl?: string | null;
   };
+  stemSplitId?: number; // Required to enable Export Custom Mix
   trackTitle?: string;
   className?: string;
 }
 
-export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemMixerProps) {
+export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className = "" }: StemMixerProps) {
   const stemsList: Stem[] = [
     { name: "vocals" as const, label: "Vocals", url: stems.vocalUrl || "", color: "from-pink-500 to-rose-600", icon: "🎤" },
     { name: "drums" as const, label: "Drums", url: stems.drumsUrl || "", color: "from-purple-500 to-indigo-600", icon: "🥁" },
@@ -46,7 +48,33 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
   );
   const [solo, setSolo] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [exportedUrl, setExportedUrl] = useState<string | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+
+  const exportMixMutation = trpc.mixer.exportCustomMix.useMutation({
+    onSuccess: (data) => {
+      setExportedUrl(data.url);
+      toast.success("Custom mix ready! Click Download to save.");
+    },
+    onError: (err) => {
+      toast.error("Failed to export mix: " + err.message);
+    },
+  });
+
+  const handleExportMix = () => {
+    if (!stemSplitId) return;
+    setExportedUrl(null);
+    exportMixMutation.mutate({
+      stemSplitId,
+      volumes: {
+        vocals: muted["vocals"] ? 0 : volumes["vocals"] ?? 1,
+        drums: muted["drums"] ? 0 : volumes["drums"] ?? 1,
+        bass: muted["bass"] ? 0 : volumes["bass"] ?? 1,
+        other: muted["other"] ? 0 : volumes["other"] ?? 1,
+        piano: muted["piano"] ? 0 : volumes["piano"] ?? 1,
+      },
+    });
+  };
 
   // Sync volume and mute state to audio elements
   useEffect(() => {
@@ -250,9 +278,43 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
         />
       ))}
 
+      {/* Export Custom Mix */}
+      {stemSplitId && (
+        <div className="pt-2 border-t border-purple-200/40 space-y-2">
+          <Button
+            size="sm"
+            className="w-full gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+            onClick={handleExportMix}
+            disabled={exportMixMutation.isPending}
+          >
+            {exportMixMutation.isPending ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Mixing… this may take a moment
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4" />
+                Export Custom Mix
+              </>
+            )}
+          </Button>
+          {exportedUrl && (
+            <a
+              href={exportedUrl}
+              download={`${trackTitle}-custom-mix.mp3`}
+              className="flex items-center justify-center gap-2 w-full py-1.5 px-3 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Custom Mix
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Info Text */}
       <p className="text-xs text-gray-600 mt-2">
-        💡 Use mute/solo to preview individual stems, then download what you need.
+        💡 Adjust volumes, mute/solo stems, then export your custom mix.
       </p>
     </motion.div>
   );
