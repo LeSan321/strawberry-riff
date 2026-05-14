@@ -140,3 +140,24 @@ export async function markGenerationAsSplit(generationId: number) {
     .set({ isSplit: true })
     .where(eq(musicGenerations.id, generationId));
 }
+
+/**
+ * Update stem split URLs (used to refresh expired pre-signed URLs)
+ */
+export async function updateStemSplitUrls(
+  id: number,
+  urls: {
+    vocalUrl?: string | null;
+    drumsUrl?: string | null;
+    bassUrl?: string | null;
+    otherUrl?: string | null;
+    pianoUrl?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  return await db
+    .update(stemSplits)
+    .set(urls)
+    .where(eq(stemSplits.id, id));
+}

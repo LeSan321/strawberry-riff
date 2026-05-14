@@ -257,10 +257,63 @@ async function startServer() {
       }
 
       // Individual stems - look up from stem_splits table
-      const { getTrackStemSplit } = await import("../stemsplit/db");
-      const stemSplit = await getTrackStemSplit(parseInt(generationId, 10));
+      const { getTrackStemSplit, updateStemSplitUrls } = await import("../stemsplit/db");
+      let stemSplit = await getTrackStemSplit(parseInt(generationId, 10));
       if (!stemSplit || stemSplit.status !== "completed") {
         return res.status(400).json({ message: "Stems not ready" });
+      }
+
+      // Check if stored URLs are expired (StemSplit pre-signed URLs expire after 1 hour)
+      // Parse expiry from the X-Amz-Date + X-Amz-Expires params in the URL
+      const isUrlExpired = (url: string | null | undefined): boolean => {
+        if (!url) return true;
+        try {
+          const u = new URL(url);
+          const amzDate = u.searchParams.get("X-Amz-Date"); // e.g. 20260514T173535Z
+          const amzExpires = u.searchParams.get("X-Amz-Expires"); // seconds
+          if (!amzDate || !amzExpires) return false; // not a pre-signed URL, assume valid
+          const issuedAt = new Date(
+            amzDate.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, "$1-$2-$3T$4:$5:$6Z")
+          ).getTime();
+          const expiresAt = issuedAt + parseInt(amzExpires, 10) * 1000;
+          return Date.now() > expiresAt - 60_000; // refresh 1 min before expiry
+        } catch {
+          return false;
+        }
+      };
+
+      // If the stored URL for this stem type is expired, refresh all URLs from StemSplit API
+      const stemUrlMapCurrent: Record<string, string | null | undefined> = {
+        vocals: stemSplit.vocalUrl,
+        drums: stemSplit.drumsUrl,
+        bass: stemSplit.bassUrl,
+        other: stemSplit.otherUrl,
+        piano: stemSplit.pianoUrl,
+      };
+
+      if (isUrlExpired(stemUrlMapCurrent[stemType])) {
+        console.log(`[Stem Audio Proxy] URLs expired for generation ${generationId}, refreshing from StemSplit API...`);
+        try {
+          const { getStemSplitStatus } = await import("../stemsplit/client");
+          const freshJob = await getStemSplitStatus(stemSplit.jobId);
+          if (freshJob.outputs) {
+            const freshUrls = {
+              vocalUrl: freshJob.outputs.vocals?.url ?? stemSplit.vocalUrl,
+              drumsUrl: freshJob.outputs.drums?.url ?? stemSplit.drumsUrl,
+              bassUrl: freshJob.outputs.bass?.url ?? stemSplit.bassUrl,
+              otherUrl: freshJob.outputs.other?.url ?? stemSplit.otherUrl,
+              pianoUrl: freshJob.outputs.piano?.url ?? stemSplit.pianoUrl,
+            };
+            // Update database with fresh URLs
+            await updateStemSplitUrls(stemSplit.id, freshUrls);
+            // Use fresh URLs for this request
+            stemSplit = { ...stemSplit, ...freshUrls };
+            console.log(`[Stem Audio Proxy] URLs refreshed successfully for generation ${generationId}`);
+          }
+        } catch (refreshError) {
+          console.error(`[Stem Audio Proxy] Failed to refresh URLs:`, refreshError);
+          // Continue with stored URLs and hope they still work
+        }
       }
 
       const stemUrlMap: Record<string, string | null | undefined> = {
@@ -278,7 +331,7 @@ async function startServer() {
 
       const response = await fetch(stemUrl);
       if (!response.ok) {
-        return res.status(response.status).json({ message: "Failed to fetch stem" });
+        return res.status(response.status).json({ message: `Failed to fetch stem: ${response.status}` });
       }
 
       res.setHeader("Content-Type", response.headers.get("content-type") || "audio/mpeg");
