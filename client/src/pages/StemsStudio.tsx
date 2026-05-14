@@ -386,11 +386,11 @@ export function StemsStudio() {
             <h2 className="text-xl font-bold mb-4">🎛️ Custom Mix Export</h2>
             <StemMixer
               stems={{
-                vocalUrl: stemSplit.stems.vocalUrl,
-                drumsUrl: stemSplit.stems.drumsUrl,
-                bassUrl: stemSplit.stems.bassUrl,
-                otherUrl: stemSplit.stems.otherUrl,
-                pianoUrl: stemSplit.stems.pianoUrl,
+                vocalUrl: stemSplit.stems.vocalUrl ? `/api/stems/audio/${generationId}/vocals` : null,
+                drumsUrl: stemSplit.stems.drumsUrl ? `/api/stems/audio/${generationId}/drums` : null,
+                bassUrl: stemSplit.stems.bassUrl ? `/api/stems/audio/${generationId}/bass` : null,
+                otherUrl: stemSplit.stems.otherUrl ? `/api/stems/audio/${generationId}/other` : null,
+                pianoUrl: stemSplit.stems.pianoUrl ? `/api/stems/audio/${generationId}/piano` : null,
               }}
               stemSplitId={stemSplit.id}
               trackTitle={generation?.title || "Track"}

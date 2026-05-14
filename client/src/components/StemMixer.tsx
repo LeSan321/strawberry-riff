@@ -274,7 +274,6 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
           }}
           src={stem.url}
           onEnded={handleStemEnded}
-          crossOrigin="anonymous"
         />
       ))}
 
