@@ -118,6 +118,7 @@ export async function handleStemSplitWebhook(req: Request, res: Response) {
         bassUrl: data.outputs?.bass?.url,
         otherUrl: data.outputs?.other?.url,
         pianoUrl: data.outputs?.piano?.url,
+        guitarUrl: data.outputs?.guitar?.url,
       };
 
       // Update database with stem URLs

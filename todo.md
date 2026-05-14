@@ -824,3 +824,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix stemsplit router test to use toMatchObject (startStemSplit now returns extra fields)
 - [x] Fix minimax.credentials.test.ts to skip gracefully when API unreachable in sandbox
 - [x] All 317 tests passing across 25 test files
+
+## Phase 79: StemsStudio Full 6-Stem Mixer + Lazy Loading + MP3 Export
+
+- [x] Change StemSplit API outputType from FOUR_STEMS to SIX_STEMS (new splits include Piano + Guitar)
+- [x] Add guitarUrl column to stem_splits DB schema and run migration
+- [x] Update webhook handler, DB helpers, stemsplit router, and audio proxy to handle guitarUrl
+- [x] Fix stems array in StemsStudio to correctly show all 6 stems (Vocals, Instrumental, Drums, Bass, Piano, Guitar)
+- [x] Update StemMixer props type to include guitarUrl and show Guitar stem (amber color)
+- [x] Implement lazy WaveSurfer loading — load waveforms one at a time (staggered queue)
+- [x] Add MP3 export option using lamejs (pure-JS encoder, 192kbps) alongside existing WAV download
+- [x] Export WAV + Export MP3 buttons side by side in StemMixer footer
+- [x] All 317 tests passing (25 test files)

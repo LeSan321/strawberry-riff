@@ -141,6 +141,7 @@ export const stemsplitRouter = router({
             bassUrl: stemSplit.bassUrl,
             otherUrl: stemSplit.otherUrl,
             pianoUrl: stemSplit.pianoUrl,
+            guitarUrl: stemSplit.guitarUrl,
           },
           completedAt: stemSplit.completedAt,
         };
@@ -169,6 +170,7 @@ export const stemsplitRouter = router({
             bassUrl: jobStatus.outputs.bass?.url,
             otherUrl: jobStatus.outputs.other?.url,
             pianoUrl: jobStatus.outputs.piano?.url,
+            guitarUrl: jobStatus.outputs.guitar?.url,
           });
           await updateStemSplitStatus(jobId, "completed");
           
@@ -184,6 +186,7 @@ export const stemsplitRouter = router({
               bassUrl: jobStatus.outputs.bass?.url,
               otherUrl: jobStatus.outputs.other?.url,
               pianoUrl: jobStatus.outputs.piano?.url,
+              guitarUrl: jobStatus.outputs.guitar?.url,
             },
             completedAt: new Date(),
           };
@@ -234,6 +237,7 @@ export const stemsplitRouter = router({
           bassUrl: split.bassUrl,
           otherUrl: split.otherUrl,
           pianoUrl: split.pianoUrl,
+          guitarUrl: split.guitarUrl,
         } : null,
         error: split.errorMessage,
       }));
@@ -288,7 +292,7 @@ export const stemsplitRouter = router({
         }
 
         // Check that at least one stem URL exists
-        if (!stemSplit.vocalUrl && !stemSplit.drumsUrl && !stemSplit.bassUrl && !stemSplit.otherUrl && !stemSplit.pianoUrl) {
+        if (!stemSplit.vocalUrl && !stemSplit.drumsUrl && !stemSplit.bassUrl && !stemSplit.otherUrl && !stemSplit.pianoUrl && !stemSplit.guitarUrl) {
           throw new Error("No stem URLs available");
         }
 
@@ -301,6 +305,7 @@ export const stemsplitRouter = router({
             bassUrl: stemSplit.bassUrl,
             otherUrl: stemSplit.otherUrl,
             pianoUrl: stemSplit.pianoUrl,
+            guitarUrl: stemSplit.guitarUrl,
           },
           trackTitle: generation.title || "stems",
         };
@@ -364,6 +369,7 @@ export const stemsplitRouter = router({
             bassUrl: stemSplit.bassUrl,
             otherUrl: stemSplit.otherUrl,
             pianoUrl: stemSplit.pianoUrl,
+            guitarUrl: stemSplit.guitarUrl,
           } : null,
           error: stemSplit.errorMessage,
         };

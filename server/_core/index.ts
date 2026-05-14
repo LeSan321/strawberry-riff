@@ -174,6 +174,7 @@ async function startServer() {
         ["bass", stemSplit.bassUrl],
         ["other", stemSplit.otherUrl],
         ["piano", stemSplit.pianoUrl],
+        ["guitar", stemSplit.guitarUrl],
       ];
 
       // Use Node.js fetch which bypasses CORS (built-in for Node 18+)
@@ -289,6 +290,7 @@ async function startServer() {
         bass: stemSplit.bassUrl,
         other: stemSplit.otherUrl,
         piano: stemSplit.pianoUrl,
+        guitar: stemSplit.guitarUrl,
       };
 
       if (isUrlExpired(stemUrlMapCurrent[stemType])) {
@@ -303,6 +305,7 @@ async function startServer() {
               bassUrl: freshJob.outputs.bass?.url ?? stemSplit.bassUrl,
               otherUrl: freshJob.outputs.other?.url ?? stemSplit.otherUrl,
               pianoUrl: freshJob.outputs.piano?.url ?? stemSplit.pianoUrl,
+              guitarUrl: freshJob.outputs.guitar?.url ?? stemSplit.guitarUrl,
             };
             // Update database with fresh URLs
             await updateStemSplitUrls(stemSplit.id, freshUrls);
@@ -322,6 +325,7 @@ async function startServer() {
         bass: stemSplit.bassUrl,
         other: stemSplit.otherUrl,
         piano: stemSplit.pianoUrl,
+        guitar: stemSplit.guitarUrl,
       };
 
       const stemUrl = stemUrlMap[stemType];

@@ -1,0 +1,1 @@
+ALTER TABLE `stem_splits` ADD `guitarUrl` text;

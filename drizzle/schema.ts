@@ -265,6 +265,7 @@ export const stemSplits = mysqlTable("stem_splits", {
   bassUrl: text("bassUrl"),
   otherUrl: text("otherUrl"),
   pianoUrl: text("pianoUrl"),
+  guitarUrl: text("guitarUrl"),
   // Metadata
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),

@@ -2,26 +2,23 @@
  * StemMixer Component
  * Dark-themed mini-mixer for stem playback with mute/solo, volume controls, and custom mix export.
  * Mix export uses the Web Audio API (client-side) — no FFmpeg or server binary required.
+ * Supports WAV export (lossless) and MP3 export (via lamejs, shareable size).
  * Design: dark cards, per-stem color accents, inline volume sliders.
  */
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { VolumeX, Volume2, Download, Wand2, Loader2, Sliders } from "lucide-react";
+import { VolumeX, Volume2, Download, Wand2, Loader2, Sliders, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface Stem {
-  name: "vocals" | "drums" | "bass" | "other" | "piano";
+  name: "vocals" | "drums" | "bass" | "other" | "piano" | "guitar";
   label: string;
   url: string;
-  /** Tailwind border/ring color class */
   borderColor: string;
-  /** Tailwind text color class for label */
   textColor: string;
-  /** Tailwind bg color for the icon badge */
   badgeBg: string;
-  /** Hex for the range input accent */
   accentHex: string;
   icon: string;
 }
@@ -33,6 +30,7 @@ interface StemMixerProps {
     bassUrl?: string | null;
     otherUrl?: string | null;
     pianoUrl?: string | null;
+    guitarUrl?: string | null;
   };
   stemSplitId?: number;
   trackTitle?: string;
@@ -48,6 +46,16 @@ const STEM_DEFS: Omit<Stem, "url">[] = [
     badgeBg: "bg-pink-500/20",
     accentHex: "#ec4899",
     icon: "🎤",
+  },
+  {
+    name: "other",
+    // "other" from FOUR_STEMS = everything except vocals/drums/bass = effectively Instrumental
+    label: "Instrumental",
+    borderColor: "border-green-500/40",
+    textColor: "text-green-300",
+    badgeBg: "bg-green-500/20",
+    accentHex: "#10b981",
+    icon: "🎵",
   },
   {
     name: "drums",
@@ -68,16 +76,6 @@ const STEM_DEFS: Omit<Stem, "url">[] = [
     icon: "🎸",
   },
   {
-    name: "other",
-    // "other" from FOUR_STEMS = everything except vocals/drums/bass = effectively Instrumental
-    label: "Instrumental",
-    borderColor: "border-green-500/40",
-    textColor: "text-green-300",
-    badgeBg: "bg-green-500/20",
-    accentHex: "#10b981",
-    icon: "🎵",
-  },
-  {
     name: "piano",
     label: "Piano",
     borderColor: "border-cyan-500/40",
@@ -86,19 +84,26 @@ const STEM_DEFS: Omit<Stem, "url">[] = [
     accentHex: "#06b6d4",
     icon: "🎼",
   },
+  {
+    name: "guitar",
+    label: "Guitar",
+    borderColor: "border-amber-500/40",
+    textColor: "text-amber-300",
+    badgeBg: "bg-amber-500/20",
+    accentHex: "#f59e0b",
+    icon: "🎸",
+  },
 ];
 
 /**
  * Mix stems client-side using the Web Audio API.
  * Fetches each stem URL, decodes the audio, applies volume scaling,
- * sums the PCM samples, and returns a WAV Blob.
+ * sums the PCM samples, and returns a rendered AudioBuffer.
  */
-async function mixStemsClientSide(
+async function renderMix(
   stemEntries: { url: string; volume: number }[],
   onProgress?: (msg: string) => void
-): Promise<Blob> {
-  const ctx = new OfflineAudioContext(2, 1, 44100); // temp context just for decoding
-
+): Promise<AudioBuffer> {
   onProgress?.("Fetching stems…");
 
   // Fetch + decode all stems in parallel
@@ -107,7 +112,6 @@ async function mixStemsClientSide(
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to fetch stem: ${res.status}`);
       const arrayBuf = await res.arrayBuffer();
-      // Decode in a throwaway context
       const decodeCtx = new AudioContext();
       const audioBuf = await decodeCtx.decodeAudioData(arrayBuf);
       await decodeCtx.close();
@@ -117,33 +121,23 @@ async function mixStemsClientSide(
 
   onProgress?.("Mixing…");
 
-  // Use the longest buffer duration
   const maxLength = Math.max(...decoded.map((d) => d.audioBuf.length));
   const sampleRate = decoded[0].audioBuf.sampleRate;
   const numChannels = 2;
 
-  // Create offline context at correct sample rate and length
   const offlineCtx = new OfflineAudioContext(numChannels, maxLength, sampleRate);
 
   for (const { audioBuf, volume } of decoded) {
     const source = offlineCtx.createBufferSource();
     source.buffer = audioBuf;
-
     const gainNode = offlineCtx.createGain();
     gainNode.gain.value = volume;
-
     source.connect(gainNode);
     gainNode.connect(offlineCtx.destination);
     source.start(0);
   }
 
-  const renderedBuffer = await offlineCtx.startRendering();
-
-  onProgress?.("Encoding WAV…");
-
-  // Encode to WAV
-  const wavBlob = audioBufferToWav(renderedBuffer);
-  return wavBlob;
+  return await offlineCtx.startRendering();
 }
 
 /**
@@ -153,7 +147,7 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
   const numChannels = Math.min(buffer.numberOfChannels, 2);
   const sampleRate = buffer.sampleRate;
   const numSamples = buffer.length;
-  const bytesPerSample = 2; // 16-bit
+  const bytesPerSample = 2;
   const blockAlign = numChannels * bytesPerSample;
   const byteRate = sampleRate * blockAlign;
   const dataSize = numSamples * blockAlign;
@@ -163,22 +157,20 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
   const arrayBuffer = new ArrayBuffer(totalSize);
   const view = new DataView(arrayBuffer);
 
-  // RIFF header
   writeString(view, 0, "RIFF");
   view.setUint32(4, totalSize - 8, true);
   writeString(view, 8, "WAVE");
   writeString(view, 12, "fmt ");
-  view.setUint32(16, 16, true); // PCM chunk size
-  view.setUint16(20, 1, true);  // PCM format
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, byteRate, true);
   view.setUint16(32, blockAlign, true);
-  view.setUint16(34, 16, true); // bits per sample
+  view.setUint16(34, 16, true);
   writeString(view, 36, "data");
   view.setUint32(40, dataSize, true);
 
-  // Interleave channels
   const channels: Float32Array[] = [];
   for (let c = 0; c < numChannels; c++) {
     channels.push(buffer.getChannelData(c));
@@ -196,6 +188,50 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
   return new Blob([arrayBuffer], { type: "audio/wav" });
 }
 
+/**
+ * Encode an AudioBuffer to an MP3 Blob using lamejs.
+ * Dynamically imports lamejs to keep the initial bundle lean.
+ */
+async function audioBufferToMp3(buffer: AudioBuffer, onProgress?: (msg: string) => void): Promise<Blob> {
+  onProgress?.("Encoding MP3…");
+  // @ts-ignore — lamejs has no default TS types
+  const lamejs = await import("lamejs");
+  const Mp3Encoder = lamejs.default?.Mp3Encoder ?? lamejs.Mp3Encoder;
+
+  const numChannels = Math.min(buffer.numberOfChannels, 2);
+  const sampleRate = buffer.sampleRate;
+  const bitrate = 192; // kbps
+
+  const encoder = new Mp3Encoder(numChannels, sampleRate, bitrate);
+  const blockSize = 1152; // samples per MP3 frame
+
+  // Convert Float32 [-1,1] to Int16
+  const toInt16 = (floatArr: Float32Array): Int16Array => {
+    const int16 = new Int16Array(floatArr.length);
+    for (let i = 0; i < floatArr.length; i++) {
+      const s = Math.max(-1, Math.min(1, floatArr[i]));
+      int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return int16;
+  };
+
+  const leftInt16 = toInt16(buffer.getChannelData(0));
+  const rightInt16 = numChannels > 1 ? toInt16(buffer.getChannelData(1)) : leftInt16;
+
+  const mp3Chunks: Uint8Array[] = [];
+  for (let i = 0; i < leftInt16.length; i += blockSize) {
+    const leftChunk = leftInt16.subarray(i, i + blockSize);
+    const rightChunk = rightInt16.subarray(i, i + blockSize);
+    const encoded = encoder.encodeBuffer(leftChunk, rightChunk);
+    if (encoded.length > 0) mp3Chunks.push(new Uint8Array(encoded));
+  }
+
+  const flushed = encoder.flush();
+  if (flushed.length > 0) mp3Chunks.push(new Uint8Array(flushed));
+
+  return new Blob(mp3Chunks as BlobPart[], { type: "audio/mp3" });
+}
+
 function writeString(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) {
     view.setUint8(offset + i, str.charCodeAt(i));
@@ -209,6 +245,7 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     bass: stems.bassUrl,
     other: stems.otherUrl,
     piano: stems.pianoUrl,
+    guitar: stems.guitarUrl,
   };
 
   const stemsList: Stem[] = STEM_DEFS
@@ -222,12 +259,13 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     Object.fromEntries(stemsList.map((s) => [s.name, false]))
   );
   const [solo, setSolo] = useState<string | null>(null);
-  const [exportedUrl, setExportedUrl] = useState<string | null>(null);
+  const [exportedWavUrl, setExportedWavUrl] = useState<string | null>(null);
+  const [exportedMp3Url, setExportedMp3Url] = useState<string | null>(null);
   const [isMixing, setIsMixing] = useState(false);
   const [mixProgress, setMixProgress] = useState<string>("");
 
-  const handleExportMix = async () => {
-    const activeStemEntries = stemsList
+  const getActiveStemEntries = () =>
+    stemsList
       .filter((stem) => {
         const isSoloActive = solo !== null && solo !== stem.name;
         return !muted[stem.name] && !isSoloActive && (volumes[stem.name] ?? 1) > 0;
@@ -237,23 +275,51 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
         volume: volumes[stem.name] ?? 1,
       }));
 
+  const handleExportWav = async () => {
+    const activeStemEntries = getActiveStemEntries();
     if (activeStemEntries.length === 0) {
       toast.error("No active stems to mix — unmute at least one stem.");
       return;
     }
-
     setIsMixing(true);
-    setExportedUrl(null);
+    setExportedWavUrl(null);
+    setExportedMp3Url(null);
     setMixProgress("Starting…");
-
     try {
-      const wavBlob = await mixStemsClientSide(activeStemEntries, setMixProgress);
+      const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
+      setMixProgress("Encoding WAV…");
+      const wavBlob = audioBufferToWav(renderedBuffer);
       const url = URL.createObjectURL(wavBlob);
-      setExportedUrl(url);
-      toast.success("Custom mix ready! Click Download to save.");
+      setExportedWavUrl(url);
+      toast.success("WAV mix ready! Click Download to save.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to export mix: " + msg);
+    } finally {
+      setIsMixing(false);
+      setMixProgress("");
+    }
+  };
+
+  const handleExportMp3 = async () => {
+    const activeStemEntries = getActiveStemEntries();
+    if (activeStemEntries.length === 0) {
+      toast.error("No active stems to mix — unmute at least one stem.");
+      return;
+    }
+    setIsMixing(true);
+    setExportedWavUrl(null);
+    setExportedMp3Url(null);
+    setMixProgress("Starting…");
+    try {
+      const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
+      const mp3Blob = await audioBufferToMp3(renderedBuffer, setMixProgress);
+      const url = URL.createObjectURL(mp3Blob);
+      setExportedMp3Url(url);
+      toast.success("MP3 mix ready! Click Download to save.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Failed to export MP3: " + msg);
     } finally {
       setIsMixing(false);
       setMixProgress("");
@@ -323,7 +389,7 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
                 className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
                   isSoloActive
                     ? "border-slate-800 bg-slate-950/40"
-                    : `${stem.borderColor} bg-slate-800/50`
+                    : `${stem.borderColor} bg-slate-800/40`
                 }`}
               >
                 {/* Icon badge */}
@@ -404,29 +470,49 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
       {/* Export Footer */}
       <div className="px-4 pb-4 pt-1 space-y-2">
         <div className="h-px bg-slate-800 mb-3" />
-        <Button
-          size="sm"
-          className="w-full gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/30 transition-all"
-          onClick={handleExportMix}
-          disabled={isMixing}
-        >
-          {isMixing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {mixProgress || "Mixing…"}
-            </>
-          ) : (
-            <>
-              <Wand2 className="w-4 h-4" />
-              Export Custom Mix
-            </>
-          )}
-        </Button>
 
+        {/* Export buttons row */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            size="sm"
+            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/30 transition-all text-xs"
+            onClick={handleExportWav}
+            disabled={isMixing}
+          >
+            {isMixing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Wand2 className="w-3.5 h-3.5" />
+            )}
+            Export WAV
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-violet-500/40 text-violet-300 hover:bg-violet-500/10 font-semibold text-xs"
+            onClick={handleExportMp3}
+            disabled={isMixing}
+          >
+            {isMixing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Music className="w-3.5 h-3.5" />
+            )}
+            Export MP3
+          </Button>
+        </div>
+
+        {/* Progress indicator */}
+        {isMixing && mixProgress && (
+          <p className="text-xs text-slate-400 text-center animate-pulse">{mixProgress}</p>
+        )}
+
+        {/* Download links */}
         <AnimatePresence>
-          {exportedUrl && (
+          {exportedWavUrl && (
             <motion.a
-              href={exportedUrl}
+              href={exportedWavUrl}
               download={`${trackTitle}-custom-mix.wav`}
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -435,6 +521,19 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
             >
               <Download className="w-4 h-4" />
               Download Custom Mix (WAV)
+            </motion.a>
+          )}
+          {exportedMp3Url && (
+            <motion.a
+              href={exportedMp3Url}
+              download={`${trackTitle}-custom-mix.mp3`}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-md text-sm font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Custom Mix (MP3)
             </motion.a>
           )}
         </AnimatePresence>

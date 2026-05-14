@@ -104,6 +104,7 @@ export async function updateStemSplitStems(
     bassUrl?: string;
     otherUrl?: string;
     pianoUrl?: string;
+    guitarUrl?: string;
   }
 ) {
   const db = await getDb();
@@ -152,6 +153,7 @@ export async function updateStemSplitUrls(
     bassUrl?: string | null;
     otherUrl?: string | null;
     pianoUrl?: string | null;
+    guitarUrl?: string | null;
   }
 ) {
   const db = await getDb();

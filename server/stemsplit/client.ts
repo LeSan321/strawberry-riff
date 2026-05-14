@@ -52,7 +52,7 @@ export async function startStemSplit(
 ): Promise<{ jobId: string; status: string }> {
   const payload = {
     sourceUrl: audioUrl,
-    outputType: "FOUR_STEMS", // vocals, drums, bass, other
+    outputType: "SIX_STEMS", // vocals, drums, bass, other, piano, guitar
     quality: "BALANCED",
     outputFormat: "MP3",
   };

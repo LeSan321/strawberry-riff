@@ -19,9 +19,16 @@ import {
 import WaveSurfer from "wavesurfer.js";
 import { StemMixer } from "@/components/StemMixer";
 
-const STEM_THEMES = [
-  {
-    name: "Vocals",
+// ── Stem theme definitions ────────────────────────────────────────────────────
+const STEM_THEMES: Record<string, {
+  emoji: string;
+  color: string;
+  description: string;
+  waveformColor: string;
+  buttonAccent: string;
+  borderAccent: string;
+}> = {
+  Vocals: {
     emoji: "🎤",
     color: "from-pink-500 to-rose-500",
     description: "Isolated voice track",
@@ -29,17 +36,15 @@ const STEM_THEMES = [
     buttonAccent: "bg-pink-700 hover:bg-pink-600",
     borderAccent: "border-pink-500/30",
   },
-  {
-    name: "Instrumental",
-    emoji: "🎸",
+  Instrumental: {
+    emoji: "🎵",
     color: "from-green-500 to-emerald-500",
     description: "Music without vocals",
     waveformColor: "#10b981",
     buttonAccent: "bg-green-700 hover:bg-green-600",
     borderAccent: "border-green-500/30",
   },
-  {
-    name: "Drums",
+  Drums: {
     emoji: "🥁",
     color: "from-orange-500 to-yellow-500",
     description: "Percussion and rhythm",
@@ -47,46 +52,46 @@ const STEM_THEMES = [
     buttonAccent: "bg-orange-700 hover:bg-orange-600",
     borderAccent: "border-orange-500/30",
   },
-  {
-    name: "Bass",
-    emoji: "🎹",
+  Bass: {
+    emoji: "🎸",
     color: "from-purple-500 to-indigo-500",
     description: "Bass guitar and low frequencies",
     waveformColor: "#a855f7",
     buttonAccent: "bg-purple-700 hover:bg-purple-600",
     borderAccent: "border-purple-500/30",
   },
-  {
-    name: "Other",
-    emoji: "🎺",
+  Piano: {
+    emoji: "🎹",
     color: "from-cyan-500 to-blue-500",
-    description: "Remaining instruments",
+    description: "Piano and keys",
     waveformColor: "#06b6d4",
     buttonAccent: "bg-cyan-700 hover:bg-cyan-600",
     borderAccent: "border-cyan-500/30",
   },
-];
+  Guitar: {
+    emoji: "🎸",
+    color: "from-amber-500 to-orange-500",
+    description: "Guitar tracks",
+    waveformColor: "#f59e0b",
+    buttonAccent: "bg-amber-700 hover:bg-amber-600",
+    borderAccent: "border-amber-500/30",
+  },
+};
 
 interface StemData {
   name: string;
-  emoji: string;
   url?: string | null;
-  color: string;
-  description: string;
-  waveformColor: string;
 }
+
+// ── WaveSurfer skeleton bar heights (stable — no Math.random in render) ───────
+const MASTER_BARS = Array.from({ length: 80 }, (_, i) => 25 + Math.sin(i * 0.3) * 18);
+const STEM_BARS = Array.from({ length: 60 }, (_, i) => 20 + Math.sin(i * 0.4) * 15 + (i % 7) * 1.4);
 
 export function StemsStudio() {
   const { generationId } = useParams<{ generationId: string }>();
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const [stemVolumes, setStemVolumes] = useState<Record<string, number>>({
-    Vocals: 100,
-    Instrumental: 100,
-    Drums: 100,
-    Bass: 100,
-    Other: 100,
-  });
+  const [stemVolumes, setStemVolumes] = useState<Record<string, number>>({});
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
 
@@ -97,8 +102,13 @@ export function StemsStudio() {
 
   // Refs for WaveSurfer containers and instances
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
-  // Track which audio URLs have been loaded per key
   const loadedUrls = useRef<Record<string, string>>({});
+
+  // ── Lazy loading queue ──────────────────────────────────────────────────────
+  // We load WaveSurfer instances one at a time with a small stagger to avoid
+  // hammering the browser with 6 simultaneous audio decodes on Chrome.
+  const lazyLoadQueue = useRef<Array<{ key: string; container: HTMLDivElement; url: string; color: string }>>([]);
+  const isLoadingWave = useRef(false);
 
   // Fetch stem split data
   const { data: stemSplit, refetch: refetchStemSplit } = trpc.stemsplit.getTrackStemSplit.useQuery({
@@ -120,66 +130,56 @@ export function StemsStudio() {
     },
   });
 
-  // Build stem data array with proxy URLs to bypass CORS - memoized to prevent infinite re-renders
+  // Build stem data array with proxy URLs — memoized to prevent infinite re-renders
   const stems: StemData[] = useMemo(() => {
     if (!generationId || !stemSplit?.stems) return [];
     const buildProxyUrl = (stemType: string) => `/api/stems/audio/${generationId}/${stemType}`;
     return [
-      {
-        name: "Vocals",
-        emoji: "🎤",
-        url: stemSplit.stems.vocalUrl ? buildProxyUrl("vocals") : undefined,
-        color: "from-pink-500 to-rose-500",
-        description: "Isolated voice track",
-        waveformColor: "#ec4899",
-      },
-      {
-        name: "Instrumental",
-        emoji: "🎸",
-        url: stemSplit.stems.otherUrl ? buildProxyUrl("other") : undefined,
-        color: "from-green-500 to-emerald-500",
-        description: "Music without vocals",
-        waveformColor: "#10b981",
-      },
-      {
-        name: "Drums",
-        emoji: "🥁",
-        url: stemSplit.stems.drumsUrl ? buildProxyUrl("drums") : undefined,
-        color: "from-orange-500 to-yellow-500",
-        description: "Percussion and rhythm",
-        waveformColor: "#f97316",
-      },
-      {
-        name: "Bass",
-        emoji: "🎹",
-        url: stemSplit.stems.bassUrl ? buildProxyUrl("bass") : undefined,
-        color: "from-purple-500 to-indigo-500",
-        description: "Bass guitar and low frequencies",
-        waveformColor: "#a855f7",
-      },
-      {
-        name: "Other",
-        emoji: "🎺",
-        url: stemSplit.stems.pianoUrl ? buildProxyUrl("piano") : undefined,
-        color: "from-cyan-500 to-blue-500",
-        description: "Remaining instruments",
-        waveformColor: "#06b6d4",
-      },
-    ];
+      { name: "Vocals",       url: stemSplit.stems.vocalUrl  ? buildProxyUrl("vocals")  : undefined },
+      { name: "Instrumental", url: stemSplit.stems.otherUrl  ? buildProxyUrl("other")   : undefined },
+      { name: "Drums",        url: stemSplit.stems.drumsUrl  ? buildProxyUrl("drums")   : undefined },
+      { name: "Bass",         url: stemSplit.stems.bassUrl   ? buildProxyUrl("bass")    : undefined },
+      { name: "Piano",        url: stemSplit.stems.pianoUrl  ? buildProxyUrl("piano")   : undefined },
+      { name: "Guitar",       url: stemSplit.stems.guitarUrl ? buildProxyUrl("guitar")  : undefined },
+    ].filter((s) => s.url);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [generationId, stemSplit?.stems?.vocalUrl, stemSplit?.stems?.drumsUrl, stemSplit?.stems?.bassUrl, stemSplit?.stems?.otherUrl, stemSplit?.stems?.pianoUrl]);
+  }, [
+    generationId,
+    stemSplit?.stems?.vocalUrl,
+    stemSplit?.stems?.drumsUrl,
+    stemSplit?.stems?.bassUrl,
+    stemSplit?.stems?.otherUrl,
+    stemSplit?.stems?.pianoUrl,
+    stemSplit?.stems?.guitarUrl,
+  ]);
 
-  // Helper: create and load a WaveSurfer instance into a container
-  const initWaveSurfer = useCallback((
-    key: string,
-    container: HTMLDivElement,
-    audioUrl: string,
-    waveColor: string,
-  ) => {
-    // Already loaded this URL for this key — skip
-    if (loadedUrls.current[key] === audioUrl && waveSurferInstances.current[key]) return;
+  // Initialize volume state when stems load
+  useEffect(() => {
+    if (stems.length === 0) return;
+    setStemVolumes((prev) => {
+      const next = { ...prev };
+      stems.forEach((s) => {
+        if (!(s.name in next)) next[s.name] = 100;
+      });
+      return next;
+    });
+  }, [stems]);
 
-    // Destroy any existing instance for this key
+  // ── Lazy WaveSurfer loader ──────────────────────────────────────────────────
+  const processLazyQueue = useCallback(() => {
+    if (isLoadingWave.current || lazyLoadQueue.current.length === 0) return;
+
+    const { key, container, url, color } = lazyLoadQueue.current.shift()!;
+
+    // Skip if already loaded this URL
+    if (loadedUrls.current[key] === url && waveSurferInstances.current[key]) {
+      processLazyQueue(); // immediately try next
+      return;
+    }
+
+    isLoadingWave.current = true;
+
+    // Destroy any existing instance
     const existing = waveSurferInstances.current[key];
     if (existing) {
       existing.destroy();
@@ -188,7 +188,7 @@ export function StemsStudio() {
 
     const ws = WaveSurfer.create({
       container,
-      waveColor,
+      waveColor: color,
       progressColor: "rgba(255,255,255,0.35)",
       barWidth: 2,
       barGap: 1,
@@ -200,43 +200,52 @@ export function StemsStudio() {
     });
 
     ws.on("error", (err) => console.error(`[WaveSurfer] Error loading ${key}:`, err));
+
     ws.on("ready", () => {
       console.log(`[WaveSurfer] Ready: ${key}`);
       setReadyKeys((prev) => { const next = new Set(Array.from(prev)); next.add(key); return next; });
+      isLoadingWave.current = false;
+      // Load next after a short stagger to keep the browser responsive
+      setTimeout(processLazyQueue, 150);
     });
 
-    // Wire play/pause events to update icon state
     ws.on("play", () => {
       setPlayingKeys((prev) => { const next = new Set(Array.from(prev)); next.add(key); return next; });
     });
     ws.on("pause", () => {
-      setPlayingKeys((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
+      setPlayingKeys((prev) => { const next = new Set(prev); next.delete(key); return next; });
     });
     ws.on("finish", () => {
-      setPlayingKeys((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
+      setPlayingKeys((prev) => { const next = new Set(prev); next.delete(key); return next; });
     });
 
-    ws.load(audioUrl);
+    ws.load(url);
     waveSurferInstances.current[key] = ws;
-    loadedUrls.current[key] = audioUrl;
+    loadedUrls.current[key] = url;
   }, []);
 
-  // Use proxy URL for master mix to avoid CORS issues with CloudFront
+  const enqueueWaveSurfer = useCallback((
+    key: string,
+    container: HTMLDivElement,
+    url: string,
+    color: string,
+  ) => {
+    // Already loaded this URL — skip
+    if (loadedUrls.current[key] === url && waveSurferInstances.current[key]) return;
+    // Remove any existing queued entry for this key
+    lazyLoadQueue.current = lazyLoadQueue.current.filter((e) => e.key !== key);
+    lazyLoadQueue.current.push({ key, container, url, color });
+    processLazyQueue();
+  }, [processLazyQueue]);
+
+  // Use proxy URL for master mix
   const masterProxyUrl = generationId ? `/api/stems/audio/${generationId}/master` : null;
 
   // Ref callback for the master mix container — fires when the element mounts
   const masterContainerRef = useCallback((el: HTMLDivElement | null) => {
     if (!el || !masterProxyUrl) return;
-    initWaveSurfer("Master", el, masterProxyUrl, "#a78bfa");
-  }, [masterProxyUrl, initWaveSurfer]);
+    enqueueWaveSurfer("Master", el, masterProxyUrl, "#a78bfa");
+  }, [masterProxyUrl, enqueueWaveSurfer]);
 
   // When master proxy URL changes and container is already mounted, reload
   useEffect(() => {
@@ -251,8 +260,9 @@ export function StemsStudio() {
   // Ref callback factory for individual stems
   const makeStemRef = useCallback((stem: StemData) => (el: HTMLDivElement | null) => {
     if (!el || !stem.url) return;
-    initWaveSurfer(stem.name, el, stem.url, stem.waveformColor);
-  }, [initWaveSurfer]);
+    const theme = STEM_THEMES[stem.name];
+    enqueueWaveSurfer(stem.name, el, stem.url, theme?.waveformColor ?? "#a78bfa");
+  }, [enqueueWaveSurfer]);
 
   // When stems URLs change and containers are already mounted, reload
   useEffect(() => {
@@ -286,6 +296,7 @@ export function StemsStudio() {
       });
       waveSurferInstances.current = {};
       loadedUrls.current = {};
+      lazyLoadQueue.current = [];
     };
   }, []);
 
@@ -447,11 +458,11 @@ export function StemsStudio() {
                 {/* Loading skeleton for master mix */}
                 {!readyKeys.has("Master") && masterProxyUrl && (
                   <div className="absolute inset-0 flex items-center gap-0.5 px-1 overflow-hidden">
-                    {Array.from({ length: 80 }).map((_, i) => (
+                    {MASTER_BARS.map((h, i) => (
                       <div
                         key={i}
                         className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
-                        style={{ height: `${25 + Math.sin(i * 0.3) * 18}px` }}
+                        style={{ height: `${h}px` }}
                       />
                     ))}
                   </div>
@@ -490,8 +501,8 @@ export function StemsStudio() {
             <div className="xl:col-span-2 space-y-4">
               <h2 className="text-xl font-bold">Individual Stems</h2>
               {stems.map((stem) => {
-                const stemTheme = STEM_THEMES.find((t) => t.name === stem.name);
-                if (!stemTheme) return null;
+                const theme = STEM_THEMES[stem.name];
+                if (!theme) return null;
                 const isPlaying = playingKeys.has(stem.name);
 
                 return (
@@ -501,17 +512,17 @@ export function StemsStudio() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className={`border-slate-800 ${stemTheme.borderAccent} bg-gradient-to-r from-slate-900/50 to-slate-800/30 p-6 hover:border-slate-700 transition-colors`}>
+                    <Card className={`border-slate-800 ${theme.borderAccent} bg-gradient-to-r from-slate-900/50 to-slate-800/30 p-6 hover:border-slate-700 transition-colors`}>
                       <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="text-lg font-semibold flex items-center gap-2">
-                              <span className="text-2xl">{stem.emoji}</span>
+                              <span className="text-2xl">{theme.emoji}</span>
                               {stem.name}
                             </h3>
                             <p className="text-sm text-slate-400 mt-1">
-                              {stem.description}
+                              {theme.description}
                             </p>
                           </div>
                         </div>
@@ -520,7 +531,7 @@ export function StemsStudio() {
                         <div className="flex items-center justify-between gap-4">
                           <Button
                             size="sm"
-                            className={`rounded-full flex-shrink-0 ${stemTheme.buttonAccent}`}
+                            className={`rounded-full flex-shrink-0 ${theme.buttonAccent}`}
                             onClick={() => handleStemPlay(stem.name)}
                           >
                             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -530,11 +541,11 @@ export function StemsStudio() {
                             {/* Loading skeleton shown until WaveSurfer fires 'ready' */}
                             {!readyKeys.has(stem.name) && stem.url && (
                               <div className="absolute inset-0 flex items-center gap-0.5 px-1 overflow-hidden">
-                                {Array.from({ length: 60 }).map((_, i) => (
+                                {STEM_BARS.map((h, i) => (
                                   <div
                                     key={i}
                                     className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
-                                    style={{ height: `${20 + Math.sin(i * 0.4) * 15 + Math.random() * 10}px` }}
+                                    style={{ height: `${h}px` }}
                                   />
                                 ))}
                               </div>
@@ -552,18 +563,18 @@ export function StemsStudio() {
                                 type="range"
                                 min="0"
                                 max="100"
-                                value={stemVolumes[stem.name]}
+                                value={stemVolumes[stem.name] ?? 100}
                                 onChange={(e) =>
-                                  setStemVolumes({
-                                    ...stemVolumes,
+                                  setStemVolumes((prev) => ({
+                                    ...prev,
                                     [stem.name]: parseInt(e.target.value),
-                                  })
+                                  }))
                                 }
                                 className="w-20 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                                style={{ accentColor: stem.waveformColor }}
+                                style={{ accentColor: theme.waveformColor }}
                               />
                               <span className="text-sm font-medium w-10">
-                                {stemVolumes[stem.name]}%
+                                {stemVolumes[stem.name] ?? 100}%
                               </span>
                             </div>
                             <Button
@@ -595,11 +606,12 @@ export function StemsStudio() {
               <div className="xl:sticky xl:top-6">
                 <StemMixer
                   stems={{
-                    vocalUrl: stemSplit.stems?.vocalUrl ? `/api/stems/audio/${generationId}/vocals` : null,
-                    drumsUrl: stemSplit.stems?.drumsUrl ? `/api/stems/audio/${generationId}/drums` : null,
-                    bassUrl: stemSplit.stems?.bassUrl ? `/api/stems/audio/${generationId}/bass` : null,
-                    otherUrl: stemSplit.stems?.otherUrl ? `/api/stems/audio/${generationId}/other` : null,
-                    pianoUrl: stemSplit.stems?.pianoUrl ? `/api/stems/audio/${generationId}/piano` : null,
+                    vocalUrl:  stemSplit.stems?.vocalUrl  ? `/api/stems/audio/${generationId}/vocals`  : null,
+                    drumsUrl:  stemSplit.stems?.drumsUrl  ? `/api/stems/audio/${generationId}/drums`   : null,
+                    bassUrl:   stemSplit.stems?.bassUrl   ? `/api/stems/audio/${generationId}/bass`    : null,
+                    otherUrl:  stemSplit.stems?.otherUrl  ? `/api/stems/audio/${generationId}/other`   : null,
+                    pianoUrl:  stemSplit.stems?.pianoUrl  ? `/api/stems/audio/${generationId}/piano`   : null,
+                    guitarUrl: stemSplit.stems?.guitarUrl ? `/api/stems/audio/${generationId}/guitar`  : null,
                   }}
                   stemSplitId={stemSplit.id}
                   trackTitle={generation?.title || "Track"}
@@ -609,7 +621,7 @@ export function StemsStudio() {
           </div>
         )}
 
-        {/* Individual Stems only (no completed stems yet but not in two-col layout) */}
+        {/* No stems yet */}
         {stemSplit?.status !== "completed" && stems.length === 0 && !stemSplit && (
           <div>
             <h2 className="text-xl font-bold mb-4">Individual Stems</h2>
