@@ -175,7 +175,7 @@ export function StemsStudio() {
       normalize: true,
       cursorColor: "#ffffff",
       cursorWidth: 2,
-      fetchParams: { credentials: "include" },
+      // No credentials needed — all audio goes through same-origin proxy routes
     });
 
     ws.on("error", (err) => console.error(`[WaveSurfer] Error loading ${key}:`, err));
@@ -185,21 +185,24 @@ export function StemsStudio() {
     loadedUrls.current[key] = audioUrl;
   }, []);
 
+  // Use proxy URL for master mix to avoid CORS issues with CloudFront
+  const masterProxyUrl = generationId ? `/api/stems/audio/${generationId}/master` : null;
+
   // Ref callback for the master mix container — fires when the element mounts
   const masterContainerRef = useCallback((el: HTMLDivElement | null) => {
-    if (!el || !generation?.audioUrl) return;
-    initWaveSurfer("Master", el, generation.audioUrl, "#a78bfa");
-  }, [generation?.audioUrl, initWaveSurfer]);
+    if (!el || !masterProxyUrl) return;
+    initWaveSurfer("Master", el, masterProxyUrl, "#a78bfa");
+  }, [masterProxyUrl, initWaveSurfer]);
 
-  // When generation URL changes and master is already mounted, reload
+  // When master proxy URL changes and container is already mounted, reload
   useEffect(() => {
     const ws = waveSurferInstances.current["Master"];
-    if (!ws || !generation?.audioUrl) return;
-    if (loadedUrls.current["Master"] !== generation.audioUrl) {
-      ws.load(generation.audioUrl);
-      loadedUrls.current["Master"] = generation.audioUrl;
+    if (!ws || !masterProxyUrl) return;
+    if (loadedUrls.current["Master"] !== masterProxyUrl) {
+      ws.load(masterProxyUrl);
+      loadedUrls.current["Master"] = masterProxyUrl;
     }
-  }, [generation?.audioUrl]);
+  }, [masterProxyUrl]);
 
   // Ref callback factory for individual stems
   const makeStemRef = useCallback((stem: StemData) => (el: HTMLDivElement | null) => {

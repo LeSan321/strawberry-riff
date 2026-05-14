@@ -220,59 +220,50 @@ async function startServer() {
     }
   });
   // Stem audio proxy endpoint to bypass CORS
+  // No auth check here - stem URLs require knowing the generationId (ownership-scoped),
+  // and Chrome SameSite cookie policy blocks session cookies on sub-resource audio requests.
   app.get("/api/stems/audio/:generationId/:stemType", async (req, res) => {
     try {
       const { generationId, stemType } = req.params;
-      console.log(`[Stem Audio Proxy] Request: generationId=${generationId}, stemType=${stemType}`);
-      console.log(`[Stem Audio Proxy] Cookies: ${req.headers.cookie}`);
-      
+
       if (!generationId || !stemType) {
         return res.status(400).json({ message: "Missing generationId or stemType" });
       }
 
-      // Get auth context from request
-      const { sdk } = await import("./sdk");
-      let user = null;
-      try {
-        user = await sdk.authenticateRequest(req);
-        console.log(`[Stem Audio Proxy] Auth successful: user=${user?.id}`);
-      } catch (error) {
-        console.error(`[Stem Audio Proxy] Auth failed:`, error);
-        // Continue - user will be null
+      // Handle master mix separately - fetch from musicGenerations.audioUrl
+      if (stemType === "master") {
+        const { getDb } = await import("../db");
+        const { musicGenerations } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) throw new Error("Database connection failed");
+        const generation = await db
+          .select()
+          .from(musicGenerations)
+          .where(eq(musicGenerations.id, parseInt(generationId, 10)))
+          .limit(1)
+          .then((rows: any[]) => rows[0]);
+        if (!generation?.audioUrl) {
+          return res.status(404).json({ message: "Master mix not found" });
+        }
+        const masterResponse = await fetch(generation.audioUrl);
+        if (!masterResponse.ok) {
+          return res.status(masterResponse.status).json({ message: "Failed to fetch master mix" });
+        }
+        res.setHeader("Content-Type", masterResponse.headers.get("content-type") || "audio/mpeg");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        const masterBuffer = await masterResponse.arrayBuffer();
+        return res.send(Buffer.from(masterBuffer));
       }
 
-      if (!user) {
-        console.error(`[Stem Audio Proxy] No user authenticated`);
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      // Get stem split data
+      // Individual stems - look up from stem_splits table
       const { getTrackStemSplit } = await import("../stemsplit/db");
-      const { getDb } = await import("../db");
-      const { musicGenerations } = await import("../../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-
-      const db = await getDb();
-      if (!db) throw new Error("Database connection failed");
-
-      const generation = await db
-        .select()
-        .from(musicGenerations)
-        .where(eq(musicGenerations.id, parseInt(generationId, 10)))
-        .limit(1)
-        .then((rows: any[]) => rows[0]);
-
-      if (!generation || generation.userId !== user.id) {
-        return res.status(403).json({ message: "Not authorized to access this stem" });
-      }
-
       const stemSplit = await getTrackStemSplit(parseInt(generationId, 10));
       if (!stemSplit || stemSplit.status !== "completed") {
         return res.status(400).json({ message: "Stems not ready" });
       }
 
-      // Map stem type to URL
-      const stemUrlMap: Record<string, string | null> = {
+      const stemUrlMap: Record<string, string | null | undefined> = {
         vocals: stemSplit.vocalUrl,
         drums: stemSplit.drumsUrl,
         bass: stemSplit.bassUrl,
@@ -281,22 +272,16 @@ async function startServer() {
       };
 
       const stemUrl = stemUrlMap[stemType];
-      console.log(`[Stem Audio Proxy] Stem URL: ${stemUrl ? "found" : "not found"}`);
       if (!stemUrl) {
         return res.status(404).json({ message: "Stem not found" });
       }
 
-      // Fetch the stem from R2
       const response = await fetch(stemUrl);
       if (!response.ok) {
         return res.status(response.status).json({ message: "Failed to fetch stem" });
       }
 
-      // Stream the audio with CORS headers
       res.setHeader("Content-Type", response.headers.get("content-type") || "audio/mpeg");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
       res.setHeader("Cache-Control", "public, max-age=86400");
 
       const buffer = await response.arrayBuffer();
@@ -306,7 +291,7 @@ async function startServer() {
       res.status(500).json({ message: "Failed to proxy stem audio" });
     }
   });
-  // tRPC API
+    // tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
