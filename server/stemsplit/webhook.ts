@@ -8,7 +8,8 @@ import { Request, Response } from "express";
 import { createHmac } from "crypto";
 import { getStemSplitByJobId, updateStemSplitStems, updateStemSplitStatus, markGenerationAsSplit } from "./db";
 
-const STEMSPLIT_WEBHOOK_SECRET = process.env.STEMSPLIT_WEBHOOK_SECRET;
+// Read lazily so tests can set process.env.STEMSPLIT_WEBHOOK_SECRET in beforeEach
+const getWebhookSecret = () => process.env.STEMSPLIT_WEBHOOK_SECRET;
 
 export interface StemSplitWebhookPayload {
   event: "job.completed" | "job.failed";
@@ -48,7 +49,8 @@ export interface StemSplitWebhookPayload {
  * Signature format: sha256=<hex>
  */
 function verifyWebhookSignature(payload: string, signature: string): boolean {
-  if (!STEMSPLIT_WEBHOOK_SECRET) {
+  const secret = getWebhookSecret();
+  if (!secret) {
     console.warn("[StemSplit Webhook] STEMSPLIT_WEBHOOK_SECRET not configured");
     return false;
   }
@@ -63,7 +65,7 @@ function verifyWebhookSignature(payload: string, signature: string): boolean {
     const expectedSignature = signatureParts[1];
 
     // Compute HMAC-SHA256
-    const computed = createHmac("sha256", STEMSPLIT_WEBHOOK_SECRET)
+    const computed = createHmac("sha256", secret)
       .update(payload)
       .digest("hex");
 

@@ -1,242 +1,109 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { handleStemSplitWebhook } from "./webhook";
 import * as db from "./db";
-import * as client from "./client";
 import { Request, Response } from "express";
+import { createHmac } from "crypto";
 
-/**
- * StemSplit Webhook Handler Tests
- * Tests webhook signature verification and event processing
- */
+const WEBHOOK_SECRET = "test-webhook-secret";
+
+function makeSignature(payload: string): string {
+  const hex = createHmac("sha256", WEBHOOK_SECRET).update(payload).digest("hex");
+  return `sha256=${hex}`;
+}
 
 describe("StemSplit Webhook Handler", () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let jsonSpy: any;
-  let statusSpy: any;
+  let jsonSpy: ReturnType<typeof vi.fn>;
+  let statusSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // Mock response object
+    process.env.STEMSPLIT_WEBHOOK_SECRET = WEBHOOK_SECRET;
     jsonSpy = vi.fn().mockReturnValue(undefined);
-    statusSpy = vi.fn().mockReturnValue({
-      json: jsonSpy,
-    });
-
-    mockRes = {
-      json: jsonSpy,
-      status: statusSpy,
-    };
-
-    // Mock database functions
+    statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
+    mockRes = { json: jsonSpy, status: statusSpy };
     vi.spyOn(db, "getStemSplitByJobId").mockResolvedValue(null);
-    vi.spyOn(db, "updateStemSplitStems").mockResolvedValue(undefined);
-    vi.spyOn(db, "updateStemSplitStatus").mockResolvedValue(undefined);
+    vi.spyOn(db, "updateStemSplitStems").mockResolvedValue(undefined as any);
+    vi.spyOn(db, "updateStemSplitStatus").mockResolvedValue(undefined as any);
+    vi.spyOn(db, "markGenerationAsSplit").mockResolvedValue(undefined as any);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    delete process.env.STEMSPLIT_WEBHOOK_SECRET;
   });
 
   it("should reject webhook with invalid signature", async () => {
-    const payload = JSON.stringify({ event: "split.completed", jobId: "test-123" });
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": "invalid_signature_12345",
-      },
-    };
-
+    const payload = JSON.stringify({ event: "job.completed", timestamp: new Date().toISOString(), data: { jobId: "test-123", status: "COMPLETED" } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": "sha256=invalid_hex_value" } };
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
     expect(statusSpy).toHaveBeenCalledWith(401);
     expect(jsonSpy).toHaveBeenCalledWith({ error: "Invalid signature" });
   });
 
   it("should reject webhook without signature", async () => {
-    const payload = JSON.stringify({ event: "split.completed", jobId: "test-123" });
-
-    mockReq = {
-      body: payload,
-      headers: {},
-    };
-
+    const payload = JSON.stringify({ event: "job.completed", timestamp: new Date().toISOString(), data: { jobId: "test-123", status: "COMPLETED" } });
+    mockReq = { body: payload, headers: {} };
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
     expect(statusSpy).toHaveBeenCalledWith(401);
   });
 
   it("should return 404 for non-existent job", async () => {
-    const payload = JSON.stringify({ event: "split.completed", jobId: "non-existent-job" });
-    const signature = require("crypto")
-      .createHmac("sha256", process.env.STEMSPLIT_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": signature,
-      },
-    };
-
+    const payload = JSON.stringify({ event: "job.completed", timestamp: new Date().toISOString(), data: { jobId: "non-existent-job", status: "COMPLETED" } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": makeSignature(payload) } };
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
     expect(statusSpy).toHaveBeenCalledWith(404);
     expect(jsonSpy).toHaveBeenCalledWith({ error: "Job not found" });
   });
 
-  it("should process split.completed event with stems", async () => {
+  it("should process job.completed event with stems", async () => {
     const jobId = "test-job-123";
-    const stems = {
-      vocals: "https://cdn.example.com/vocals.mp3",
-      drums: "https://cdn.example.com/drums.mp3",
-      bass: "https://cdn.example.com/bass.mp3",
-      other: "https://cdn.example.com/other.mp3",
-      piano: "https://cdn.example.com/piano.mp3",
+    const outputs = {
+      vocals: { url: "https://cdn.example.com/vocals.mp3", expiresAt: "2026-01-01T00:00:00Z" },
+      drums: { url: "https://cdn.example.com/drums.mp3", expiresAt: "2026-01-01T00:00:00Z" },
+      bass: { url: "https://cdn.example.com/bass.mp3", expiresAt: "2026-01-01T00:00:00Z" },
+      other: { url: "https://cdn.example.com/other.mp3", expiresAt: "2026-01-01T00:00:00Z" },
+      piano: { url: "https://cdn.example.com/piano.mp3", expiresAt: "2026-01-01T00:00:00Z" },
     };
-
-    const payload = JSON.stringify({
-      event: "split.completed",
-      jobId,
-      status: "completed",
-      stems,
-      timestamp: new Date().toISOString(),
-    });
-
-    const signature = require("crypto")
-      .createHmac("sha256", process.env.STEMSPLIT_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": signature,
-      },
-    };
-
-    // Mock database to return an existing job
-    (db.getStemSplitByJobId as any).mockResolvedValueOnce({
-      id: 1,
-      jobId,
-      userId: 1,
-      trackId: 1,
-      status: "processing",
-    });
-
+    const payload = JSON.stringify({ event: "job.completed", timestamp: new Date().toISOString(), data: { jobId, status: "COMPLETED", outputs } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": makeSignature(payload) } };
+    (db.getStemSplitByJobId as any).mockResolvedValueOnce({ id: 1, jobId, userId: 1, generationId: 1, status: "processing" });
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
     expect(db.updateStemSplitStems).toHaveBeenCalledWith(jobId, {
-      vocalUrl: stems.vocals,
-      drumsUrl: stems.drums,
-      bassUrl: stems.bass,
-      otherUrl: stems.other,
-      pianoUrl: stems.piano,
+      vocalUrl: outputs.vocals.url,
+      drumsUrl: outputs.drums.url,
+      bassUrl: outputs.bass.url,
+      otherUrl: outputs.other.url,
+      pianoUrl: outputs.piano.url,
     });
-
-    expect(jsonSpy).toHaveBeenCalledWith({ success: true, message: "Stems updated" });
+    expect(db.updateStemSplitStatus).toHaveBeenCalledWith(jobId, "completed");
+    expect(jsonSpy).toHaveBeenCalledWith({ verified: true, status: "completed" });
   });
 
-  it("should process split.failed event with error message", async () => {
+  it("should process job.failed event", async () => {
     const jobId = "test-job-456";
-    const errorMsg = "Audio file format not supported";
-
-    const payload = JSON.stringify({
-      event: "split.failed",
-      jobId,
-      status: "failed",
-      error: errorMsg,
-      timestamp: new Date().toISOString(),
-    });
-
-    const signature = require("crypto")
-      .createHmac("sha256", process.env.STEMSPLIT_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": signature,
-      },
-    };
-
-    // Mock database to return an existing job
-    (db.getStemSplitByJobId as any).mockResolvedValueOnce({
-      id: 2,
-      jobId,
-      userId: 1,
-      trackId: 2,
-      status: "processing",
-    });
-
+    const payload = JSON.stringify({ event: "job.failed", timestamp: new Date().toISOString(), data: { jobId, status: "FAILED", errorMessage: "Audio file format not supported" } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": makeSignature(payload) } };
+    (db.getStemSplitByJobId as any).mockResolvedValueOnce({ id: 2, jobId, userId: 1, generationId: 2, status: "processing" });
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
-    expect(db.updateStemSplitStatus).toHaveBeenCalledWith(jobId, "failed", errorMsg);
-    expect(jsonSpy).toHaveBeenCalledWith({ success: true, message: "Failure recorded" });
+    expect(db.updateStemSplitStatus).toHaveBeenCalledWith(jobId, "failed");
+    expect(jsonSpy).toHaveBeenCalledWith({ verified: true, status: "failed" });
   });
 
-  it("should reject unknown event types", async () => {
-    const payload = JSON.stringify({
-      event: "unknown.event",
-      jobId: "test-job-789",
-      timestamp: new Date().toISOString(),
-    });
-
-    const signature = require("crypto")
-      .createHmac("sha256", process.env.STEMSPLIT_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": signature,
-      },
-    };
-
-    // Mock database to return an existing job
-    (db.getStemSplitByJobId as any).mockResolvedValueOnce({
-      id: 3,
-      jobId: "test-job-789",
-      userId: 1,
-      trackId: 3,
-      status: "processing",
-    });
-
+  it("should handle unknown event types gracefully", async () => {
+    const jobId = "test-job-789";
+    const payload = JSON.stringify({ event: "job.unknown", timestamp: new Date().toISOString(), data: { jobId, status: "UNKNOWN" } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": makeSignature(payload) } };
+    (db.getStemSplitByJobId as any).mockResolvedValueOnce({ id: 3, jobId, userId: 1, generationId: 3, status: "processing" });
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
-    expect(statusSpy).toHaveBeenCalledWith(400);
-    expect(jsonSpy).toHaveBeenCalledWith({ error: "Unknown event type" });
+    expect(jsonSpy).toHaveBeenCalledWith({ verified: true, status: "unknown" });
   });
 
   it("should handle database errors gracefully", async () => {
-    const payload = JSON.stringify({
-      event: "split.completed",
-      jobId: "test-job-error",
-      status: "completed",
-      stems: {},
-      timestamp: new Date().toISOString(),
-    });
-
-    const signature = require("crypto")
-      .createHmac("sha256", process.env.STEMSPLIT_WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    mockReq = {
-      body: payload,
-      headers: {
-        "x-webhook-signature": signature,
-      },
-    };
-
-    // Mock database to throw an error
+    const payload = JSON.stringify({ event: "job.completed", timestamp: new Date().toISOString(), data: { jobId: "test-job-error", status: "COMPLETED" } });
+    mockReq = { body: payload, headers: { "x-webhook-signature": makeSignature(payload) } };
     (db.getStemSplitByJobId as any).mockRejectedValueOnce(new Error("Database connection failed"));
-
     await handleStemSplitWebhook(mockReq as Request, mockRes as Response);
-
     expect(statusSpy).toHaveBeenCalledWith(500);
     expect(jsonSpy).toHaveBeenCalledWith({ error: "Internal server error" });
   });

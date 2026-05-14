@@ -1,11 +1,12 @@
 /**
  * StemMixer Component
- * Mini-mixer for stem playback with mute/solo, volume controls, and download
+ * Dark-themed mini-mixer for stem playback with mute/solo, volume controls, and custom mix export.
+ * Design: dark cards, per-stem color accents, inline volume sliders.
  */
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Volume1, VolumeX, Music, Download, Play, Pause, Wand2 } from "lucide-react";
+import { VolumeX, Volume2, Download, Wand2, Loader2, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -14,7 +15,14 @@ interface Stem {
   name: "vocals" | "drums" | "bass" | "other" | "piano";
   label: string;
   url: string;
-  color: string;
+  /** Tailwind border/ring color class */
+  borderColor: string;
+  /** Tailwind text color class for label */
+  textColor: string;
+  /** Tailwind bg color for the icon badge */
+  badgeBg: string;
+  /** Hex for the range input accent */
+  accentHex: string;
   icon: string;
 }
 
@@ -26,19 +34,71 @@ interface StemMixerProps {
     otherUrl?: string | null;
     pianoUrl?: string | null;
   };
-  stemSplitId?: number; // Required to enable Export Custom Mix
+  stemSplitId?: number;
   trackTitle?: string;
   className?: string;
 }
 
+const STEM_DEFS: Omit<Stem, "url">[] = [
+  {
+    name: "vocals",
+    label: "Vocals",
+    borderColor: "border-pink-500/40",
+    textColor: "text-pink-300",
+    badgeBg: "bg-pink-500/20",
+    accentHex: "#ec4899",
+    icon: "🎤",
+  },
+  {
+    name: "drums",
+    label: "Drums",
+    borderColor: "border-orange-500/40",
+    textColor: "text-orange-300",
+    badgeBg: "bg-orange-500/20",
+    accentHex: "#f97316",
+    icon: "🥁",
+  },
+  {
+    name: "bass",
+    label: "Bass",
+    borderColor: "border-purple-500/40",
+    textColor: "text-purple-300",
+    badgeBg: "bg-purple-500/20",
+    accentHex: "#a855f7",
+    icon: "🎸",
+  },
+  {
+    name: "other",
+    label: "Other",
+    borderColor: "border-cyan-500/40",
+    textColor: "text-cyan-300",
+    badgeBg: "bg-cyan-500/20",
+    accentHex: "#06b6d4",
+    icon: "🎺",
+  },
+  {
+    name: "piano",
+    label: "Piano",
+    borderColor: "border-green-500/40",
+    textColor: "text-green-300",
+    badgeBg: "bg-green-500/20",
+    accentHex: "#10b981",
+    icon: "🎼",
+  },
+];
+
 export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className = "" }: StemMixerProps) {
-  const stemsList: Stem[] = [
-    { name: "vocals" as const, label: "Vocals", url: stems.vocalUrl || "", color: "from-pink-500 to-rose-600", icon: "🎤" },
-    { name: "drums" as const, label: "Drums", url: stems.drumsUrl || "", color: "from-purple-500 to-indigo-600", icon: "🥁" },
-    { name: "bass" as const, label: "Bass", url: stems.bassUrl || "", color: "from-blue-500 to-cyan-600", icon: "🎸" },
-    { name: "other" as const, label: "Other", url: stems.otherUrl || "", color: "from-amber-500 to-orange-600", icon: "🎹" },
-    { name: "piano" as const, label: "Piano", url: stems.pianoUrl || "", color: "from-green-500 to-emerald-600", icon: "🎼" },
-  ].filter((s) => s.url) // Only show stems that have URLs
+  const urlMap: Record<string, string | null | undefined> = {
+    vocals: stems.vocalUrl,
+    drums: stems.drumsUrl,
+    bass: stems.bassUrl,
+    other: stems.otherUrl,
+    piano: stems.pianoUrl,
+  };
+
+  const stemsList: Stem[] = STEM_DEFS
+    .map((def) => ({ ...def, url: urlMap[def.name] || "" }))
+    .filter((s) => s.url);
 
   const [volumes, setVolumes] = useState<Record<string, number>>(
     Object.fromEntries(stemsList.map((s) => [s.name, 1]))
@@ -47,7 +107,6 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
     Object.fromEntries(stemsList.map((s) => [s.name, false]))
   );
   const [solo, setSolo] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [exportedUrl, setExportedUrl] = useState<string | null>(null);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
 
@@ -87,31 +146,6 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
     });
   }, [volumes, muted, solo, stemsList]);
 
-  const handlePlay = () => {
-    setIsPlaying(true);
-    stemsList.forEach((stem) => {
-      const audio = audioRefs.current[stem.name];
-      if (audio) audio.play().catch(() => {});
-    });
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-    stemsList.forEach((stem) => {
-      const audio = audioRefs.current[stem.name];
-      if (audio) audio.pause();
-    });
-  };
-
-  const handleStemEnded = () => {
-    // Check if all stems have ended
-    const allEnded = stemsList.every((stem) => {
-      const audio = audioRefs.current[stem.name];
-      return !audio || audio.ended;
-    });
-    if (allEnded) setIsPlaying(false);
-  };
-
   const handleToggleMute = (stemName: string) => {
     setMuted((prev) => ({ ...prev, [stemName]: !prev[stemName] }));
   };
@@ -138,123 +172,111 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
 
   return (
     <motion.div
-      className={`rounded-lg border border-purple-200/30 bg-gradient-to-br from-purple-50/50 to-pink-50/50 p-4 space-y-3 ${className}`}
+      className={`rounded-xl border border-slate-700/60 bg-slate-900/80 backdrop-blur-sm overflow-hidden ${className}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Music className="w-4 h-4 text-purple-600" />
-          <h3 className="text-sm font-semibold text-gray-900">Stem Mixer</h3>
+      {/* Panel Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30">
+          <Sliders className="w-4 h-4 text-violet-400" />
         </div>
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-xs"
-            onClick={isPlaying ? handlePause : handlePlay}
-          >
-            {isPlaying ? (
-              <Pause className="w-3 h-3" />
-            ) : (
-              <Play className="w-3 h-3" />
-            )}
-          </Button>
+        <div>
+          <h3 className="text-sm font-semibold text-white">Custom Mix</h3>
+          <p className="text-xs text-slate-400">Adjust levels, then export your blend</p>
         </div>
       </div>
 
-      {/* Stems */}
-      <div className="space-y-2.5">
+      {/* Stem Rows */}
+      <div className="px-4 py-3 space-y-2">
         <AnimatePresence>
           {stemsList.map((stem) => {
             const isMuted = muted[stem.name];
             const isSolo = solo === stem.name;
             const isSoloActive = solo !== null && solo !== stem.name;
+            const vol = volumes[stem.name] ?? 1;
+            const effectiveVol = isMuted || isSoloActive ? 0 : vol;
 
             return (
               <motion.div
                 key={stem.name}
                 layout
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className={`rounded-lg border p-2.5 transition-all ${
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: isSoloActive ? 0.35 : 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.2 }}
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
                   isSoloActive
-                    ? "border-gray-200/30 bg-gray-50/30 opacity-40"
-                    : "border-purple-200/50 bg-white/60"
+                    ? "border-slate-800 bg-slate-950/40"
+                    : `${stem.borderColor} bg-slate-800/50`
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  {/* Stem Icon & Label */}
-                  <div className="w-12 flex-shrink-0">
-                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br ${stem.color} text-white text-sm`}>
-                      {stem.icon}
-                    </div>
+                {/* Icon badge */}
+                <div className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg ${stem.badgeBg} text-lg`}>
+                  {stem.icon}
+                </div>
+
+                {/* Label + controls */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold tracking-wide uppercase ${stem.textColor}`}>
+                      {stem.label}
+                    </span>
+                    <span className="text-xs text-slate-500 ml-auto">
+                      {Math.round(effectiveVol * 100)}%
+                    </span>
                   </div>
 
-                  {/* Controls */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-medium text-gray-700 min-w-fit">
-                        {stem.label}
-                      </span>
-                      <div className="flex gap-0.5 ml-auto">
-                        {/* Mute Button */}
-                        <button
-                          onClick={() => handleToggleMute(stem.name)}
-                          className={`p-1 rounded transition-colors ${
-                            isMuted
-                              ? "bg-red-100 text-red-600"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
-                          title={isMuted ? "Unmute" : "Mute"}
-                        >
-                          {isMuted ? (
-                            <VolumeX className="w-3 h-3" />
-                          ) : (
-                            <Volume2 className="w-3 h-3" />
-                          )}
-                        </button>
-
-                        {/* Solo Button */}
-                        <button
-                          onClick={() => handleToggleSolo(stem.name)}
-                          className={`px-1.5 rounded text-xs font-medium transition-colors ${
-                            isSolo
-                              ? "bg-purple-200 text-purple-700"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
-                          title={isSolo ? "Unsolo" : "Solo"}
-                        >
-                          S
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Volume Slider */}
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={volumes[stem.name]}
-                        onChange={(e) => handleVolumeChange(stem.name, parseFloat(e.target.value))}
-                        className="flex-1 h-1.5 rounded-full bg-gray-200 appearance-none cursor-pointer accent-purple-600"
-                      />
-                      <span className="text-xs text-gray-600 w-6 text-right">
-                        {Math.round(volumes[stem.name] * 100)}%
-                      </span>
-                    </div>
+                  {/* Volume slider */}
+                  <div className="relative h-2 flex items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={vol}
+                      onChange={(e) => handleVolumeChange(stem.name, parseFloat(e.target.value))}
+                      disabled={isMuted || isSoloActive}
+                      className="w-full h-1.5 rounded-full appearance-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ accentColor: stem.accentHex }}
+                    />
                   </div>
+                </div>
 
-                  {/* Download Button */}
+                {/* Action buttons */}
+                <div className="flex-shrink-0 flex items-center gap-1">
+                  {/* Solo */}
+                  <button
+                    onClick={() => handleToggleSolo(stem.name)}
+                    title={isSolo ? "Unsolo" : "Solo"}
+                    className={`w-7 h-7 rounded text-xs font-bold transition-all ${
+                      isSolo
+                        ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
+                        : "bg-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                    }`}
+                  >
+                    S
+                  </button>
+
+                  {/* Mute */}
+                  <button
+                    onClick={() => handleToggleMute(stem.name)}
+                    title={isMuted ? "Unmute" : "Mute"}
+                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                      isMuted
+                        ? "bg-red-500/20 text-red-400 border border-red-500/40"
+                        : "bg-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                    }`}
+                  >
+                    {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Download stem */}
                   <button
                     onClick={() => handleDownloadStem(stem)}
-                    className="p-1.5 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors flex-shrink-0"
-                    title={`Download ${stem.label} stem`}
+                    title={`Download ${stem.label}`}
+                    className="w-7 h-7 rounded flex items-center justify-center bg-slate-700/60 text-slate-400 hover:text-blue-300 hover:bg-slate-700 transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -273,22 +295,22 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
             if (el) audioRefs.current[stem.name] = el;
           }}
           src={stem.url}
-          onEnded={handleStemEnded}
         />
       ))}
 
-      {/* Export Custom Mix */}
+      {/* Export Footer */}
       {stemSplitId && (
-        <div className="pt-2 border-t border-purple-200/40 space-y-2">
+        <div className="px-4 pb-4 pt-1 space-y-2">
+          <div className="h-px bg-slate-800 mb-3" />
           <Button
             size="sm"
-            className="w-full gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+            className="w-full gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/30 transition-all"
             onClick={handleExportMix}
             disabled={exportMixMutation.isPending}
           >
             {exportMixMutation.isPending ? (
               <>
-                <span className="animate-spin">⏳</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Mixing… this may take a moment
               </>
             ) : (
@@ -298,23 +320,28 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
               </>
             )}
           </Button>
-          {exportedUrl && (
-            <a
-              href={exportedUrl}
-              download={`${trackTitle}-custom-mix.mp3`}
-              className="flex items-center justify-center gap-2 w-full py-1.5 px-3 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download Custom Mix
-            </a>
-          )}
+
+          <AnimatePresence>
+            {exportedUrl && (
+              <motion.a
+                href={exportedUrl}
+                download={`${trackTitle}-custom-mix.mp3`}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-md text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download Custom Mix
+              </motion.a>
+            )}
+          </AnimatePresence>
+
+          <p className="text-xs text-slate-500 text-center pt-0.5">
+            Mute or solo stems, adjust volumes, then export your custom blend.
+          </p>
         </div>
       )}
-
-      {/* Info Text */}
-      <p className="text-xs text-gray-600 mt-2">
-        💡 Adjust volumes, mute/solo stems, then export your custom mix.
-      </p>
     </motion.div>
   );
 }

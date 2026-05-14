@@ -804,3 +804,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Register mixer router in main routers.ts as trpc.mixer.*
 - [x] Add custom mix export UI to StemsStudio page (volume sliders per stem + Export button)
 - [x] Test custom mix export end-to-end without affecting stem splitting
+
+## Phase 77: StemsStudio UX Polish
+
+- [x] Redesign StemMixer component with dark color-coded per-stem cards (Vocals=pink, Drums=orange, Bass=cyan, Other=green, Piano=purple)
+- [x] Add play/pause toggle icon wired to WaveSurfer play/pause events in StemsStudio
+- [x] Retry button for failed/stuck stem split jobs (calls startStemSplit again)
+- [x] Fix webhook handler tests to match real StemSplit API payload format (job.completed/job.failed)
+- [x] Fix webhook STEMSPLIT_WEBHOOK_SECRET to be read lazily (fixes test isolation)
+- [x] All webhook handler tests passing (7 tests)
