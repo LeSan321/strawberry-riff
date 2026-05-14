@@ -6,7 +6,6 @@
  * It has no knowledge of StemSplit jobs, webhooks, or database records.
  */
 
-import ffmpegStatic from "ffmpeg-static";
 import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
 import * as os from "os";
@@ -14,10 +13,29 @@ import * as path from "path";
 import * as https from "https";
 import * as http from "http";
 
-// Point fluent-ffmpeg to the bundled static binary
-if (ffmpegStatic) {
-  Ffmpeg.setFfmpegPath(ffmpegStatic);
+// Resolve ffmpeg binary path:
+// 1. FFMPEG_BIN env var (set on Railway or any custom deployment)
+// 2. Common system paths (Railway Nixpacks installs to /usr/bin/ffmpeg)
+// 3. ffmpeg-static fallback (may not work on all platforms)
+function resolveFfmpegPath(): string {
+  if (process.env.FFMPEG_BIN) return process.env.FFMPEG_BIN;
+  const systemPaths = ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/homebrew/bin/ffmpeg"];
+  for (const p of systemPaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  // Last resort: try ffmpeg-static (may be null if binary not downloaded)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ffmpegStatic = require("ffmpeg-static") as string | null;
+    if (ffmpegStatic && fs.existsSync(ffmpegStatic)) return ffmpegStatic;
+  } catch {}
+  throw new Error(
+    "ffmpeg binary not found. Set FFMPEG_BIN environment variable to the ffmpeg binary path, " +
+    "or ensure ffmpeg is installed on the system (e.g. apt install ffmpeg)."
+  );
 }
+
+Ffmpeg.setFfmpegPath(resolveFfmpegPath());
 
 export interface StemVolumes {
   vocals: number;   // 0.0 – 2.0 (1.0 = original volume)
