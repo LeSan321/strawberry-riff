@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { downloadAllStems } from "@/lib/downloadUtils";
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -84,8 +84,10 @@ export function StemsStudio() {
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
 
-  const stemWaveRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Refs for WaveSurfer containers and instances
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
+  // Track which audio URLs have been loaded per key
+  const loadedUrls = useRef<Record<string, string>>({});
 
   // Fetch stem split data
   const { data: stemSplit } = trpc.stemsplit.getTrackStemSplit.useQuery({
@@ -145,95 +147,79 @@ export function StemsStudio() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generationId, stemSplit?.stems?.vocalUrl, stemSplit?.stems?.drumsUrl, stemSplit?.stems?.bassUrl, stemSplit?.stems?.otherUrl, stemSplit?.stems?.pianoUrl]);
 
-  // Initialize master waveform — deferred to ensure DOM ref is attached after render
+  // Helper: create and load a WaveSurfer instance into a container
+  const initWaveSurfer = useCallback((
+    key: string,
+    container: HTMLDivElement,
+    audioUrl: string,
+    waveColor: string,
+  ) => {
+    // Already loaded this URL for this key — skip
+    if (loadedUrls.current[key] === audioUrl && waveSurferInstances.current[key]) return;
+
+    // Destroy any existing instance for this key
+    const existing = waveSurferInstances.current[key];
+    if (existing) {
+      existing.destroy();
+      waveSurferInstances.current[key] = null;
+    }
+
+    const ws = WaveSurfer.create({
+      container,
+      waveColor,
+      progressColor: "#ffffff",
+      barWidth: 2,
+      barGap: 1,
+      barRadius: 2,
+      height: 60,
+      normalize: true,
+      cursorColor: "#ffffff",
+      cursorWidth: 2,
+      fetchParams: { credentials: "include" },
+    });
+
+    ws.on("error", (err) => console.error(`[WaveSurfer] Error loading ${key}:`, err));
+    ws.on("ready", () => console.log(`[WaveSurfer] Ready: ${key}`));
+    ws.load(audioUrl);
+    waveSurferInstances.current[key] = ws;
+    loadedUrls.current[key] = audioUrl;
+  }, []);
+
+  // Ref callback for the master mix container — fires when the element mounts
+  const masterContainerRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el || !generation?.audioUrl) return;
+    initWaveSurfer("Master", el, generation.audioUrl, "#a78bfa");
+  }, [generation?.audioUrl, initWaveSurfer]);
+
+  // When generation URL changes and master is already mounted, reload
   useEffect(() => {
-    if (!generation?.audioUrl) return;
-
-    const timer = setTimeout(() => {
-      const masterContainer = stemWaveRefs.current["Master"];
-      if (!masterContainer || waveSurferInstances.current["Master"]) return;
-
-      const audioUrl = generation.audioUrl;
-      const masterWaveSurfer = WaveSurfer.create({
-        container: masterContainer,
-        waveColor: "#a78bfa",
-        progressColor: "#ffffff",
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        height: 60,
-        normalize: true,
-        cursorColor: "#ffffff",
-        cursorWidth: 2,
-      });
-      masterWaveSurfer.on("error", (error) => console.error("[WaveSurfer] Error loading Master:", error));
-      masterWaveSurfer.on("ready", () => console.log("[WaveSurfer] Master waveform ready"));
-      console.log("[WaveSurfer] Loading Master from:", audioUrl.substring(0, 100));
-      masterWaveSurfer.load(audioUrl);
-      waveSurferInstances.current["Master"] = masterWaveSurfer;
-    }, 150);
-
-    return () => {
-      clearTimeout(timer);
-      const instance = waveSurferInstances.current["Master"];
-      if (instance) {
-        instance.destroy();
-        waveSurferInstances.current["Master"] = null;
-      }
-    };
+    const ws = waveSurferInstances.current["Master"];
+    if (!ws || !generation?.audioUrl) return;
+    if (loadedUrls.current["Master"] !== generation.audioUrl) {
+      ws.load(generation.audioUrl);
+      loadedUrls.current["Master"] = generation.audioUrl;
+    }
   }, [generation?.audioUrl]);
 
-  // Initialize individual stem waveforms — runs after stems array is populated and DOM refs are attached
+  // Ref callback factory for individual stems
+  const makeStemRef = useCallback((stem: StemData) => (el: HTMLDivElement | null) => {
+    if (!el || !stem.url) return;
+    initWaveSurfer(stem.name, el, stem.url, stem.waveformColor);
+  }, [initWaveSurfer]);
+
+  // When stems URLs change and containers are already mounted, reload
   useEffect(() => {
-    if (stems.length === 0) return;
-
-    // Use a short timeout to ensure DOM refs are attached after render
-    const timer = setTimeout(() => {
-      stems.forEach((stem) => {
-        if (!stem.url) return;
-        const container = stemWaveRefs.current[stem.name];
-        if (!container || waveSurferInstances.current[stem.name]) return;
-
-        const waveSurfer = WaveSurfer.create({
-          container: container,
-          waveColor: stem.waveformColor,
-          progressColor: "#ffffff",
-          barWidth: 2,
-          barGap: 1,
-          barRadius: 2,
-          height: 60,
-          normalize: true,
-          cursorColor: "#ffffff",
-          cursorWidth: 2,
-          fetchParams: { credentials: "include" },
-        });
-
-        waveSurfer.on("error", (error) => console.error(`[WaveSurfer] Error loading ${stem.name}:`, error));
-        waveSurfer.on("ready", () => console.log(`[WaveSurfer] Waveform ready for ${stem.name}`));
-        console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
-        waveSurfer.load(stem.url);
-        waveSurferInstances.current[stem.name] = waveSurfer;
-
-        const volume = stemVolumes[stem.name] / 100;
-        if (!isNaN(volume) && isFinite(volume)) waveSurfer.setVolume(volume);
-      });
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      // Destroy stem waveforms (not master)
-      stems.forEach((stem) => {
-        const ws = waveSurferInstances.current[stem.name];
-        if (ws) {
-          ws.destroy();
-          waveSurferInstances.current[stem.name] = null;
-        }
-      });
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    stems.forEach((stem) => {
+      if (!stem.url) return;
+      const ws = waveSurferInstances.current[stem.name];
+      if (ws && loadedUrls.current[stem.name] !== stem.url) {
+        ws.load(stem.url);
+        loadedUrls.current[stem.name] = stem.url;
+      }
+    });
   }, [stems]);
 
-  // Update volumes
+  // Update volumes when slider changes
   useEffect(() => {
     Object.entries(stemVolumes).forEach(([stemName, volume]) => {
       const ws = waveSurferInstances.current[stemName];
@@ -244,6 +230,17 @@ export function StemsStudio() {
       }
     });
   }, [stemVolumes]);
+
+  // Cleanup all WaveSurfer instances on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(waveSurferInstances.current).forEach((ws) => {
+        if (ws) ws.destroy();
+      });
+      waveSurferInstances.current = {};
+      loadedUrls.current = {};
+    };
+  }, []);
 
   const handleDownloadAll = async () => {
     if (!generation) return;
@@ -260,23 +257,18 @@ export function StemsStudio() {
 
   const handleStemPlay = (stemName: string) => {
     const ws = waveSurferInstances.current[stemName];
-    if (ws) {
-      ws.playPause();
-    }
+    if (ws) ws.playPause();
   };
 
   const handleMasterPlay = () => {
     const ws = waveSurferInstances.current["Master"];
-    if (ws) {
-      ws.playPause();
-    }
+    if (ws) ws.playPause();
   };
 
   const handleDownloadStem = async (stemName: string) => {
     const stem = stems.find((s) => s.name === stemName);
     if (!stem?.url) return;
-
-      setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
+    setDownloadingStems((prev) => new Set(Array.from(prev).concat(stemName)));
     try {
       const link = document.createElement("a");
       link.href = stem.url;
@@ -361,10 +353,8 @@ export function StemsStudio() {
                 <Play className="w-5 h-5" />
               </Button>
               <div
-                ref={(el) => {
-                  if (el) stemWaveRefs.current["Master"] = el;
-                }}
-                className="flex-1"
+                ref={masterContainerRef}
+                className="flex-1 min-h-[60px]"
               />
               <div className="flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-slate-400" />
@@ -447,9 +437,7 @@ export function StemsStudio() {
                         </Button>
 
                         <div
-                          ref={(el) => {
-                            if (el) stemWaveRefs.current[stem.name] = el;
-                          }}
+                          ref={makeStemRef(stem)}
                           className="flex-1 min-h-[60px]"
                         />
 
