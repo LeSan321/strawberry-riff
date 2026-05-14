@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { downloadAllStems } from "@/lib/downloadUtils";
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -96,66 +96,99 @@ export function StemsStudio() {
     id: parseInt(generationId || "0"),
   });
 
-  // Build stem data array with proxy URLs to bypass CORS
-  const buildProxyUrl = (stemType: string) => {
-    if (!generationId || !stemSplit?.stems) return undefined;
-    return `/api/stems/audio/${generationId}/${stemType}`;
-  };
+  // Build stem data array with proxy URLs to bypass CORS - memoized to prevent infinite re-renders
+  const stems: StemData[] = useMemo(() => {
+    if (!generationId || !stemSplit?.stems) return [];
+    const buildProxyUrl = (stemType: string) => `/api/stems/audio/${generationId}/${stemType}`;
+    return [
+      {
+        name: "Vocals",
+        emoji: "🎤",
+        url: stemSplit.stems.vocalUrl ? buildProxyUrl("vocals") : undefined,
+        color: "from-pink-500 to-rose-500",
+        description: "Isolated voice track",
+        waveformColor: "#ec4899",
+      },
+      {
+        name: "Instrumental",
+        emoji: "🎸",
+        url: stemSplit.stems.otherUrl ? buildProxyUrl("other") : undefined,
+        color: "from-green-500 to-emerald-500",
+        description: "Music without vocals",
+        waveformColor: "#10b981",
+      },
+      {
+        name: "Drums",
+        emoji: "🥁",
+        url: stemSplit.stems.drumsUrl ? buildProxyUrl("drums") : undefined,
+        color: "from-orange-500 to-yellow-500",
+        description: "Percussion and rhythm",
+        waveformColor: "#f97316",
+      },
+      {
+        name: "Bass",
+        emoji: "🎹",
+        url: stemSplit.stems.bassUrl ? buildProxyUrl("bass") : undefined,
+        color: "from-purple-500 to-indigo-500",
+        description: "Bass guitar and low frequencies",
+        waveformColor: "#a855f7",
+      },
+      {
+        name: "Other",
+        emoji: "🎺",
+        url: stemSplit.stems.pianoUrl ? buildProxyUrl("piano") : undefined,
+        color: "from-cyan-500 to-blue-500",
+        description: "Remaining instruments",
+        waveformColor: "#06b6d4",
+      },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationId, stemSplit?.stems?.vocalUrl, stemSplit?.stems?.drumsUrl, stemSplit?.stems?.bassUrl, stemSplit?.stems?.otherUrl, stemSplit?.stems?.pianoUrl]);
 
-  const stems: StemData[] = [
-    {
-      name: "Vocals",
-      emoji: "🎤",
-      url: stemSplit?.stems?.vocalUrl ? buildProxyUrl("vocals") : undefined,
-      color: "from-pink-500 to-rose-500",
-      description: "Isolated voice track",
-      waveformColor: "#ec4899",
-    },
-    {
-      name: "Instrumental",
-      emoji: "🎸",
-      url: stemSplit?.stems?.otherUrl ? buildProxyUrl("other") : undefined,
-      color: "from-green-500 to-emerald-500",
-      description: "Music without vocals",
-      waveformColor: "#10b981",
-    },
-    {
-      name: "Drums",
-      emoji: "🥁",
-      url: stemSplit?.stems?.drumsUrl ? buildProxyUrl("drums") : undefined,
-      color: "from-orange-500 to-yellow-500",
-      description: "Percussion and rhythm",
-      waveformColor: "#f97316",
-    },
-    {
-      name: "Bass",
-      emoji: "🎹",
-      url: stemSplit?.stems?.bassUrl ? buildProxyUrl("bass") : undefined,
-      color: "from-purple-500 to-indigo-500",
-      description: "Bass guitar and low frequencies",
-      waveformColor: "#a855f7",
-    },
-    {
-      name: "Other",
-      emoji: "🎺",
-      url: stemSplit?.stems?.pianoUrl ? buildProxyUrl("piano") : undefined,
-      color: "from-cyan-500 to-blue-500",
-      description: "Remaining instruments",
-      waveformColor: "#06b6d4",
-    },
-  ];
-
-  // Initialize waveforms
+  // Initialize master waveform
   useEffect(() => {
-    if (!stemSplit?.stems && !generation?.audioUrl) return;
+    if (!generation?.audioUrl) return;
+    const masterContainer = stemWaveRefs.current["Master"];
+    if (!masterContainer || waveSurferInstances.current["Master"]) return;
 
-    // Initialize master mix waveform
-    if (generation?.audioUrl) {
-      const masterContainer = stemWaveRefs.current["Master"];
-      if (masterContainer && !waveSurferInstances.current["Master"]) {
-        const masterWaveSurfer = WaveSurfer.create({
-          container: masterContainer,
-          waveColor: "#a78bfa",
+    const masterWaveSurfer = WaveSurfer.create({
+      container: masterContainer,
+      waveColor: "#a78bfa",
+      progressColor: "#ffffff",
+      barWidth: 2,
+      barGap: 1,
+      barRadius: 2,
+      height: 60,
+      normalize: true,
+      cursorColor: "#ffffff",
+      cursorWidth: 2,
+    });
+    masterWaveSurfer.on("error", (error) => console.error("[WaveSurfer] Error loading Master:", error));
+    masterWaveSurfer.on("ready", () => console.log("[WaveSurfer] Master waveform ready"));
+    console.log("[WaveSurfer] Loading Master from:", generation.audioUrl.substring(0, 100));
+    masterWaveSurfer.load(generation.audioUrl);
+    waveSurferInstances.current["Master"] = masterWaveSurfer;
+
+    return () => {
+      masterWaveSurfer.destroy();
+      waveSurferInstances.current["Master"] = null;
+    };
+  }, [generation?.audioUrl]);
+
+  // Initialize individual stem waveforms — runs after stems array is populated and DOM refs are attached
+  useEffect(() => {
+    if (stems.length === 0) return;
+
+    // Use a short timeout to ensure DOM refs are attached after render
+    const timer = setTimeout(() => {
+      stems.forEach((stem) => {
+        if (!stem.url) return;
+        const container = stemWaveRefs.current[stem.name];
+        if (!container || waveSurferInstances.current[stem.name]) return;
+
+        const waveSurfer = WaveSurfer.create({
+          container: container,
+          waveColor: stem.waveformColor,
           progressColor: "#ffffff",
           barWidth: 2,
           barGap: 1,
@@ -164,76 +197,33 @@ export function StemsStudio() {
           normalize: true,
           cursorColor: "#ffffff",
           cursorWidth: 2,
-          // Master audio is on CloudFront (public), no credentials needed
-          // Credentials would conflict with CORS wildcard (*) policy
+          fetchParams: { credentials: "include" },
         });
 
-        masterWaveSurfer.on("error", (error) => {
-          console.error("[WaveSurfer] Error loading Master:", error);
-        });
+        waveSurfer.on("error", (error) => console.error(`[WaveSurfer] Error loading ${stem.name}:`, error));
+        waveSurfer.on("ready", () => console.log(`[WaveSurfer] Waveform ready for ${stem.name}`));
+        console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
+        waveSurfer.load(stem.url);
+        waveSurferInstances.current[stem.name] = waveSurfer;
 
-        masterWaveSurfer.on("ready", () => {
-          console.log("[WaveSurfer] Master waveform ready");
-        });
-
-        console.log("[WaveSurfer] Loading Master from:", generation.audioUrl.substring(0, 100));
-        masterWaveSurfer.load(generation.audioUrl);
-        waveSurferInstances.current["Master"] = masterWaveSurfer;
-      }
-    }
-
-    // Initialize stem waveforms
-    if (!stemSplit?.stems) return;
-
-    stems.forEach((stem) => {
-      if (!stem.url) return;
-
-      const container = stemWaveRefs.current[stem.name];
-      if (!container || waveSurferInstances.current[stem.name]) return;
-
-      const waveSurfer = WaveSurfer.create({
-        container: container,
-        waveColor: stem.waveformColor,
-        progressColor: "#ffffff",
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        height: 60,
-        normalize: true,
-        cursorColor: "#ffffff",
-        cursorWidth: 2,
-        fetchParams: {
-          credentials: "include",
-        },
+        const volume = stemVolumes[stem.name] / 100;
+        if (!isNaN(volume) && isFinite(volume)) waveSurfer.setVolume(volume);
       });
-
-      // Add error handling for waveform loading
-      waveSurfer.on("error", (error) => {
-        console.error(`[WaveSurfer] Error loading ${stem.name}:`, error);
-      });
-
-      waveSurfer.on("ready", () => {
-        console.log(`[WaveSurfer] Waveform ready for ${stem.name}`);
-      });
-
-      console.log(`[WaveSurfer] Loading ${stem.name} from:`, stem.url?.substring(0, 100));
-      waveSurfer.load(stem.url);
-      waveSurferInstances.current[stem.name] = waveSurfer;
-
-      // Sync volume with error handling for NaN
-      const volume = stemVolumes[stem.name] / 100;
-      if (!isNaN(volume) && isFinite(volume)) {
-        waveSurfer.setVolume(volume);
-      }
-    });
+    }, 100);
 
     return () => {
-      Object.values(waveSurferInstances.current).forEach((ws) => {
-        if (ws) ws.destroy();
+      clearTimeout(timer);
+      // Destroy stem waveforms (not master)
+      stems.forEach((stem) => {
+        const ws = waveSurferInstances.current[stem.name];
+        if (ws) {
+          ws.destroy();
+          waveSurferInstances.current[stem.name] = null;
+        }
       });
-      waveSurferInstances.current = {};
     };
-  }, [stemSplit?.stems, generation?.audioUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stems]);
 
   // Update volumes
   useEffect(() => {
@@ -391,7 +381,7 @@ export function StemsStudio() {
         </div>
 
         {/* Custom Mix Export Section */}
-        {stemSplit?.status === "completed" && stemSplit?.stems && stemSplit.id && (
+        {stemSplit?.status === "completed" && stemSplit?.stems && stemSplit.id != null && (
           <div>
             <h2 className="text-xl font-bold mb-4">🎛️ Custom Mix Export</h2>
             <StemMixer
