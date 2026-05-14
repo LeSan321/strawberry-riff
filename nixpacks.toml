@@ -2,4 +2,4 @@
 # Installs ffmpeg system binary so the Custom Mix Export feature works in production.
 
 [phases.setup]
-aptPkgs = ["ffmpeg"]
+aptPkgs = ["ffmpeg", "libmp3lame-dev"]

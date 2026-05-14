@@ -35,7 +35,15 @@ function resolveFfmpegPath(): string {
   );
 }
 
-Ffmpeg.setFfmpegPath(resolveFfmpegPath());
+// Lazy path resolution - only called when mixStems() is invoked, not at module load
+let ffmpegPathResolved: string | null = null;
+function getFfmpegPath(): string {
+  if (!ffmpegPathResolved) {
+    ffmpegPathResolved = resolveFfmpegPath();
+    Ffmpeg.setFfmpegPath(ffmpegPathResolved);
+  }
+  return ffmpegPathResolved;
+}
 
 export interface StemVolumes {
   vocals: number;   // 0.0 – 2.0 (1.0 = original volume)
@@ -93,6 +101,9 @@ export async function mixStems(
   stems: StemUrls,
   volumes: StemVolumes
 ): Promise<string> {
+  // Resolve ffmpeg path lazily - throws only when actually needed
+  getFfmpegPath();
+
   const tmpDir = os.tmpdir();
   const sessionId = `mix-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const tempFiles: string[] = [];
