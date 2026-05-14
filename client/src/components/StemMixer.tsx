@@ -1,15 +1,15 @@
 /**
  * StemMixer Component
  * Dark-themed mini-mixer for stem playback with mute/solo, volume controls, and custom mix export.
+ * Mix export uses the Web Audio API (client-side) — no FFmpeg or server binary required.
  * Design: dark cards, per-stem color accents, inline volume sliders.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { VolumeX, Volume2, Download, Wand2, Loader2, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { trpc } from "@/lib/trpc";
 
 interface Stem {
   name: "vocals" | "drums" | "bass" | "other" | "piano";
@@ -69,25 +69,140 @@ const STEM_DEFS: Omit<Stem, "url">[] = [
   },
   {
     name: "other",
-    label: "Other",
-    borderColor: "border-cyan-500/40",
-    textColor: "text-cyan-300",
-    badgeBg: "bg-cyan-500/20",
-    accentHex: "#06b6d4",
-    icon: "🎺",
-  },
-  {
-    name: "piano",
-    label: "Piano",
+    // "other" from FOUR_STEMS = everything except vocals/drums/bass = effectively Instrumental
+    label: "Instrumental",
     borderColor: "border-green-500/40",
     textColor: "text-green-300",
     badgeBg: "bg-green-500/20",
     accentHex: "#10b981",
+    icon: "🎵",
+  },
+  {
+    name: "piano",
+    label: "Piano",
+    borderColor: "border-cyan-500/40",
+    textColor: "text-cyan-300",
+    badgeBg: "bg-cyan-500/20",
+    accentHex: "#06b6d4",
     icon: "🎼",
   },
 ];
 
-export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className = "" }: StemMixerProps) {
+/**
+ * Mix stems client-side using the Web Audio API.
+ * Fetches each stem URL, decodes the audio, applies volume scaling,
+ * sums the PCM samples, and returns a WAV Blob.
+ */
+async function mixStemsClientSide(
+  stemEntries: { url: string; volume: number }[],
+  onProgress?: (msg: string) => void
+): Promise<Blob> {
+  const ctx = new OfflineAudioContext(2, 1, 44100); // temp context just for decoding
+
+  onProgress?.("Fetching stems…");
+
+  // Fetch + decode all stems in parallel
+  const decoded = await Promise.all(
+    stemEntries.map(async ({ url, volume }) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch stem: ${res.status}`);
+      const arrayBuf = await res.arrayBuffer();
+      // Decode in a throwaway context
+      const decodeCtx = new AudioContext();
+      const audioBuf = await decodeCtx.decodeAudioData(arrayBuf);
+      await decodeCtx.close();
+      return { audioBuf, volume };
+    })
+  );
+
+  onProgress?.("Mixing…");
+
+  // Use the longest buffer duration
+  const maxLength = Math.max(...decoded.map((d) => d.audioBuf.length));
+  const sampleRate = decoded[0].audioBuf.sampleRate;
+  const numChannels = 2;
+
+  // Create offline context at correct sample rate and length
+  const offlineCtx = new OfflineAudioContext(numChannels, maxLength, sampleRate);
+
+  for (const { audioBuf, volume } of decoded) {
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuf;
+
+    const gainNode = offlineCtx.createGain();
+    gainNode.gain.value = volume;
+
+    source.connect(gainNode);
+    gainNode.connect(offlineCtx.destination);
+    source.start(0);
+  }
+
+  const renderedBuffer = await offlineCtx.startRendering();
+
+  onProgress?.("Encoding WAV…");
+
+  // Encode to WAV
+  const wavBlob = audioBufferToWav(renderedBuffer);
+  return wavBlob;
+}
+
+/**
+ * Encode an AudioBuffer to a WAV Blob (16-bit PCM, stereo).
+ */
+function audioBufferToWav(buffer: AudioBuffer): Blob {
+  const numChannels = Math.min(buffer.numberOfChannels, 2);
+  const sampleRate = buffer.sampleRate;
+  const numSamples = buffer.length;
+  const bytesPerSample = 2; // 16-bit
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numSamples * blockAlign;
+  const headerSize = 44;
+  const totalSize = headerSize + dataSize;
+
+  const arrayBuffer = new ArrayBuffer(totalSize);
+  const view = new DataView(arrayBuffer);
+
+  // RIFF header
+  writeString(view, 0, "RIFF");
+  view.setUint32(4, totalSize - 8, true);
+  writeString(view, 8, "WAVE");
+  writeString(view, 12, "fmt ");
+  view.setUint32(16, 16, true); // PCM chunk size
+  view.setUint16(20, 1, true);  // PCM format
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true); // bits per sample
+  writeString(view, 36, "data");
+  view.setUint32(40, dataSize, true);
+
+  // Interleave channels
+  const channels: Float32Array[] = [];
+  for (let c = 0; c < numChannels; c++) {
+    channels.push(buffer.getChannelData(c));
+  }
+
+  let offset = headerSize;
+  for (let i = 0; i < numSamples; i++) {
+    for (let c = 0; c < numChannels; c++) {
+      const sample = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: "audio/wav" });
+}
+
+function writeString(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
+
+export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemMixerProps) {
   const urlMap: Record<string, string | null | undefined> = {
     vocals: stems.vocalUrl,
     drums: stems.drumsUrl,
@@ -108,43 +223,42 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
   );
   const [solo, setSolo] = useState<string | null>(null);
   const [exportedUrl, setExportedUrl] = useState<string | null>(null);
-  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+  const [isMixing, setIsMixing] = useState(false);
+  const [mixProgress, setMixProgress] = useState<string>("");
 
-  const exportMixMutation = trpc.mixer.exportCustomMix.useMutation({
-    onSuccess: (data) => {
-      setExportedUrl(data.url);
-      toast.success("Custom mix ready! Click Download to save.");
-    },
-    onError: (err) => {
-      toast.error("Failed to export mix: " + err.message);
-    },
-  });
-
-  const handleExportMix = () => {
-    if (!stemSplitId) return;
-    setExportedUrl(null);
-    exportMixMutation.mutate({
-      stemSplitId,
-      volumes: {
-        vocals: muted["vocals"] ? 0 : volumes["vocals"] ?? 1,
-        drums: muted["drums"] ? 0 : volumes["drums"] ?? 1,
-        bass: muted["bass"] ? 0 : volumes["bass"] ?? 1,
-        other: muted["other"] ? 0 : volumes["other"] ?? 1,
-        piano: muted["piano"] ? 0 : volumes["piano"] ?? 1,
-      },
-    });
-  };
-
-  // Sync volume and mute state to audio elements
-  useEffect(() => {
-    stemsList.forEach((stem) => {
-      const audio = audioRefs.current[stem.name];
-      if (audio) {
+  const handleExportMix = async () => {
+    const activeStemEntries = stemsList
+      .filter((stem) => {
         const isSoloActive = solo !== null && solo !== stem.name;
-        audio.volume = isSoloActive || muted[stem.name] ? 0 : volumes[stem.name];
-      }
-    });
-  }, [volumes, muted, solo, stemsList]);
+        return !muted[stem.name] && !isSoloActive && (volumes[stem.name] ?? 1) > 0;
+      })
+      .map((stem) => ({
+        url: stem.url,
+        volume: volumes[stem.name] ?? 1,
+      }));
+
+    if (activeStemEntries.length === 0) {
+      toast.error("No active stems to mix — unmute at least one stem.");
+      return;
+    }
+
+    setIsMixing(true);
+    setExportedUrl(null);
+    setMixProgress("Starting…");
+
+    try {
+      const wavBlob = await mixStemsClientSide(activeStemEntries, setMixProgress);
+      const url = URL.createObjectURL(wavBlob);
+      setExportedUrl(url);
+      toast.success("Custom mix ready! Click Download to save.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Failed to export mix: " + msg);
+    } finally {
+      setIsMixing(false);
+      setMixProgress("");
+    }
+  };
 
   const handleToggleMute = (stemName: string) => {
     setMuted((prev) => ({ ...prev, [stemName]: !prev[stemName] }));
@@ -287,61 +401,48 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
         </AnimatePresence>
       </div>
 
-      {/* Hidden Audio Elements */}
-      {stemsList.map((stem) => (
-        <audio
-          key={stem.name}
-          ref={(el) => {
-            if (el) audioRefs.current[stem.name] = el;
-          }}
-          src={stem.url}
-        />
-      ))}
-
       {/* Export Footer */}
-      {stemSplitId && (
-        <div className="px-4 pb-4 pt-1 space-y-2">
-          <div className="h-px bg-slate-800 mb-3" />
-          <Button
-            size="sm"
-            className="w-full gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/30 transition-all"
-            onClick={handleExportMix}
-            disabled={exportMixMutation.isPending}
-          >
-            {exportMixMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Mixing… this may take a moment
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4" />
-                Export Custom Mix
-              </>
-            )}
-          </Button>
+      <div className="px-4 pb-4 pt-1 space-y-2">
+        <div className="h-px bg-slate-800 mb-3" />
+        <Button
+          size="sm"
+          className="w-full gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/30 transition-all"
+          onClick={handleExportMix}
+          disabled={isMixing}
+        >
+          {isMixing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {mixProgress || "Mixing…"}
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4" />
+              Export Custom Mix
+            </>
+          )}
+        </Button>
 
-          <AnimatePresence>
-            {exportedUrl && (
-              <motion.a
-                href={exportedUrl}
-                download={`${trackTitle}-custom-mix.mp3`}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-md text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Download Custom Mix
-              </motion.a>
-            )}
-          </AnimatePresence>
+        <AnimatePresence>
+          {exportedUrl && (
+            <motion.a
+              href={exportedUrl}
+              download={`${trackTitle}-custom-mix.wav`}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-md text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Custom Mix (WAV)
+            </motion.a>
+          )}
+        </AnimatePresence>
 
-          <p className="text-xs text-slate-500 text-center pt-0.5">
-            Mute or solo stems, adjust volumes, then export your custom blend.
-          </p>
-        </div>
-      )}
+        <p className="text-xs text-slate-500 text-center pt-0.5">
+          Mute or solo stems, adjust volumes, then export your custom blend.
+        </p>
+      </div>
     </motion.div>
   );
 }

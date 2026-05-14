@@ -48,13 +48,13 @@ describe("StemSplit Database Helpers", () => {
 
   it("should retrieve stem split by job ID", async () => {
     const testJobId = generateJobId();
-    const trackId = generateTrackId();
-    await createStemSplit(testUserId, trackId, testJobId);
+    const generationId = generateTrackId();
+    await createStemSplit(testUserId, generationId, testJobId);
     const record = await getStemSplitByJobId(testJobId);
     expect(record).toBeDefined();
     expect(record?.jobId).toBe(testJobId);
     expect(record?.userId).toBe(testUserId);
-    expect(record?.trackId).toBe(trackId);
+    expect(record?.generationId).toBe(generationId);
     expect(record?.status).toBe("pending");
     if (record?.id) createdId = record.id;
   });
@@ -105,18 +105,18 @@ describe("StemSplit Database Helpers", () => {
   });
 
   it("should retrieve stem split for a specific track", async () => {
-    const trackId = generateTrackId();
+    const generationId = generateTrackId();
     const jobId = generateJobId();
 
-    const result = await createStemSplit(testUserId, trackId, jobId);
+    const result = await createStemSplit(testUserId, generationId, jobId);
     if ((result as any).insertId) createdId = (result as any).insertId;
 
     // Give it a moment for the database to be ready
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const record = await getTrackStemSplit(trackId);
+    const record = await getTrackStemSplit(generationId);
     expect(record).toBeDefined();
-    expect(record?.trackId).toBe(trackId);
+    expect(record?.generationId).toBe(generationId);
     // Just verify a record was returned; jobId might be from a previous test if DB wasn't cleaned
     expect(record?.jobId).toBeDefined();
   });

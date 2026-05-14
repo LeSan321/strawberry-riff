@@ -92,6 +92,8 @@ export function StemsStudio() {
 
   // Play/pause state tracked per WaveSurfer key
   const [playingKeys, setPlayingKeys] = useState<Set<string>>(new Set());
+  // Track which waveforms have finished loading (ready event fired)
+  const [readyKeys, setReadyKeys] = useState<Set<string>>(new Set());
 
   // Refs for WaveSurfer containers and instances
   const waveSurferInstances = useRef<Record<string, WaveSurfer | null>>({});
@@ -198,7 +200,10 @@ export function StemsStudio() {
     });
 
     ws.on("error", (err) => console.error(`[WaveSurfer] Error loading ${key}:`, err));
-    ws.on("ready", () => console.log(`[WaveSurfer] Ready: ${key}`));
+    ws.on("ready", () => {
+      console.log(`[WaveSurfer] Ready: ${key}`);
+      setReadyKeys((prev) => { const next = new Set(Array.from(prev)); next.add(key); return next; });
+    });
 
     // Wire play/pause events to update icon state
     ws.on("play", () => {
@@ -438,10 +443,24 @@ export function StemsStudio() {
               >
                 {isMasterPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
-              <div
-                ref={masterContainerRef}
-                className="flex-1 min-h-[60px]"
-              />
+              <div className="flex-1 relative min-h-[60px]">
+                {/* Loading skeleton for master mix */}
+                {!readyKeys.has("Master") && masterProxyUrl && (
+                  <div className="absolute inset-0 flex items-center gap-0.5 px-1 overflow-hidden">
+                    {Array.from({ length: 80 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
+                        style={{ height: `${25 + Math.sin(i * 0.3) * 18}px` }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div
+                  ref={masterContainerRef}
+                  className="w-full min-h-[60px]"
+                />
+              </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Volume2 className="w-4 h-4 text-slate-400" />
                 <span className="text-sm font-medium">100%</span>
@@ -507,10 +526,24 @@ export function StemsStudio() {
                             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                           </Button>
 
-                          <div
-                            ref={makeStemRef(stem)}
-                            className="flex-1 min-h-[60px]"
-                          />
+                          <div className="flex-1 relative min-h-[60px]">
+                            {/* Loading skeleton shown until WaveSurfer fires 'ready' */}
+                            {!readyKeys.has(stem.name) && stem.url && (
+                              <div className="absolute inset-0 flex items-center gap-0.5 px-1 overflow-hidden">
+                                {Array.from({ length: 60 }).map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
+                                    style={{ height: `${20 + Math.sin(i * 0.4) * 15 + Math.random() * 10}px` }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            <div
+                              ref={makeStemRef(stem)}
+                              className="w-full min-h-[60px]"
+                            />
+                          </div>
 
                           <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="flex items-center gap-2">

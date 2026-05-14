@@ -39,12 +39,14 @@ describe("StemSplit tRPC Router", () => {
 
       const result = await caller.startStemSplit({ generationId: 1 });
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         success: true,
         jobId: "job-123",
         status: "pending",
         message: "Stem split job started",
       });
+      // The result also includes isPremium, remainingThisMonth, and error fields
+      expect(result.success).toBe(true);
       // Verify that startStemSplit was called with some audio URL
       expect(stemSplitClient.startStemSplit).toHaveBeenCalled();
       // Verify that createStemSplit was called with the correct user and generation IDs
