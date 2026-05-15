@@ -876,3 +876,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add label and name fields to getActiveStemEntries return type
 - [x] Add expiry warning badge to My Stems panel cards (yellow "Xd left" for ≤7 days, red "Expired" for expired)
 - [x] All 317 tests passing (25 test files)
+
+## Phase 84: Lyrics Page Topic/Theme Field Limit Increase
+
+- [x] Increase Topic/Theme maxLength from 500 to 1500 characters in LyricsGenerator.tsx
+- [x] Add character counter helper text below the Topic/Theme field
+- [x] Check and update server-side Zod validation for the topic field if needed

@@ -448,13 +448,15 @@ export function LyricsGeneratorPage() {
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">Topic / Theme <span className="text-destructive">*</span></label>
-                  <Input
-                    placeholder="e.g., midnight longing, self-discovery after heartbreak, euphoric escape"
+                  <Textarea
+                    placeholder="e.g., midnight longing, self-discovery after heartbreak, euphoric escape — or paste existing lyrics to rewrite/re-vision them"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     disabled={isGenerating}
-                    maxLength={500}
+                    maxLength={1500}
+                    rows={3}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">{topic.length}/1500 characters (~200–250 words)</p>
                 </div>
               </div>
 

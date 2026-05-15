@@ -1178,7 +1178,7 @@ const lyricsRouter = router({
     .input(
       z.object({
         fusion: z.string().min(1).max(200),
-        topic: z.string().min(1).max(500),
+        topic: z.string().min(1).max(1500),
         mood: z.string().min(1).max(200),
         emotionalFeeling: z.string().max(200).optional(),
         structure: z.string().min(1).max(200),
@@ -1228,7 +1228,7 @@ const lyricsRouter = router({
         title: z.string().min(1).max(200),
         fusion: z.string().max(200).optional(),
         mood: z.string().max(200).optional(),
-        topic: z.string().max(500).optional(),
+        topic: z.string().max(1500).optional(),
         perspective: z.string().max(100).optional(),
         hookSeed: z.string().max(500).optional(),
         structure: z.string().max(200).optional(),
