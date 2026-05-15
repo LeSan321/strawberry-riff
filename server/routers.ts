@@ -1190,6 +1190,7 @@ const lyricsRouter = router({
         constraints: z.string().max(500).optional(),
         saveDraft: z.boolean().default(false),
         draftTitle: z.string().max(200).optional(),
+        rewriteMode: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {

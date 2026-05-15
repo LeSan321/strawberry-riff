@@ -197,15 +197,22 @@ function GenerationCard({
             autoFocus
           />
         ) : (
-          <button
-            className="font-medium truncate flex-1 text-left group flex items-center gap-1 hover:text-pink-600 transition-colors"
-            onClick={() => navigate(`/track-detail/${gen.id}`)}
-            onDoubleClick={() => { setTitleDraft(gen.title); setEditingTitle(true); }}
-            title="Click to view details, double-click to rename"
-          >
-            <span className="truncate">{titleDraft !== gen.title ? titleDraft : gen.title}</span>
-            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
-          </button>
+          <div className="flex items-center gap-1 flex-1 min-w-0 group">
+            <button
+              className="font-medium truncate text-left hover:text-pink-600 transition-colors flex-1 min-w-0"
+              onClick={() => navigate(`/track-detail/${gen.id}`)}
+              title="View track details"
+            >
+              <span className="truncate block">{titleDraft !== gen.title ? titleDraft : gen.title}</span>
+            </button>
+            <button
+              className="p-0.5 rounded hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+              onClick={() => { setTitleDraft(gen.title); setEditingTitle(true); }}
+              title="Rename track"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          </div>
         )}
         <div className="flex items-center gap-1 shrink-0">
         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusColor}`}>

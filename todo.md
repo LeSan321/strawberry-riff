@@ -882,3 +882,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Increase Topic/Theme maxLength from 500 to 1500 characters in LyricsGenerator.tsx
 - [x] Add character counter helper text below the Topic/Theme field
 - [x] Check and update server-side Zod validation for the topic field if needed
+
+## Phase 85: Rewrite Mode, Blend Description in My Riffs, Studio Edit Fix
+
+- [x] Add Rewrite Mode toggle to Lyrics page (dedicated system prompt: preserve spirit, elevate craft)
+- [x] Display blend description as badge/subtitle on custom mix cards in My Riffs
+- [x] Fix Studio generate panel edit button conflict — replace card click navigation with explicit pencil icon

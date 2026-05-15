@@ -231,6 +231,9 @@ export function LyricsGeneratorPage() {
   const [hookSeed, setHookSeed] = useState("");
   const [constraints, setConstraints] = useState("");
 
+  // Rewrite Mode
+  const [rewriteMode, setRewriteMode] = useState(false);
+
   // Output
   const [generatedLyrics, setGeneratedLyrics] = useState("");
   const [stickinessAnalysis, setStickinessAnalysis] = useState("");
@@ -299,16 +302,17 @@ export function LyricsGeneratorPage() {
         hookSeed: hookSeed.trim() || undefined,
         constraints: constraints.trim() || undefined,
         saveDraft: false,
+        rewriteMode,
       });
       setGeneratedLyrics(result.lyrics);
       setStickinessAnalysis(result.stickinessAnalysis);
-      toast.success("Lyrics generated!");
+      toast.success(rewriteMode ? "Re-vision complete!" : "Lyrics generated!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setIsGenerating(false);
     }
-  }, [fusion, topic, mood, emotionalFeeling, structure, flowStyle, writingTeam, craftNotes, perspective, hookSeed, constraints]);
+  }, [fusion, topic, mood, emotionalFeeling, structure, flowStyle, writingTeam, craftNotes, perspective, hookSeed, constraints, rewriteMode]);
 
   const handleCopyLyrics = useCallback(() => {
     if (!generatedLyrics) return;
@@ -447,14 +451,40 @@ export function LyricsGeneratorPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium">Topic / Theme <span className="text-destructive">*</span></label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium">
+                      {rewriteMode ? "Your Lyrics to Re-Vision" : "Topic / Theme"}{" "}
+                      <span className="text-destructive">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setRewriteMode((v) => !v)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        rewriteMode
+                          ? "bg-pink-500 text-white hover:bg-pink-600"
+                          : "bg-muted text-muted-foreground hover:bg-pink-100 hover:text-pink-700"
+                      }`}
+                      title={rewriteMode ? "Switch back to topic/theme mode" : "Switch to rewrite mode — paste your own lyrics"}
+                    >
+                      <span>{rewriteMode ? "✏️ Rewrite Mode ON" : "✏️ Rewrite Mode"}</span>
+                    </button>
+                  </div>
+                  {rewriteMode && (
+                    <p className="mb-2 text-xs rounded-md bg-pink-500/10 border border-pink-300/40 px-3 py-2 text-pink-700 dark:text-pink-300">
+                      Paste your own lyrics below. The AI will preserve your voice and story while elevating the craft — sharpening metaphors, fixing forced rhymes, and strengthening the hook.
+                    </p>
+                  )}
                   <Textarea
-                    placeholder="e.g., midnight longing, self-discovery after heartbreak, euphoric escape — or paste existing lyrics to rewrite/re-vision them"
+                    placeholder={
+                      rewriteMode
+                        ? "Paste your existing lyrics here… (verse, chorus, full song — whatever you have)"
+                        : "e.g., midnight longing, self-discovery after heartbreak, euphoric escape"
+                    }
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     disabled={isGenerating}
                     maxLength={1500}
-                    rows={3}
+                    rows={rewriteMode ? 6 : 3}
                   />
                   <p className="mt-1 text-xs text-muted-foreground">{topic.length}/1500 characters (~200–250 words)</p>
                 </div>

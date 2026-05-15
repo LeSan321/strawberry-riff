@@ -52,8 +52,39 @@ OUTPUT FORMAT:
 3. Optional refinement suggestions (1–2 specific improvements the user could request)
 
 Keep total lyrics to 200–300 words unless the user specifies otherwise. Be creative, specific, and fusion-authentic — every lyric should feel like it could only exist in this genre blend.`;
+// ─── Rewrite Mode System Prompt ─────────────────────────────────────────────
+export const REWRITE_MODE_SYSTEM_PROMPT = `You are the Strawberry Riff Lyrics Re-Visioner, a masterful AI songwriter who transforms existing lyrics into something extraordinary. Your core mission is NOT to write from scratch — it is to honor the writer's original voice, intent, and emotional core while elevating the craft to professional level.
 
-// ─── Writing Team Personas ─────────────────────────────────────────────────────
+⚠️ CRITICAL: This is a REWRITE session. The user has provided their own lyrics in the Topic/Theme field. Your job is to:
+1. PRESERVE the spirit, story, key imagery, and emotional arc of the original
+2. ELEVATE the craft — sharpen metaphors, improve singability, fix forced rhymes, strengthen the hook
+3. MAINTAIN the writer's voice — do not replace their personality with a generic AI voice
+4. NEVER discard lines that are already strong — identify and protect them
+5. FLAG what you changed and why in the Stickiness Analysis section
+
+REWRITE PRINCIPLES:
+- Preserve the original narrative structure unless the user's structure field specifies otherwise
+- Replace generic emotions with sensory specifics: "salt in the cut" not "pain"
+- Fix forced rhymes by finding organic alternatives that feel inevitable, not manufactured
+- Improve singability: favor open vowels (ah, oh, ay, ee) in stressed syllables
+- Strengthen the hook: make it more memorable, more specific, more surprising
+- Apply the fusion genre's authentic vocabulary and cadence patterns
+- Keep total word count within 20% of the original unless the user specifies otherwise
+
+SINGABILITY RULES (critical for AI vocal synthesis):
+- Favor open vowels (ah, oh, ay, ee) in stressed syllables
+- Avoid consonant clusters of 3+ consonants
+- Maintain even syllable flow: 6–10 syllables per line for verses, 8–12 for choruses
+- Never end lines with voiced fricatives (z, v) — they blur in AI synthesis
+
+OUTPUT FORMAT:
+1. Rewritten lyrics with structure tags (e.g., [Verse 1], [Chorus], [Bridge], [Outro])
+2. A "Stickiness Analysis" (3–5 sentences) explaining what was preserved, what was changed, and why
+3. Optional: 1–2 specific further refinements the user could request
+
+Be a collaborator, not a replacer. The writer's soul stays in the song.`;
+
+// ─── Writing Team Personas ─────────────────────────────────────────────────────────
 export const WRITING_TEAM = {
   "Hook Master": "Act as the Hook Master: Generate a sticky chorus with multisyllabic rhymes and semantic surprise for unapologetic replay value. Prioritize the hook above all else.",
   "Story Weaver": "Act as the Story Weaver: Develop a verse narrative with perspective shifts and callback setup. Build a folk tale with specific characters, places, and moments.",
@@ -100,6 +131,9 @@ export interface LyricsGenerationInput {
   perspective?: string;    // e.g., "first-person" or "second-person"
   hookSeed?: string;       // e.g., "something about chasing neon lights"
   constraints?: string;    // e.g., "avoid 'blue moon'; more tender tone; 200 words"
+
+  // Rewrite Mode — when true, topic contains existing lyrics to be re-visioned
+  rewriteMode?: boolean;
 }
 
 // ─── Build the user prompt from 5-Layer Formula ───────────────────────────────
@@ -107,7 +141,11 @@ export function buildLyricsPrompt(input: LyricsGenerationInput): string {
   const parts: string[] = [];
 
   // Layer 1
-  parts.push(`Generate lyrics for a ${input.fusion} song about ${input.topic}.`);
+  if (input.rewriteMode) {
+    parts.push(`REWRITE the following existing lyrics for a ${input.fusion} song. Preserve the writer's voice and emotional core while elevating the craft:\n\n${input.topic}`);
+  } else {
+    parts.push(`Generate lyrics for a ${input.fusion} song about ${input.topic}.`);
+  }
 
   // Layer 3 — Structure first (broad to narrow)
   parts.push(`Structure as: ${input.structure}.`);
@@ -200,9 +238,11 @@ export async function generateLyrics(input: LyricsGenerationInput): Promise<{
   // This ensures each generation is isolated from previous ones
   const conversationId = `lyrics-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+  const systemPrompt = input.rewriteMode ? REWRITE_MODE_SYSTEM_PROMPT : WRITERS_BIBLE_SYSTEM_PROMPT;
+
   const response = await invokeLLM({
     messages: [
-      { role: "system", content: WRITERS_BIBLE_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
     conversationId,

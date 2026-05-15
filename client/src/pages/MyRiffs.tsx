@@ -542,6 +542,14 @@ function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStat
                     ))}
                   </div>
                 )}
+
+                {/* Blend description — shown for custom mix tracks */}
+                {track.description && (
+                  <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5 leading-relaxed">
+                    <span className="mt-0.5 shrink-0 text-pink-400">🎛️</span>
+                    <span>{track.description}</span>
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
