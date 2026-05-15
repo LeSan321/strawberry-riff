@@ -2,15 +2,29 @@
  * StemMixer Component
  * Dark-themed mini-mixer for stem playback with mute/solo, volume controls, and custom mix export.
  * Mix export uses the Web Audio API (client-side) — no FFmpeg or server binary required.
- * Supports WAV export (lossless) and MP3 export (via lamejs, shareable size).
+ * Supports WAV export (lossless), MP3 export (via lamejs, shareable size), and Save to My Riffs.
  * Design: dark cards, per-stem color accents, inline volume sliders.
+ *
+ * Easter egg: "More Cowbell" button on the Drums row — boosts Drums to 150% (SNL tribute 🔔).
  */
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { VolumeX, Volume2, Download, Wand2, Loader2, Sliders, Music } from "lucide-react";
+import {
+  VolumeX,
+  Volume2,
+  Download,
+  Wand2,
+  Loader2,
+  Sliders,
+  Music,
+  BookmarkPlus,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 
 interface Stem {
   name: "vocals" | "drums" | "bass" | "other" | "piano" | "guitar";
@@ -232,13 +246,29 @@ async function audioBufferToMp3(buffer: AudioBuffer, onProgress?: (msg: string) 
   return new Blob(mp3Chunks as BlobPart[], { type: "audio/mp3" });
 }
 
+/** Convert a Blob to a base64 string */
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // Strip the data:...;base64, prefix
+      resolve(dataUrl.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function writeString(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) {
     view.setUint8(offset + i, str.charCodeAt(i));
   }
 }
 
-export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemMixerProps) {
+export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className = "" }: StemMixerProps) {
+  const [, navigate] = useLocation();
+
   const urlMap: Record<string, string | null | undefined> = {
     vocals: stems.vocalUrl,
     drums: stems.drumsUrl,
@@ -263,6 +293,23 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
   const [exportedMp3Url, setExportedMp3Url] = useState<string | null>(null);
   const [isMixing, setIsMixing] = useState(false);
   const [mixProgress, setMixProgress] = useState<string>("");
+  const [savedTrackId, setSavedTrackId] = useState<number | null>(null);
+  const [cowbellActive, setCowbellActive] = useState(false);
+
+  const saveMixMutation = trpc.mixer.saveMixToRiffs.useMutation({
+    onSuccess: (data) => {
+      setSavedTrackId(data.trackId);
+      toast.success("Custom mix saved to My Riffs! 🍓", {
+        action: {
+          label: "View",
+          onClick: () => navigate("/my-riffs"),
+        },
+      });
+    },
+    onError: (err) => {
+      toast.error("Failed to save mix: " + err.message);
+    },
+  });
 
   const getActiveStemEntries = () =>
     stemsList
@@ -284,6 +331,7 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     setIsMixing(true);
     setExportedWavUrl(null);
     setExportedMp3Url(null);
+    setSavedTrackId(null);
     setMixProgress("Starting…");
     try {
       const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
@@ -310,6 +358,7 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     setIsMixing(true);
     setExportedWavUrl(null);
     setExportedMp3Url(null);
+    setSavedTrackId(null);
     setMixProgress("Starting…");
     try {
       const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
@@ -320,6 +369,43 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to export MP3: " + msg);
+    } finally {
+      setIsMixing(false);
+      setMixProgress("");
+    }
+  };
+
+  const handleSaveToRiffs = async () => {
+    if (!stemSplitId) {
+      toast.error("Cannot save — stem split ID is missing.");
+      return;
+    }
+    const activeStemEntries = getActiveStemEntries();
+    if (activeStemEntries.length === 0) {
+      toast.error("No active stems to mix — unmute at least one stem.");
+      return;
+    }
+    setIsMixing(true);
+    setSavedTrackId(null);
+    setMixProgress("Rendering mix…");
+    try {
+      const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
+      setMixProgress("Encoding WAV…");
+      const wavBlob = audioBufferToWav(renderedBuffer);
+      setMixProgress("Uploading to My Riffs…");
+      const base64 = await blobToBase64(wavBlob);
+      await saveMixMutation.mutateAsync({
+        stemSplitId,
+        audioBase64: base64,
+        mimeType: "audio/wav",
+        title: trackTitle,
+        duration: Math.round(renderedBuffer.duration),
+      });
+    } catch (err) {
+      if (!saveMixMutation.isError) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        toast.error("Failed to save mix: " + msg);
+      }
     } finally {
       setIsMixing(false);
       setMixProgress("");
@@ -346,6 +432,19 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
     link.click();
     document.body.removeChild(link);
     toast.success(`Downloaded ${stem.label} stem`);
+  };
+
+  /** 🔔 More Cowbell — boost Drums to 150% */
+  const handleMoreCowbell = () => {
+    setCowbellActive(true);
+    setVolumes((prev) => ({ ...prev, drums: 1.5 }));
+    setMuted((prev) => ({ ...prev, drums: false }));
+    toast("🔔 I got a fever... and the only prescription is MORE COWBELL!", {
+      duration: 4000,
+      description: "Drums boosted to 150% — Will Ferrell would be proud.",
+    });
+    // Reset the cowbell glow after 3 seconds
+    setTimeout(() => setCowbellActive(false), 3000);
   };
 
   if (stemsList.length === 0) return null;
@@ -377,6 +476,8 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
             const isSoloActive = solo !== null && solo !== stem.name;
             const vol = volumes[stem.name] ?? 1;
             const effectiveVol = isMuted || isSoloActive ? 0 : vol;
+            const isDrums = stem.name === "drums";
+            const isCowbellGlowing = isDrums && cowbellActive;
 
             return (
               <motion.div
@@ -386,15 +487,17 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
                 animate={{ opacity: isSoloActive ? 0.35 : 1, x: 0 }}
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.2 }}
-                className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
-                  isSoloActive
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all ${
+                  isCowbellGlowing
+                    ? "border-orange-400/70 bg-orange-500/10 shadow-lg shadow-orange-500/20"
+                    : isSoloActive
                     ? "border-slate-800 bg-slate-950/40"
                     : `${stem.borderColor} bg-slate-800/40`
                 }`}
               >
                 {/* Icon badge */}
-                <div className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg ${stem.badgeBg} text-lg`}>
-                  {stem.icon}
+                <div className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg ${stem.badgeBg} text-lg ${isCowbellGlowing ? "animate-bounce" : ""}`}>
+                  {isCowbellGlowing ? "🔔" : stem.icon}
                 </div>
 
                 {/* Label + controls */}
@@ -402,6 +505,9 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
                   <div className="flex items-center gap-2">
                     <span className={`text-xs font-semibold tracking-wide uppercase ${stem.textColor}`}>
                       {stem.label}
+                      {isDrums && vol > 1.2 && (
+                        <span className="ml-1 text-orange-400 normal-case font-normal">🔔</span>
+                      )}
                     </span>
                     <span className="text-xs text-slate-500 ml-auto">
                       {Math.round(effectiveVol * 100)}%
@@ -413,7 +519,7 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
                     <input
                       type="range"
                       min="0"
-                      max="1"
+                      max="2"
                       step="0.01"
                       value={vol}
                       onChange={(e) => handleVolumeChange(stem.name, parseFloat(e.target.value))}
@@ -426,6 +532,21 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
 
                 {/* Action buttons */}
                 <div className="flex-shrink-0 flex items-center gap-1">
+                  {/* More Cowbell — only on Drums row */}
+                  {isDrums && (
+                    <button
+                      onClick={handleMoreCowbell}
+                      title="More Cowbell! 🔔"
+                      className={`w-7 h-7 rounded flex items-center justify-center text-sm transition-all ${
+                        cowbellActive
+                          ? "bg-orange-500/30 text-orange-300 border border-orange-500/50 animate-pulse"
+                          : "bg-slate-700/60 text-slate-400 hover:text-orange-300 hover:bg-orange-500/10"
+                      }`}
+                    >
+                      🔔
+                    </button>
+                  )}
+
                   {/* Solo */}
                   <button
                     onClick={() => handleToggleSolo(stem.name)}
@@ -502,6 +623,30 @@ export function StemMixer({ stems, trackTitle = "Track", className = "" }: StemM
             Export MP3
           </Button>
         </div>
+
+        {/* Save to My Riffs button */}
+        {stemSplitId && (
+          <Button
+            size="sm"
+            variant="outline"
+            className={`w-full gap-1.5 font-semibold text-xs transition-all ${
+              savedTrackId
+                ? "border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/10"
+                : "border-pink-500/40 text-pink-300 hover:bg-pink-500/10"
+            }`}
+            onClick={savedTrackId ? () => navigate("/my-riffs") : handleSaveToRiffs}
+            disabled={isMixing && !savedTrackId}
+          >
+            {isMixing && !savedTrackId ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : savedTrackId ? (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            ) : (
+              <BookmarkPlus className="w-3.5 h-3.5" />
+            )}
+            {savedTrackId ? "Saved! View in My Riffs →" : "Save to My Riffs 🍓"}
+          </Button>
+        )}
 
         {/* Progress indicator */}
         {isMixing && mixProgress && (

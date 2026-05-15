@@ -836,3 +836,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add MP3 export option using lamejs (pure-JS encoder, 192kbps) alongside existing WAV download
 - [x] Export WAV + Export MP3 buttons side by side in StemMixer footer
 - [x] All 317 tests passing (25 test files)
+
+## Phase 80: StemsStudio Polish — Colored Waveforms, More Cowbell, Save to My Riffs
+
+- [x] Color-tint each WaveSurfer waveform to match its stem color (already wired via waveformColor per stem in StemsStudio)
+- [x] Add "More Cowbell" 🔔 easter egg button on Drums row in StemMixer — boosts Drums to 150%, bouncing bell icon, SNL-inspired toast
+- [x] Add "Save to My Riffs" button in StemMixer — renders mix client-side, uploads WAV to S3, creates track record
+- [x] Backend: saveMixToRiffs tRPC procedure in mixer router (accepts base64 WAV, storagePut, createTrack)
+- [x] Save button shows loading state, success state ("Saved! View in My Riffs →"), and navigates to /my-riffs on click
+- [x] Update mixer.test.ts to test saveMixToRiffs (6 tests covering validation, S3 upload, track creation, isolation)
+- [x] All 317 tests passing (25 test files)
