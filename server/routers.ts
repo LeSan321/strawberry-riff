@@ -1157,13 +1157,19 @@ const musicGenerationRouter = router({
       return { success: true, title: input.title };
     }),
 
-  getPastSplits: protectedProcedure.query(async ({ ctx }) => {
-    const generations = await getMusicGenerationsByUserId(ctx.user.id);
-    // Filter to only splits that are complete and have isSplit=true, sorted by most recent first
-    return generations
-      .filter((gen) => gen.isSplit === true && gen.status === "complete")
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }),
+  getPastSplits: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().max(200).optional(),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const generations = await getMusicGenerationsByUserId(ctx.user.id, input?.search);
+      // Filter to only splits that are complete and have isSplit=true, sorted by most recent first
+      return generations
+        .filter((gen) => gen.isSplit === true && gen.status === "complete")
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }),
 });
 
 // ─── Lyrics Generator ────────────────────────────────────────────────────────

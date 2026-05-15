@@ -549,13 +549,18 @@ export async function getMusicGenerationById(id: number): Promise<MusicGeneratio
   return rows[0] ?? null;
 }
 
-export async function getMusicGenerationsByUserId(userId: number): Promise<MusicGeneration[]> {
+export async function getMusicGenerationsByUserId(userId: number, search?: string): Promise<MusicGeneration[]> {
   const db = await getDb();
   if (!db) return [];
+  const conditions: ReturnType<typeof eq>[] = [eq(musicGenerations.userId, userId) as any];
+  if (search && search.trim()) {
+    const term = `%${search.trim().toLowerCase()}%`;
+    conditions.push(sql`LOWER(${musicGenerations.title}) LIKE ${term}` as any);
+  }
   return db
     .select()
     .from(musicGenerations)
-    .where(eq(musicGenerations.userId, userId))
+    .where(and(...conditions))
     .orderBy(desc(musicGenerations.createdAt));
 }
 

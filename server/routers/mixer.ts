@@ -40,10 +40,12 @@ export const mixerRouter = router({
         title: z.string().min(1).max(200),
         /** Approximate duration in seconds */
         duration: z.number().int().min(0).max(7200).optional(),
+        /** Human-readable blend description, e.g. "Vocals 80%, Drums 150% 🔔, Bass 100%" */
+        blendDescription: z.string().max(500).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { stemSplitId, audioBase64, mimeType, title, duration } = input;
+      const { stemSplitId, audioBase64, mimeType, title, duration, blendDescription } = input;
       const userId = ctx.user.id;
 
       // Verify the stem split belongs to this user and is completed
@@ -100,7 +102,9 @@ export const mixerRouter = router({
         moodTags: JSON.stringify([]),
         gradient: "from-violet-600 to-pink-600",
         coverArtUrl,
-        description: `Custom mix created in Stems Studio from stem split #${stemSplitId}`,
+        description: blendDescription
+          ? `${blendDescription} — Custom mix created in Stems Studio`
+          : `Custom mix created in Stems Studio from stem split #${stemSplitId}`,
         musicGenerationId: null,
       });
 

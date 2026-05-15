@@ -6,7 +6,7 @@
  * Inherits the Studio dark theme via CSS variables.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -51,23 +51,23 @@ type SortOrder = "newest" | "oldest" | "az" | "za";
 export function MyStemsPanel({ textAccent = "text-violet-400", buttonAccent = "bg-violet-700 hover:bg-violet-600" }: MyStemsPanelProps) {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
-  const { data: pastSplits, isLoading, error } = trpc.musicGeneration.getPastSplits.useQuery();
 
+  // Debounce search input — fire server query 300ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: pastSplits, isLoading, isFetching, error } = trpc.musicGeneration.getPastSplits.useQuery(
+    { search: debouncedSearch || undefined }
+  );
+
+  // Client-side sort only (search is server-side)
   const filteredAndSorted = useMemo(() => {
     if (!pastSplits) return [];
-    let results = pastSplits;
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      results = results.filter((s) =>
-        (s.title || "Untitled Track").toLowerCase().includes(q)
-      );
-    }
-
-    // Sort
-    results = [...results].sort((a, b) => {
+    return [...pastSplits].sort((a, b) => {
       switch (sortOrder) {
         case "newest":
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -79,9 +79,7 @@ export function MyStemsPanel({ textAccent = "text-violet-400", buttonAccent = "b
           return (b.title || "").localeCompare(a.title || "");
       }
     });
-
-    return results;
-  }, [pastSplits, searchQuery, sortOrder]);
+  }, [pastSplits, sortOrder]);
 
   const sortLabels: Record<SortOrder, string> = {
     newest: "Newest",
@@ -145,8 +143,11 @@ export function MyStemsPanel({ textAccent = "text-violet-400", buttonAccent = "b
         <div className="flex items-center gap-2">
           <Layers className={`w-4 h-4 ${textAccent}`} />
           <span className="text-sm font-semibold text-foreground">
-            {pastSplits.length} split{pastSplits.length !== 1 ? "s" : ""}
+            {filteredAndSorted.length} split{filteredAndSorted.length !== 1 ? "s" : ""}
           </span>
+          {isFetching && (
+            <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin opacity-50" style={{ borderColor: "currentColor" }} />
+          )}
         </div>
         <span className="text-xs text-muted-foreground">Stems expire after 30 days</span>
       </div>

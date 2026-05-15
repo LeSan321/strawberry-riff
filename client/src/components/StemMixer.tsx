@@ -321,6 +321,8 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
       .map((stem) => ({
         url: stem.url,
         volume: volumes[stem.name] ?? 1,
+        label: stem.label,
+        name: stem.name,
       }));
 
   const handleExportWav = async () => {
@@ -386,6 +388,15 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
       toast.error("No active stems to mix — unmute at least one stem.");
       return;
     }
+    // Build blend description from active stems and their volumes
+    const blendDescription = activeStemEntries
+      .map(({ label, name, volume }) => {
+        const pct = Math.round(volume * 100);
+        const cowbell = name === "drums" && cowbellActive ? " 🔔" : "";
+        return `${label} ${pct}%${cowbell}`;
+      })
+      .join(", ");
+
     setIsMixing(true);
     setSavedTrackId(null);
     setMixProgress("Rendering mix…");
@@ -401,6 +412,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
         mimeType: "audio/wav",
         title: mixTitle.trim() || `${trackTitle} (Custom Mix)`,
         duration: Math.round(renderedBuffer.duration),
+        blendDescription,
       });
     } catch (err) {
       if (!saveMixMutation.isError) {

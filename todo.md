@@ -864,3 +864,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add status filter to Generate page (All / Complete / Generating / Failed)
 - [x] Auto-copy original track coverArtUrl when saving custom mix to My Riffs via saveMixToRiffs
 - [x] All 317 tests passing (25 test files)
+
+## Phase 83: My Stems Server-Side Search, Blend Metadata, Expiry Warnings
+
+- [x] Add server-side `search` parameter to `getPastSplits` tRPC procedure (SQL LIKE filter on title)
+- [x] Update getMusicGenerationsByUserId in db.ts to accept optional search string
+- [x] Update MyStemsPanel to use server-side search with 300ms debounce + isFetching spinner
+- [x] Add `blendDescription` optional field to `saveMixToRiffs` input schema
+- [x] Update `saveMixToRiffs` to store blend description in track.description field
+- [x] Update StemMixer to build blend description string from active stems + volumes (e.g. "Vocals 80%, Drums 150% 🔔, Bass 100%")
+- [x] Add label and name fields to getActiveStemEntries return type
+- [x] Add expiry warning badge to My Stems panel cards (yellow "Xd left" for ≤7 days, red "Expired" for expired)
+- [x] All 317 tests passing (25 test files)
