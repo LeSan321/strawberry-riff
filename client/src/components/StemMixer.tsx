@@ -711,7 +711,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
           )}
         </AnimatePresence>
 
-        <p className="text-xs text-purple-300/50 text-center pt-0.5">
+        <p className="text-xs text-pink-300/80 text-center pt-0.5">
           Saved mixes are yours forever — stems expire after 30 days.
         </p>
       </div>
