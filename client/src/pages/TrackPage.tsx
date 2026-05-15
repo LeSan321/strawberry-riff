@@ -12,9 +12,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
 const CARD_GRADIENTS = [
@@ -37,6 +36,7 @@ export default function TrackPage() {
   const params = useParams<{ id: string }>();
   const trackId = parseInt(params.id ?? "0", 10);
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
+  const [, setLocation] = useLocation();
   const [shareAnimating, setShareAnimating] = useState(false);
 
   const { data: track, isLoading } = trpc.tracks.getById.useQuery(
@@ -52,6 +52,16 @@ export default function TrackPage() {
     () => fullTrack?.gradient ?? CARD_GRADIENTS[trackId % CARD_GRADIENTS.length],
     [fullTrack?.gradient, trackId]
   );
+
+  // Fetch more tracks from this creator (only when we have a username)
+  const { data: creatorProfile } = trpc.creators.publicProfile.useQuery(
+    { username: fullTrack?.creatorUsername ?? "" },
+    { enabled: !!fullTrack?.creatorUsername }
+  );
+  const moreTracks = useMemo(() => {
+    if (!creatorProfile?.tracks) return [];
+    return creatorProfile.tracks.filter((t) => t.id !== trackId).slice(0, 4);
+  }, [creatorProfile?.tracks, trackId]);
 
   const isCurrentlyPlaying = currentTrack?.id === trackId && isPlaying;
 
@@ -83,6 +93,10 @@ export default function TrackPage() {
     } catch {
       toast.info(`Share this link: ${url}`);
     }
+  };
+
+  const handleExploreVibe = (tag: string) => {
+    setLocation(`/discover?vibe=${encodeURIComponent(tag)}`);
   };
 
   // ── Loading ──
@@ -270,18 +284,25 @@ export default function TrackPage() {
               </p>
             )}
 
-            {/* Mood tags */}
+            {/* Mood tags — click to explore vibe in Discover */}
             {fullTrack!.moodTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {fullTrack!.moodTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-pink-50 text-pink-600 border-0 px-3 py-1"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+              <div className="mt-4">
+                <p className="text-xs text-muted-foreground mb-2">Vibe</p>
+                <div className="flex flex-wrap gap-2">
+                  {fullTrack!.moodTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleExploreVibe(tag)}
+                      title="Explore this vibe in Discover"
+                      className="text-sm px-3 py-1 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 hover:text-pink-700 transition-colors font-medium border-0"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Tap a vibe to explore this sound in Discover →
+                </p>
               </div>
             )}
 
@@ -335,6 +356,70 @@ export default function TrackPage() {
             )}
           </div>
         </motion.div>
+
+        {/* More from this creator */}
+        {moreTracks.length > 0 && fullTrack!.creatorUsername && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-foreground">
+                More from {fullTrack!.creatorUsername}
+              </h2>
+              <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
+                <span className="text-xs text-pink-600 hover:underline">
+                  Full profile →
+                </span>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {moreTracks.map((t, i) => {
+                const tGradient = t.gradient ?? CARD_GRADIENTS[i % CARD_GRADIENTS.length];
+                return (
+                  <Link key={t.id} href={`/track/${t.id}`}>
+                    <motion.div
+                      whileHover={{ y: -2 }}
+                      className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer border border-border"
+                    >
+                      <div className={`h-20 bg-gradient-to-br ${tGradient} relative`}>
+                        {t.coverArtUrl && (
+                          <img src={t.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            play({
+                              id: t.id,
+                              title: t.title,
+                              artist: fullTrack!.creatorUsername ?? "Unknown",
+                              audioUrl: t.audioUrl,
+                              gradient: tGradient,
+                              coverArtUrl: t.coverArtUrl,
+                            });
+                          }}
+                          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20"
+                        >
+                          <Play className="w-6 h-6 fill-white text-white" />
+                        </button>
+                      </div>
+                      <div className="p-2.5">
+                        <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
+                        {t.moodTags && t.moodTags.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {t.moodTags.slice(0, 2).join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
       </div>
     </div>
   );

@@ -626,6 +626,62 @@ function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStat
   );
 }
 
+function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
+  const allTags = tracks.flatMap((t) => t.moodTags);
+  if (allTags.length === 0) return null;
+
+  // Count frequency of each tag
+  const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
+    acc[tag] = (acc[tag] ?? 0) + 1;
+    return acc;
+  }, {});
+  const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+  const topTags = sorted.slice(0, 10);
+  const maxCount = topTags[0]?.[1] ?? 1;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 border border-pink-100"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Flame className="w-5 h-5 text-pink-500" />
+        <h2 className="text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+          Your Creative Identity
+        </h2>
+      </div>
+      <p className="text-sm text-muted-foreground mb-5">
+        These are the vibes that define your sound — the emotional fingerprint across all your riffs.
+      </p>
+      <div className="space-y-2">
+        {topTags.map(([tag, count]) => (
+          <div key={tag} className="flex items-center gap-3">
+            <span className="text-sm font-medium text-foreground w-28 truncate flex-shrink-0">{tag}</span>
+            <div className="flex-1 h-2 rounded-full bg-pink-100 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(count / maxCount) * 100}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="h-full rounded-full bg-gradient-to-r from-pink-400 to-purple-500"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground w-12 text-right flex-shrink-0">
+              {count} {count === 1 ? "track" : "tracks"}
+            </span>
+          </div>
+        ))}
+      </div>
+      {sorted.length > 10 && (
+        <p className="text-xs text-muted-foreground mt-4">
+          +{sorted.length - 10} more vibes in your catalog
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
 export default function MyRiffs() {
   const { isAuthenticated } = useAuth();
   const tracksQuery = trpc.tracks.myTracks.useQuery(undefined, { enabled: isAuthenticated });
@@ -702,13 +758,16 @@ export default function MyRiffs() {
           </Link>
         </motion.div>
       ) : (
-        <AnimatePresence>
-          <div className="space-y-3">
-            {tracks.map((track) => (
-              <TrackCard key={track.id} track={track} previewLinkStatus={previewLinkByTrack[track.id]} />
-            ))}
-          </div>
-        </AnimatePresence>
+        <>
+          <AnimatePresence>
+            <div className="space-y-3">
+              {tracks.map((track) => (
+                <TrackCard key={track.id} track={track} previewLinkStatus={previewLinkByTrack[track.id]} />
+              ))}
+            </div>
+          </AnimatePresence>
+          <CreativeIdentityPanel tracks={tracks} />
+        </>
       )}
     </div>
   );

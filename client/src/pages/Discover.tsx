@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
 const CARD_GRADIENTS = [
@@ -38,13 +38,15 @@ interface DiscoverTrack {
   creatorIsPremium?: boolean;
 }
 
-function TrackCard({ track, index, queue }: {
+function TrackCard({ track, index, queue, onTagClick }: {
   track: DiscoverTrack;
   index: number;
   queue: DiscoverTrack[];
+  onTagClick?: (tag: string) => void;
 }) {
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
   const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const [liked, setLiked] = useState(false);
   const [likeCount] = useState(Math.floor(Math.random() * 200) + 20);
@@ -83,8 +85,8 @@ function TrackCard({ track, index, queue }: {
   };
 
   return (
-    <Link href={`/track/${track.id}`}>
       <motion.div
+        onClick={() => setLocation(`/track/${track.id}`)}
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -131,25 +133,31 @@ function TrackCard({ track, index, queue }: {
       <div className="p-4">
         <p className="font-semibold text-foreground truncate">{track.title}</p>
         {track.creatorUsername ? (
-          <Link href={`/creator/${encodeURIComponent(track.creatorUsername)}`}>
-            <p className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer flex items-center gap-1">
-              <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>
-              {track.creatorIsPremium && (
-                <StrawberryBadge size={14} className="flex-shrink-0" />
-              )}
-            </p>
-          </Link>
+          <p
+            onClick={(e) => { e.stopPropagation(); setLocation(`/creator/${encodeURIComponent(track.creatorUsername!)}`); }}
+            className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>
+            {track.creatorIsPremium && (
+              <StrawberryBadge size={14} className="flex-shrink-0" />
+            )}
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground truncate mb-2">{track.artist ?? "Unknown Artist"}</p>
         )}
 
-        {/* Mood tags */}
+        {/* Mood tags — click to filter by vibe */}
         {track.moodTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {track.moodTags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5 bg-pink-50 text-pink-600 border-0">
+              <button
+                key={tag}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTagClick?.(tag); }}
+                title={`Explore this vibe: ${tag}`}
+                className="text-xs px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border-0 hover:bg-pink-100 hover:text-pink-700 transition-colors cursor-pointer"
+              >
                 {tag}
-              </Badge>
+              </button>
             ))}
           </div>
         )}
@@ -188,7 +196,6 @@ function TrackCard({ track, index, queue }: {
         </div>
       </div>
       </motion.div>
-    </Link>
   );
 }
 
@@ -351,7 +358,7 @@ export default function Discover() {
           {/* Mood tag cloud */}
           {availableTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 items-center">
-              <span className="text-xs text-muted-foreground mr-1">Vibe:</span>
+              <span className="text-xs text-muted-foreground mr-1">Your vibe:</span>
               {availableTags.map((tag) => (
                 <button
                   key={tag}
@@ -379,7 +386,7 @@ export default function Discover() {
                   onClick={clearFilters}
                   className="text-xs px-2 py-1.5 rounded-full text-gray-400 hover:text-gray-600 flex items-center gap-0.5 ml-1"
                 >
-                  <X className="w-3 h-3" /> Clear
+                  <X className="w-3 h-3" /> Reset my mix
                 </button>
               )}
             </div>
@@ -457,11 +464,11 @@ export default function Discover() {
               </>
             ) : (
               <>
-                <h3 className="text-xl font-bold mb-2">No matches found</h3>
-                <p className="text-muted-foreground mb-4">Try a different search or mood filter</p>
+                <h3 className="text-xl font-bold mb-2">No riffs match this vibe yet</h3>
+                <p className="text-muted-foreground mb-4">Try a different mix — the perfect sound is out there</p>
                 <Button variant="outline" onClick={clearFilters}
                   className="rounded-full border-pink-300 text-pink-600 hover:bg-pink-50">
-                  Clear filters
+                  Reset my mix
                 </Button>
               </>
             )}
@@ -469,10 +476,10 @@ export default function Discover() {
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                 {filtered.length} {filtered.length === 1 ? "riff" : "riffs"}
                 {selectedTags.length > 0 && (
-                  <span> tagged {selectedTags.map((t) => `"${t}"`).join(" + ")}</span>
+                  <span> · {selectedTags.length} {selectedTags.length === 1 ? "vibe" : "vibes"} selected</span>
                 )}
                 {shuffled && <span className="ml-1 text-purple-500">· shuffled</span>}
               </p>
@@ -483,12 +490,12 @@ export default function Discover() {
                 style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                Play All
+                {selectedTags.length > 0 ? "Play My Mix" : "Play All Riffs"}
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((track, i) => (
-                <TrackCard key={track.id} track={track} index={i} queue={filtered} />
+                <TrackCard key={track.id} track={track} index={i} queue={filtered} onTagClick={toggleTag} />
               ))}
             </div>
           </>

@@ -501,7 +501,7 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Redesign SharedPlaylistPage to match release page aesthetic (large centered card, prominent cover art, elegant player)
 - [ ] Redesign TrackPage (individual track share link) to match release page aesthetic
 - [x] Add "More from [Creator]" section to SharedPlaylistPage — show creator's other playlists/tracks as funnel
-- [ ] Add "More from [Creator]" section to TrackPage — show creator's other tracks as funnel
+- [x] Add "More from [Creator]" section to TrackPage — show creator's other tracks as funnel
 - [ ] Implement conditional lyrics display on shared pages based on `showLyricsOnShare` toggle
 - [ ] Implement conditional riff button on shared pages based on `allowRiffsOnShare` toggle
 - [ ] Test end-to-end: creator controls → shared page respects settings
@@ -903,3 +903,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Update Upload page to use shared MOOD_TAGS constant
 - [x] Add mood tag picker to Generate publish dialog
 - [x] Verify Discover filter and My Riffs edit dialog work with expanded tags
+
+## Phase 89: Creator-First Features — Language, Track Detail, Analytics
+- [x] Discover: update "Vibe:" → "Your vibe:", "Play All" → "Play My Mix" / "Play All Riffs", "Clear" → "Reset my mix", tag-click shortcut on track cards
+- [x] Track detail page: add mood tag pills, creator catalog "More from [Creator]" section, "Explore this vibe in Discover →" secondary link
+- [x] My Riffs: add "Your Creative Identity" section with top mood tags used across creator's tracks
