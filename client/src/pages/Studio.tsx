@@ -30,6 +30,7 @@ import { GeneratePage } from "./Generate";
 import { LyricsGeneratorPage } from "./LyricsGenerator";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { StyleLibrary } from "./StyleLibrary";
+import { MyStemsPanel } from "@/components/MyStemsPanel";
 
 // ─── Studio Theme Definitions ─────────────────────────────────────────────────
 const STUDIO_THEMES = [
@@ -667,12 +668,10 @@ export default function Studio() {
               ) : activeTool === "styles" ? (
                 <StyleLibrary />
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Download className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">My Stems coming soon</p>
-                  </div>
-                </div>
+                <MyStemsPanel
+                  textAccent={theme.textAccent}
+                  buttonAccent={theme.buttonAccent}
+                />
               )}
             </motion.div>
           </AnimatePresence>

@@ -846,3 +846,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Save button shows loading state, success state ("Saved! View in My Riffs →"), and navigates to /my-riffs on click
 - [x] Update mixer.test.ts to test saveMixToRiffs (6 tests covering validation, S3 upload, track creation, isolation)
 - [x] All 317 tests passing (25 test files)
+
+## Phase 81: StemsStudio — Guitar Restore, My Stems Page, Save Title Field
+
+- [x] Guitar stem confirmed present in StemMixer (amber, 🎸) — shows for SIX_STEMS splits; old FOUR_STEMS splits need re-split
+- [x] Wire My Stems panel into Studio.tsx replacing "coming soon" placeholder (MyStemsPanel component)
+- [x] MyStemsPanel shows all split-ready tracks with Open Studio button, expiry badge, and duration
+- [x] Add custom mix title text field above Save to My Riffs button in StemMixer
+- [x] Title field pre-filled with "[Track Title] (Custom Mix)", editable before saving
+- [x] All 317 tests passing (25 test files)

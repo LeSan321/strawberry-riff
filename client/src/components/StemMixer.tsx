@@ -295,6 +295,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
   const [mixProgress, setMixProgress] = useState<string>("");
   const [savedTrackId, setSavedTrackId] = useState<number | null>(null);
   const [cowbellActive, setCowbellActive] = useState(false);
+  const [mixTitle, setMixTitle] = useState(`${trackTitle} (Custom Mix)`);
 
   const saveMixMutation = trpc.mixer.saveMixToRiffs.useMutation({
     onSuccess: (data) => {
@@ -398,7 +399,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
         stemSplitId,
         audioBase64: base64,
         mimeType: "audio/wav",
-        title: trackTitle,
+        title: mixTitle.trim() || `${trackTitle} (Custom Mix)`,
         duration: Math.round(renderedBuffer.duration),
       });
     } catch (err) {
@@ -623,6 +624,21 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
             Export MP3
           </Button>
         </div>
+
+        {/* Custom mix title input — shown before saving */}
+        {stemSplitId && !savedTrackId && (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-400 font-medium">Mix name</label>
+            <input
+              type="text"
+              value={mixTitle}
+              onChange={(e) => setMixTitle(e.target.value)}
+              placeholder={`${trackTitle} (Custom Mix)`}
+              maxLength={200}
+              className="w-full px-3 py-1.5 text-xs rounded-md bg-slate-800/80 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 transition-all"
+            />
+          </div>
+        )}
 
         {/* Save to My Riffs button */}
         {stemSplitId && (
