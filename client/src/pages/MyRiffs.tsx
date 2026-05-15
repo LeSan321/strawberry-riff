@@ -23,6 +23,7 @@ import {
   ImagePlus,
   Flame,
   Pencil,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -644,6 +645,7 @@ function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
+      id="creative-identity"
       className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 border border-pink-100"
     >
       <div className="flex items-center gap-2 mb-4">
@@ -658,7 +660,7 @@ function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
       <div className="space-y-2">
         {topTags.map(([tag, count]) => (
           <div key={tag} className="flex items-center gap-3">
-            <span className="text-sm font-medium text-foreground w-28 truncate flex-shrink-0">{tag}</span>
+            <span className="text-sm font-medium text-gray-800 w-28 truncate flex-shrink-0">{tag}</span>
             <div className="flex-1 h-2 rounded-full bg-pink-100 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
@@ -727,12 +729,23 @@ export default function MyRiffs() {
             {tracks.length} {tracks.length === 1 ? "track" : "tracks"} uploaded
           </p>
         </div>
-        <Link href="/upload">
-          <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0">
-            <Plus className="w-4 h-4 mr-2" />
-            Upload New
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => document.getElementById('creative-identity')?.scrollIntoView({ behavior: 'smooth' })}
+            className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors"
+            title="Jump to Your Creative Identity"
+          >
+            <Flame className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">My Vibe</span>
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+          <Link href="/upload">
+            <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0">
+              <Plus className="w-4 h-4 mr-2" />
+              Upload New
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {tracksQuery.isLoading ? (

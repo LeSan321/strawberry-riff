@@ -358,7 +358,7 @@ export default function Discover() {
           {/* Mood tag cloud */}
           {availableTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 items-center">
-              <span className="text-xs text-muted-foreground mr-1">Your vibe:</span>
+              <span className="text-sm font-semibold text-foreground mr-2">Your vibe:</span>
               {availableTags.map((tag) => (
                 <button
                   key={tag}

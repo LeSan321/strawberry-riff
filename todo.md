@@ -908,3 +908,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Discover: update "Vibe:" → "Your vibe:", "Play All" → "Play My Mix" / "Play All Riffs", "Clear" → "Reset my mix", tag-click shortcut on track cards
 - [x] Track detail page: add mood tag pills, creator catalog "More from [Creator]" section, "Explore this vibe in Discover →" secondary link
 - [x] My Riffs: add "Your Creative Identity" section with top mood tags used across creator's tracks
+
+## Phase 90: Discover & My Riffs Polish
+- [x] Increase "Your vibe:" label font size on Discover to match "Search By" heading
+- [x] Add jump-to anchor button at top of My Riffs page for Creative Identity panel
+- [x] Fix Creative Identity tag font color (too light/unreadable)
