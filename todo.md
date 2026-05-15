@@ -888,3 +888,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add Rewrite Mode toggle to Lyrics page (dedicated system prompt: preserve spirit, elevate craft)
 - [x] Display blend description as badge/subtitle on custom mix cards in My Riffs
 - [x] Fix Studio generate panel edit button conflict — replace card click navigation with explicit pencil icon
+
+## Phase 86: Stems Studio — Option B Plum-Indigo Bridge Theme
+- [x] Replace slate background/border/text classes in StemsStudio.tsx with plum-indigo palette

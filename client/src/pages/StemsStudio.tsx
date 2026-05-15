@@ -354,9 +354,9 @@ export function StemsStudio() {
   const isMasterPlaying = playingKeys.has("Master");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0614] via-[#1a0a2e] to-[#0d0a1e] text-white">
       {/* Header */}
-      <div className="border-b border-slate-800">
+      <div className="border-b border-[#2e1a4a]">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -371,7 +371,7 @@ export function StemsStudio() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
                   Stems Studio
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-purple-200/60 mt-1">
                   {generation?.title || "Untitled"}
                 </p>
               </div>
@@ -403,7 +403,7 @@ export function StemsStudio() {
 
         {/* Pending / Failed status with retry */}
         {stemSplit && stemSplit.status !== "completed" && (
-          <Card className="border-slate-700 bg-slate-900/60 p-5">
+          <Card className="border-purple-800/40 bg-[#1a0a2e]/70 p-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {stemSplit.status === "pending" || stemSplit.status === "processing" ? (
@@ -413,7 +413,7 @@ export function StemsStudio() {
                 )}
                 <div>
                   <p className="font-semibold text-white capitalize">{stemSplit.status}</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-purple-200/60">
                     {stemSplit.status === "pending" || stemSplit.status === "processing"
                       ? "Stem separation is in progress. This usually takes 1–3 minutes."
                       : stemSplit.error || "Stem separation failed. You can retry below."}
@@ -445,7 +445,7 @@ export function StemsStudio() {
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             🎵 Master Mix
           </h2>
-          <Card className="border-slate-800 bg-slate-900/50 p-6">
+          <Card className="border-[#2e1a4a] bg-[#160b1e]/60 p-6">
             <div className="flex items-center justify-between gap-4">
               <Button
                 size="lg"
@@ -461,7 +461,7 @@ export function StemsStudio() {
                     {MASTER_BARS.map((h, i) => (
                       <div
                         key={i}
-                        className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
+                        className="flex-1 rounded-sm bg-purple-900/50 animate-pulse"
                         style={{ height: `${h}px` }}
                       />
                     ))}
@@ -473,7 +473,7 @@ export function StemsStudio() {
                 />
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Volume2 className="w-4 h-4 text-slate-400" />
+                <Volume2 className="w-4 h-4 text-purple-300/60" />
                 <span className="text-sm font-medium">100%</span>
               </div>
               <Button
@@ -512,7 +512,7 @@ export function StemsStudio() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card className={`border-slate-800 ${theme.borderAccent} bg-gradient-to-r from-slate-900/50 to-slate-800/30 p-6 hover:border-slate-700 transition-colors`}>
+                    <Card className={`border-[#2e1a4a] ${theme.borderAccent} bg-gradient-to-r from-[#160b1e]/60 to-[#1a0a2e]/40 p-6 hover:border-purple-700/50 transition-colors`}>
                       <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-start justify-between">
@@ -521,7 +521,7 @@ export function StemsStudio() {
                               <span className="text-2xl">{theme.emoji}</span>
                               {stem.name}
                             </h3>
-                            <p className="text-sm text-slate-400 mt-1">
+                            <p className="text-sm text-purple-200/60 mt-1">
                               {theme.description}
                             </p>
                           </div>
@@ -544,7 +544,7 @@ export function StemsStudio() {
                                 {STEM_BARS.map((h, i) => (
                                   <div
                                     key={i}
-                                    className="flex-1 rounded-sm bg-slate-700/60 animate-pulse"
+                                    className="flex-1 rounded-sm bg-purple-900/50 animate-pulse"
                                     style={{ height: `${h}px` }}
                                   />
                                 ))}
@@ -558,7 +558,7 @@ export function StemsStudio() {
 
                           <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="flex items-center gap-2">
-                              <Volume2 className="w-4 h-4 text-slate-400" />
+                              <Volume2 className="w-4 h-4 text-purple-300/60" />
                               <input
                                 type="range"
                                 min="0"
@@ -570,7 +570,7 @@ export function StemsStudio() {
                                     [stem.name]: parseInt(e.target.value),
                                   }))
                                 }
-                                className="w-20 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                                className="w-20 h-2 bg-purple-900/60 rounded-lg appearance-none cursor-pointer"
                                 style={{ accentColor: theme.waveformColor }}
                               />
                               <span className="text-sm font-medium w-10">
@@ -625,8 +625,8 @@ export function StemsStudio() {
         {stemSplit?.status !== "completed" && stems.length === 0 && !stemSplit && (
           <div>
             <h2 className="text-xl font-bold mb-4">Individual Stems</h2>
-            <Card className="border-slate-800 bg-slate-900/50 p-8 text-center">
-              <p className="text-slate-400">No stem data found for this track.</p>
+            <Card className="border-[#2e1a4a] bg-[#160b1e]/60 p-8 text-center">
+              <p className="text-purple-200/60">No stem data found for this track.</p>
             </Card>
           </div>
         )}
