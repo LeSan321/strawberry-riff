@@ -15,7 +15,7 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { getDb } from "../db";
-import { stemSplits } from "../../drizzle/schema";
+import { stemSplits, tracks } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { storagePut } from "../storage";
 import { createTrack } from "../db";
@@ -64,6 +64,22 @@ export const mixerRouter = router({
         throw new Error("Stem split is not yet completed");
       }
 
+      // Look up the original track's cover art (via generationId → tracks.musicGenerationId)
+      let coverArtUrl: string | null = null;
+      try {
+        const originalTracks = await db
+          .select({ coverArtUrl: tracks.coverArtUrl })
+          .from(tracks)
+          .where(and(eq(tracks.musicGenerationId, record.generationId), eq(tracks.userId, userId)))
+          .limit(1);
+        if (originalTracks[0]?.coverArtUrl) {
+          coverArtUrl = originalTracks[0].coverArtUrl;
+          console.log(`[Mixer] Copied cover art from original track: ${coverArtUrl}`);
+        }
+      } catch (err) {
+        console.warn(`[Mixer] Could not look up cover art, proceeding without it:`, err);
+      }
+
       // Decode base64 audio and upload to S3
       const audioBuffer = Buffer.from(audioBase64, "base64");
       const ext = mimeType === "audio/wav" ? "wav" : "mp3";
@@ -83,7 +99,7 @@ export const mixerRouter = router({
         visibility: "private",
         moodTags: JSON.stringify([]),
         gradient: "from-violet-600 to-pink-600",
-        coverArtUrl: null,
+        coverArtUrl,
         description: `Custom mix created in Stems Studio from stem split #${stemSplitId}`,
         musicGenerationId: null,
       });

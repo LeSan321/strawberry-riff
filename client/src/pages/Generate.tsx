@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
@@ -647,6 +647,23 @@ export function GeneratePage() {
   const { data: monthlyUsage } =
     trpc.musicGeneration.monthlyUsage.useQuery(undefined, { enabled: !!user });
 
+  // Search/filter state for Recent Generations
+  const [genSearchQuery, setGenSearchQuery] = useState("");
+  const [genStatusFilter, setGenStatusFilter] = useState<"all" | "complete" | "generating" | "failed">("all");
+
+  const filteredGenerations = useMemo(() => {
+    if (!myGenerations) return [];
+    let results = myGenerations;
+    if (genSearchQuery.trim()) {
+      const q = genSearchQuery.toLowerCase();
+      results = results.filter((g) => (g.title || "").toLowerCase().includes(q));
+    }
+    if (genStatusFilter !== "all") {
+      results = results.filter((g) => g.status === genStatusFilter);
+    }
+    return results;
+  }, [myGenerations, genSearchQuery, genStatusFilter]);
+
   const handleDelete = useCallback((id: number) => {
     deleteMutation.mutate({ id });
   }, [deleteMutation]);
@@ -1261,16 +1278,71 @@ export function GeneratePage() {
                 <Badge variant="secondary">{myGenerations.length}</Badge>
               )}
             </div>
+
+            {/* Search + Status filter */}
+            {myGenerations && myGenerations.length > 0 && (
+              <div className="mb-4 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    value={genSearchQuery}
+                    onChange={(e) => setGenSearchQuery(e.target.value)}
+                    placeholder="Search by title…"
+                    className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md bg-muted/30 border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-pink-400/40 transition-all"
+                  />
+                  {genSearchQuery && (
+                    <button
+                      onClick={() => setGenSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <select
+                  value={genStatusFilter}
+                  onChange={(e) => setGenStatusFilter(e.target.value as typeof genStatusFilter)}
+                  className="px-2.5 py-1.5 text-xs rounded-md bg-muted/30 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-pink-400/40 transition-all cursor-pointer"
+                >
+                  <option value="all">All</option>
+                  <option value="complete">Complete</option>
+                  <option value="generating">Generating</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </div>
+            )}
+
             {isLoadingGenerations ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : myGenerations && myGenerations.length > 0 ? (
-              <div className="space-y-3 pr-1">
-                {myGenerations.map((gen) => (
-                  <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} />
-                ))}
-              </div>
+              filteredGenerations.length > 0 ? (
+                <div className="space-y-3 pr-1">
+                  {(genSearchQuery || genStatusFilter !== "all") && (
+                    <p className="text-xs text-muted-foreground">
+                      {filteredGenerations.length} of {myGenerations.length} result{filteredGenerations.length !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                  {filteredGenerations.map((gen) => (
+                    <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
+                    No generations match your search.
+                  </p>
+                  <button
+                    onClick={() => { setGenSearchQuery(""); setGenStatusFilter("all"); }}
+                    className="mt-2 text-xs text-pink-500 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )
             ) : (
               <div className="py-8 text-center">
                 <Sparkles className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />

@@ -855,3 +855,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add custom mix title text field above Save to My Riffs button in StemMixer
 - [x] Title field pre-filled with "[Track Title] (Custom Mix)", editable before saving
 - [x] All 317 tests passing (25 test files)
+
+## Phase 82: Search/Filter + Cover Art Auto-Copy
+
+- [x] Add title search input to My Stems panel (filters split-ready tracks by title, client-side)
+- [x] Add sort options to My Stems panel (newest first / oldest first / A-Z)
+- [x] Add title search input to Generate page Recent Generations panel (client-side filter)
+- [x] Add status filter to Generate page (All / Complete / Generating / Failed)
+- [x] Auto-copy original track coverArtUrl when saving custom mix to My Riffs via saveMixToRiffs
+- [x] All 317 tests passing (25 test files)
