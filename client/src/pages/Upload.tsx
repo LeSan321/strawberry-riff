@@ -25,11 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-
-const MOOD_PRESETS = [
-  "Chill", "Energetic", "Melancholic", "Upbeat", "Dark", "Dreamy",
-  "Aggressive", "Romantic", "Nostalgic", "Experimental", "Lo-fi", "Epic",
-];
+import { MOOD_CATEGORIES } from "../../../shared/moodTags";
 
 const GRADIENTS = [
   "from-pink-400 to-purple-500",
@@ -418,26 +414,31 @@ export default function Upload() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {MOOD_PRESETS.map((tag) => {
-                  const selected = form.moodTags.includes(tag);
-                  return (
-                    <motion.button
-                      key={tag}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => selected ? removeMoodTag(tag) : addMoodTag(tag)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
-                        selected
-                          ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-md"
-                          : "bg-card text-muted-foreground border-border hover:border-purple-400"
-                      }`}
-                    >
-                      {tag}
-                    </motion.button>
-                  );
-                })}
-              </div>
+              {MOOD_CATEGORIES.map((cat) => (
+                <div key={cat.label}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">{cat.emoji} {cat.label}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.tags.map((tag) => {
+                      const selected = form.moodTags.includes(tag);
+                      return (
+                        <motion.button
+                          key={tag}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => selected ? removeMoodTag(tag) : addMoodTag(tag)}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                            selected
+                              ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-md"
+                              : "bg-card text-muted-foreground border-border hover:border-purple-400"
+                          }`}
+                        >
+                          {tag}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
               <div className="flex gap-2">
                 <Input
                   placeholder="Add custom mood tag..."

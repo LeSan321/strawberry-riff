@@ -27,6 +27,8 @@ import { StemSplitButton } from "@/components/StemSplitButton";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
+import { MOOD_CATEGORIES } from "../../../shared/moodTags";
+import { Tag } from "lucide-react";
 
 // ─── Status polling hook ───────────────────────────────────────────────────────
 function useGenerationPolling(
@@ -68,11 +70,20 @@ function PublishDialog({
   generationId: number;
 }) {
   const [visibility, setVisibility] = useState<"private" | "inner-circle" | "public">("private");
+  const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const publishMutation = trpc.musicGeneration.publish.useMutation();
+
+  const toggleMood = (tag: string) => {
+    setSelectedMoods((prev) =>
+      prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : prev.length < 8 ? [...prev, tag] : prev
+    );
+  };
 
   const handlePublish = async () => {
     try {
-      await publishMutation.mutateAsync({ generationId, visibility });
+      await publishMutation.mutateAsync({ generationId, visibility, moodTags: selectedMoods });
       toast.success("Published to My Riffs!");
       onClose();
     } catch (err) {
@@ -82,14 +93,16 @@ function PublishDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Publish to My Riffs</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <div className="space-y-5 py-2">
           <p className="text-sm text-muted-foreground">
             This will add the generated track to your My Riffs library. You can edit the details there after publishing.
           </p>
+
+          {/* Visibility */}
           <div>
             <label className="mb-2 block text-sm font-medium">Visibility</label>
             <Select
@@ -105,6 +118,60 @@ function PublishDialog({
                 <SelectItem value="public">Public — everyone</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Mood Tags */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Tag className="w-4 h-4 text-purple-400" /> Tag the Vibe
+              </label>
+              <span className="text-xs text-muted-foreground">{selectedMoods.length}/8 selected</span>
+            </div>
+            <div className="space-y-3">
+              {MOOD_CATEGORIES.map((cat) => (
+                <div key={cat.label}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">{cat.emoji} {cat.label}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {cat.tags.map((tag) => {
+                      const selected = selectedMoods.includes(tag);
+                      const atLimit = selectedMoods.length >= 8 && !selected;
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => toggleMood(tag)}
+                          disabled={atLimit}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
+                            selected
+                              ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-sm"
+                              : atLimit
+                              ? "bg-card text-muted-foreground/40 border-border/40 cursor-not-allowed"
+                              : "bg-card text-muted-foreground border-border hover:border-purple-400 hover:text-foreground"
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {selectedMoods.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border">
+                {selectedMoods.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                  >
+                    {tag}
+                    <button onClick={() => toggleMood(tag)} className="hover:text-red-400 transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>

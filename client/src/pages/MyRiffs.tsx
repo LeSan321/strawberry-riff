@@ -25,6 +25,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { useState, useRef } from "react";
+import { MOOD_CATEGORIES } from "../../../shared/moodTags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -98,9 +99,18 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     genre: track.genre ?? "",
     description: track.description ?? "",
     visibility: track.visibility,
-    moodTags: track.moodTags.join(", "),
+    moodTags: track.moodTags,
     coverArtUrl: track.coverArtUrl ?? "",
   });
+
+  const toggleEditMood = (tag: string) => {
+    setForm((prev) => ({
+      ...prev,
+      moodTags: prev.moodTags.includes(tag)
+        ? prev.moodTags.filter((t) => t !== tag)
+        : prev.moodTags.length < 8 ? [...prev.moodTags, tag] : prev.moodTags,
+    }));
+  };
   const [coverPreview, setCoverPreview] = useState<string | null>(track.coverArtUrl ?? null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -144,10 +154,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
       genre: form.genre || undefined,
       description: form.description || undefined,
       visibility: form.visibility as Visibility,
-      moodTags: form.moodTags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      moodTags: form.moodTags,
       coverArtUrl: form.coverArtUrl || undefined,
     });
   };
@@ -226,13 +233,40 @@ function EditDialog({ track, onClose }: EditDialogProps) {
           />
         </div>
         <div>
-          <Label>Mood Tags (comma-separated)</Label>
-          <Input
-            value={form.moodTags}
-            onChange={(e) => setForm((p) => ({ ...p, moodTags: e.target.value }))}
-            className="mt-1"
-            placeholder="Chill, Dreamy, Lo-fi"
-          />
+          <div className="flex items-center justify-between mb-1">
+            <Label>Tag the Vibe</Label>
+            <span className="text-xs text-muted-foreground">{form.moodTags.length}/8</span>
+          </div>
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {MOOD_CATEGORIES.map((cat) => (
+              <div key={cat.label}>
+                <p className="text-xs font-semibold text-muted-foreground mb-1">{cat.emoji} {cat.label}</p>
+                <div className="flex flex-wrap gap-1">
+                  {cat.tags.map((tag) => {
+                    const selected = form.moodTags.includes(tag);
+                    const atLimit = form.moodTags.length >= 8 && !selected;
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleEditMood(tag)}
+                        disabled={atLimit}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all border ${
+                          selected
+                            ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent"
+                            : atLimit
+                            ? "bg-card text-muted-foreground/40 border-border/40 cursor-not-allowed"
+                            : "bg-card text-muted-foreground border-border hover:border-purple-400"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         <div>
           <Label>Visibility</Label>

@@ -897,3 +897,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Apply plum-indigo gradient to Lyrics Generator page
 - [x] Add empty-state waveform illustration to Stems Studio no-data card
 - [x] Replace download warning banner with save-first framing on Save button + 7-day toast nudge
+
+## Phase 88: Expanded Mood Tags + Generate Publish Dialog
+- [x] Create shared/moodTags.ts with ~40 tags across 5 categories
+- [x] Update Upload page to use shared MOOD_TAGS constant
+- [x] Add mood tag picker to Generate publish dialog
+- [x] Verify Discover filter and My Riffs edit dialog work with expanded tags
