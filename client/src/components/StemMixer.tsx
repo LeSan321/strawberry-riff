@@ -464,19 +464,19 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
 
   return (
     <motion.div
-      className={`rounded-xl border border-slate-700/60 bg-slate-900/80 backdrop-blur-sm overflow-hidden ${className}`}
+      className={`rounded-xl border border-[#2e1a4a] bg-[#160b1e]/80 backdrop-blur-sm overflow-hidden ${className}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       {/* Panel Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-800">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2e1a4a]">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30">
           <Sliders className="w-4 h-4 text-violet-400" />
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">Custom Mix</h3>
-          <p className="text-xs text-slate-400">Adjust levels, then export your blend</p>
+          <p className="text-xs text-purple-200/60">Adjust levels, then export your blend</p>
         </div>
       </div>
 
@@ -504,8 +504,8 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                   isCowbellGlowing
                     ? "border-orange-400/70 bg-orange-500/10 shadow-lg shadow-orange-500/20"
                     : isSoloActive
-                    ? "border-slate-800 bg-slate-950/40"
-                    : `${stem.borderColor} bg-slate-800/40`
+                    ? "border-[#2e1a4a] bg-[#0d0a1e]/60"
+                    : `${stem.borderColor} bg-[#1a0a2e]/50`
                 }`}
               >
                 {/* Icon badge */}
@@ -522,7 +522,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                         <span className="ml-1 text-orange-400 normal-case font-normal">🔔</span>
                       )}
                     </span>
-                    <span className="text-xs text-slate-500 ml-auto">
+                    <span className="text-xs text-purple-300/50 ml-auto">
                       {Math.round(effectiveVol * 100)}%
                     </span>
                   </div>
@@ -553,7 +553,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                       className={`w-7 h-7 rounded flex items-center justify-center text-sm transition-all ${
                         cowbellActive
                           ? "bg-orange-500/30 text-orange-300 border border-orange-500/50 animate-pulse"
-                          : "bg-slate-700/60 text-slate-400 hover:text-orange-300 hover:bg-orange-500/10"
+                          : "bg-purple-900/40 text-purple-300/60 hover:text-orange-300 hover:bg-orange-500/10"
                       }`}
                     >
                       🔔
@@ -567,7 +567,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                     className={`w-7 h-7 rounded text-xs font-bold transition-all ${
                       isSolo
                         ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
-                        : "bg-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                          : "bg-purple-900/40 text-purple-300/60 hover:text-purple-100 hover:bg-purple-800/60"
                     }`}
                   >
                     S
@@ -580,7 +580,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
                       isMuted
                         ? "bg-red-500/20 text-red-400 border border-red-500/40"
-                        : "bg-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                        : "bg-purple-900/40 text-purple-300/60 hover:text-purple-100 hover:bg-purple-800/60"
                     }`}
                   >
                     {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
@@ -590,7 +590,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
                   <button
                     onClick={() => handleDownloadStem(stem)}
                     title={`Download ${stem.label}`}
-                    className="w-7 h-7 rounded flex items-center justify-center bg-slate-700/60 text-slate-400 hover:text-blue-300 hover:bg-slate-700 transition-all"
+                    className="w-7 h-7 rounded flex items-center justify-center bg-purple-900/40 text-purple-300/60 hover:text-blue-300 hover:bg-purple-800/60 transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -603,7 +603,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
 
       {/* Export Footer */}
       <div className="px-4 pb-4 pt-1 space-y-2">
-        <div className="h-px bg-slate-800 mb-3" />
+        <div className="h-px bg-[#2e1a4a] mb-3" />
 
         {/* Export buttons row */}
         <div className="grid grid-cols-2 gap-2">
@@ -640,14 +640,14 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
         {/* Custom mix title input — shown before saving */}
         {stemSplitId && !savedTrackId && (
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400 font-medium">Mix name</label>
+            <label className="text-xs text-purple-200/60 font-medium">Mix name</label>
             <input
               type="text"
               value={mixTitle}
               onChange={(e) => setMixTitle(e.target.value)}
               placeholder={`${trackTitle} (Custom Mix)`}
               maxLength={200}
-              className="w-full px-3 py-1.5 text-xs rounded-md bg-slate-800/80 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 transition-all"
+              className="w-full px-3 py-1.5 text-xs rounded-md bg-[#1a0a2e]/80 border border-[#2e1a4a] text-purple-100 placeholder-purple-400/40 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 transition-all"
             />
           </div>
         )}
@@ -678,7 +678,7 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
 
         {/* Progress indicator */}
         {isMixing && mixProgress && (
-          <p className="text-xs text-slate-400 text-center animate-pulse">{mixProgress}</p>
+          <p className="text-xs text-purple-300/60 text-center animate-pulse">{mixProgress}</p>
         )}
 
         {/* Download links */}
@@ -711,8 +711,8 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
           )}
         </AnimatePresence>
 
-        <p className="text-xs text-slate-500 text-center pt-0.5">
-          Mute or solo stems, adjust volumes, then export your custom blend.
+        <p className="text-xs text-purple-300/50 text-center pt-0.5">
+          Saved mixes are yours forever — stems expire after 30 days.
         </p>
       </div>
     </motion.div>

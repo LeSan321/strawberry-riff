@@ -393,7 +393,10 @@ export function LyricsGeneratorPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0614] via-[#1a0a2e] to-[#0d0a1e]">
+      {/* Accent strip */}
+      <div className="h-[2px] bg-gradient-to-r from-violet-500 via-pink-500 to-rose-400 opacity-80" />
+      <div className="container mx-auto py-8">
       <div className="grid gap-8 lg:grid-cols-3">
         {/* ── Left: Form ── */}
         <div className="lg:col-span-2 space-y-6">
@@ -886,6 +889,7 @@ export function LyricsGeneratorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

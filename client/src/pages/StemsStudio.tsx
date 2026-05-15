@@ -165,6 +165,26 @@ export function StemsStudio() {
     });
   }, [stems]);
 
+  // 7-day retention nudge — show once per session when stems expire within 7 days
+  useEffect(() => {
+    if (!stemSplit?.createdAt || stemSplit.status !== "completed") return;
+    const createdAt = new Date(stemSplit.createdAt).getTime();
+    const expiresAt = createdAt + 30 * 24 * 60 * 60 * 1000;
+    const daysLeft = Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+    if (daysLeft > 0 && daysLeft <= 7) {
+      const nudgeKey = `stems-nudge-${stemSplit.id}`;
+      if (!sessionStorage.getItem(nudgeKey)) {
+        sessionStorage.setItem(nudgeKey, "1");
+        setTimeout(() => {
+          toast(`Your stems expire in ${daysLeft} day${daysLeft === 1 ? "" : "s"} — save your mix to My Riffs to keep it forever.`, {
+            duration: 8000,
+            icon: "🎛️",
+          });
+        }, 1500);
+      }
+    }
+  }, [stemSplit?.id, stemSplit?.createdAt, stemSplit?.status]);
+
   // ── Lazy WaveSurfer loader ──────────────────────────────────────────────────
   const processLazyQueue = useCallback(() => {
     if (isLoadingWave.current || lazyLoadQueue.current.length === 0) return;
@@ -380,27 +400,11 @@ export function StemsStudio() {
         </div>
       </div>
 
+      {/* Accent strip */}
+      <div className="h-[2px] bg-gradient-to-r from-violet-500 via-pink-500 to-rose-400 opacity-80" />
+
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Download Warning */}
-        {stemSplit?.status === "completed" && (
-          <Card className="border-amber-900/50 bg-amber-950/20 p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">⏱️</span>
-              <div>
-                <h3 className="font-semibold text-amber-200">
-                  Download your files to start the 30-day retention period
-                </h3>
-                <p className="text-sm text-amber-300/80 mt-1">
-                  Your stems will be automatically deleted on{" "}
-                  {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}{" "}
-                  (30 days remaining). Download them now to keep forever.
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* Pending / Failed status with retry */}
         {stemSplit && stemSplit.status !== "completed" && (
           <Card className="border-purple-800/40 bg-[#1a0a2e]/70 p-5">
@@ -625,8 +629,23 @@ export function StemsStudio() {
         {stemSplit?.status !== "completed" && stems.length === 0 && !stemSplit && (
           <div>
             <h2 className="text-xl font-bold mb-4">Individual Stems</h2>
-            <Card className="border-[#2e1a4a] bg-[#160b1e]/60 p-8 text-center">
-              <p className="text-purple-200/60">No stem data found for this track.</p>
+            <Card className="border-[#2e1a4a] bg-[#160b1e]/60 p-12 text-center">
+              {/* Waveform illustration */}
+              <div className="flex items-end justify-center gap-1 mb-6 h-16">
+                {[4,8,14,20,28,36,28,44,36,28,44,52,44,36,28,36,44,36,28,20,28,36,28,20,14,8,4].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 rounded-full opacity-60"
+                    style={{
+                      height: `${h}px`,
+                      background: `linear-gradient(to top, #7c3aed, #ec4899)`,
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-purple-200/70 font-medium mb-1">No stem data found for this track</p>
+              <p className="text-purple-300/40 text-sm">Use the Split Stems button on the Studio page to separate this track into individual stems.</p>
             </Card>
           </div>
         )}
