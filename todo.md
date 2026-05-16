@@ -920,10 +920,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Stems Studio: design revelation moment — beat of stillness + waveform animation before controls appear
 - [x] Landing page: replace "Everything You Need" with warmer copy
 - [x] Landing page: move a Sonic Soulprint near the hero section
-- [ ] Landing page: fill or remove the empty section
+- [x] Landing page: fill or remove the empty section
 - [ ] About page: rewrite "We're building the future of music creation" subtitle in Riff voice
 
 ## Phase 92: Platform Experience Bible — Final Alignment
 - [x] About page: rewrite subtitle and key copy in Riff voice
 - [x] Stems Studio: update "Stem split complete" toast to match Reveal Stems language
 - [x] Lyrics page: tint form cards to bg-[#160b1e]/80 with border-[#2e1a4a] to match Stems Studio
+
+## Phase 93: Landing Page Philosophy Section
+- [x] Fill empty landing page section with Riff Philosophy statement (Platform Experience Bible voice)
+- [ ] Plan opt-in creator vibe fingerprint: off by default, 8+ tagged tracks threshold, toggle in profile settings

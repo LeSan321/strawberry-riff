@@ -487,6 +487,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── The Riff Philosophy ────────────────────────────────────────────── */}
+      <section className="py-24 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <p className="text-pink-400 text-sm font-semibold tracking-widest uppercase mb-6">The Riff Philosophy</p>
+            <blockquote className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-8"
+              style={{ background: "linear-gradient(135deg, #f9a8d4, #c084fc, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              Music is not a product.<br />
+              It is a conversation<br />
+              between a human heart<br />
+              and the world that needs it.
+            </blockquote>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              We don't measure success in streams or followers. We measure it in the moment a stranger
+              hears your track and feels less alone. Every tool on this platform exists to serve that moment —
+              nothing more, nothing less.
+            </p>
+            <div className="mt-10 h-px max-w-xs mx-auto bg-gradient-to-r from-transparent via-pink-500/40 to-transparent" />
+          </motion.div>
+        </div>
+      </section>
+
       {/* ── Latest Riffs ──────────────────────────────────────────────────── */}
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
