@@ -616,6 +616,51 @@ function MonthlyUsageBanner({ used, limit, isPremium }: { used: number; limit: n
   );
 }
 
+// ─── Polling Indicator — rotating 3-word Riff lines ────────────────────────────
+const RIFF_WAITING_LINES = [
+  "Sound is forming.",
+  "Frequency settling.",
+  "Almost there.",
+  "Taking shape.",
+  "Coming through.",
+];
+
+function PollingIndicator() {
+  const [lineIndex, setLineIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setLineIndex((i) => (i + 1) % RIFF_WAITING_LINES.length);
+        setVisible(true);
+      }, 400);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center gap-3 rounded-lg bg-violet-500/10 border border-violet-400/20 p-3">
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400"
+            style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          />
+        ))}
+      </div>
+      <span
+        className="text-sm font-medium text-violet-300 transition-opacity duration-400"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        {RIFF_WAITING_LINES[lineIndex]}
+      </span>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export function GeneratePage() {
   const { user } = useAuth();
@@ -1286,13 +1331,8 @@ export function GeneratePage() {
                 </div>
               )}
 
-              {/* Active polling indicator */}
-              {pollingId && (
-                <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-700 border border-yellow-200">
-                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                  Something is becoming — checking for updates every 5 seconds...
-                </div>
-              )}
+              {/* Active polling indicator — rotating 3-word Riff lines */}
+              {pollingId && <PollingIndicator />}
 
               {/* Submit Button */}
               <Button

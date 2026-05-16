@@ -931,3 +931,7 @@ Manus-managed services so the site can run entirely independently long-term.
 ## Phase 93: Landing Page Philosophy Section
 - [x] Fill empty landing page section with Riff Philosophy statement (Platform Experience Bible voice)
 - [ ] Plan opt-in creator vibe fingerprint: off by default, 8+ tagged tracks threshold, toggle in profile settings
+
+## Phase 94: Waiting Lines & Shareable Quote Card
+- [x] Generate page: replace polling indicator with rotating 3-word Riff-voice lines (max 3 words each)
+- [x] Landing page: add shareable quote card button to Riff Philosophy section

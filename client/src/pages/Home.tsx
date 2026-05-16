@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import {
   Upload, Users, Music, Zap, BarChart2, ListMusic,
-  Sparkles, Play, Heart, Globe, Lock, UserCheck, Quote, Ticket, ChevronLeft, ChevronRight
+  Sparkles, Play, Heart, Globe, Lock, UserCheck, Quote, Ticket, ChevronLeft, ChevronRight, Share2, Check
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -192,7 +192,56 @@ const PLACEHOLDER_TRACKS = [
   { id: -3, title: "Ocean Waves", artist: "Synthetic Soul", fileUrl: "", duration: 208 },
 ];
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Philosophy Share Button ───────────────────────────────────────────────────
+const PHILOSOPHY_QUOTE = `“Music is not a product.
+It is a conversation
+between a human heart
+and the world that needs it.”
+
+— The Riff Philosophy
+strawberryriff.com`;
+
+function PhilosophyShareButton() {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "The Riff Philosophy",
+          text: PHILOSOPHY_QUOTE,
+          url: "https://strawberryriff.com",
+        });
+      } else {
+        await navigator.clipboard.writeText(PHILOSOPHY_QUOTE);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } catch {
+      // user cancelled share — no action needed
+    }
+  };
+
+  return (
+    <div className="mt-8 flex flex-col items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleShare}
+        className="gap-2 border-pink-400/40 text-pink-300 hover:bg-pink-500/10 hover:text-pink-200 hover:border-pink-400/60 transition-all"
+      >
+        {copied ? (
+          <><Check className="h-3.5 w-3.5" />Copied to clipboard</>
+        ) : (
+          <><Share2 className="h-3.5 w-3.5" />Share this philosophy</>
+        )}
+      </Button>
+      <p className="text-xs text-muted-foreground/60">Copies as a shareable quote card for social media</p>
+    </div>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [easterEggOpen, setEasterEggOpen] = useState(false);
@@ -510,6 +559,7 @@ export default function Home() {
               nothing more, nothing less.
             </p>
             <div className="mt-10 h-px max-w-xs mx-auto bg-gradient-to-r from-transparent via-pink-500/40 to-transparent" />
+            <PhilosophyShareButton />
           </motion.div>
         </div>
       </section>
