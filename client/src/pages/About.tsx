@@ -112,7 +112,7 @@ export default function About() {
           </span>
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          We're building the future of music creation and sharing, where community meets creativity
+          A place where the music already inside you has somewhere to land.
         </p>
       </motion.div>
 

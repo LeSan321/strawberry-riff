@@ -62,7 +62,7 @@ export function StemSplitButton({
       setSplitJustCompleted(true);
       // Invalidate the generation query to force re-fetch of isSplit flag
       utils.musicGeneration.getById.invalidate({ id: generationId });
-      toast.success("Stem split complete! Your stems are ready.");
+      toast.success("Your stems are revealed — go see what's inside.");
       onSplitComplete?.(status.stems);
     } else if (status.status === "failed") {
       setIsPolling(false);

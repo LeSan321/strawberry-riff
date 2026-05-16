@@ -922,3 +922,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Landing page: move a Sonic Soulprint near the hero section
 - [ ] Landing page: fill or remove the empty section
 - [ ] About page: rewrite "We're building the future of music creation" subtitle in Riff voice
+
+## Phase 92: Platform Experience Bible — Final Alignment
+- [x] About page: rewrite subtitle and key copy in Riff voice
+- [x] Stems Studio: update "Stem split complete" toast to match Reveal Stems language
+- [x] Lyrics page: tint form cards to bg-[#160b1e]/80 with border-[#2e1a4a] to match Stems Studio

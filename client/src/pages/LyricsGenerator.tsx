@@ -381,7 +381,7 @@ export function LyricsGeneratorPage() {
   if (!user) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="p-8 text-center">
+        <Card className="p-8 text-center bg-[#160b1e]/80 border-[#2e1a4a] text-purple-100">
           <Pen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h2 className="mb-2 text-2xl font-bold">Sign in to Write Lyrics</h2>
           <p className="text-muted-foreground">
@@ -401,7 +401,7 @@ export function LyricsGeneratorPage() {
         {/* ── Left: Form ── */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
-          <Card className="p-6">
+          <Card className="p-6 bg-[#160b1e]/80 border-[#2e1a4a]">
             <div className="mb-6 flex items-start gap-3">
               <div className="rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 p-2.5">
                 <Pen className="h-5 w-5 text-white" />
@@ -683,7 +683,7 @@ export function LyricsGeneratorPage() {
 
           {/* ── Output Panel ── */}
           {(generatedLyrics || isGenerating) && (
-            <Card className="p-6">
+            <Card className="p-6 bg-[#160b1e]/80 border-[#2e1a4a]">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-pink-500" />
@@ -801,7 +801,7 @@ export function LyricsGeneratorPage() {
 
         {/* ── Right: Saved Drafts ── */}
         <div className="space-y-4">
-          <Card className="p-4">
+          <Card className="p-4 bg-[#160b1e]/80 border-[#2e1a4a]">
             <div className="mb-3 flex items-center gap-2">
               <Save className="h-4 w-4 text-muted-foreground" />
               <h2 className="font-semibold text-sm">Saved Drafts</h2>
@@ -838,7 +838,7 @@ export function LyricsGeneratorPage() {
           </Card>
 
           {/* Quick Tips */}
-          <Card className="p-4">
+          <Card className="p-4 bg-[#160b1e]/80 border-[#2e1a4a]">
             <div className="mb-3 flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-muted-foreground" />
               <h2 className="font-semibold text-sm">Writer's Tips</h2>
