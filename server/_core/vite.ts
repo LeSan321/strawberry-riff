@@ -117,11 +117,15 @@ export function serveStatic(app: Express) {
             track.duration || undefined
           );
           
-          // Replace default OG tags with track-specific ones
-          html = html.replace(
-            /(<meta property="og:[^"]*"[^>]*>\s*)*<meta property="og:title"/g,
-            ogTags.trim() + '\n    <meta property="og:title"'
-          );
+          // Strip ALL existing og: and twitter: meta tags (including platform-injected ones)
+          // so our track-specific tags are the only ones social crawlers see
+          html = html
+            .replace(/<meta\s+property="og:[^"]*"[^>]*>\s*/gi, "")
+            .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/gi, "")
+            .replace(/<meta\s+property="music:[^"]*"[^>]*>\s*/gi, "");
+          
+          // Inject track-specific OG tags just before </head>
+          html = html.replace("</head>", `${ogTags.trim()}\n</head>`);
           
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");

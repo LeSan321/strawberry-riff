@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -239,6 +239,32 @@ export function LyricsGeneratorPage() {
   const [stickinessAnalysis, setStickinessAnalysis] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Scroll target for output panel
+  const outputRef = useRef<HTMLDivElement>(null);
+
+  // Rotating 3-word waiting lines
+  const WAITING_LINES = [
+    "Words are forming.",
+    "Rhythm settling.",
+    "Almost there.",
+    "Finding the hook.",
+    "Voice emerging.",
+  ];
+  const [waitingLineIndex, setWaitingLineIndex] = useState(0);
+  const [waitingVisible, setWaitingVisible] = useState(true);
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    const interval = setInterval(() => {
+      setWaitingVisible(false);
+      setTimeout(() => {
+        setWaitingLineIndex((i) => (i + 1) % WAITING_LINES.length);
+        setWaitingVisible(true);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
+
   // Edit mode
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
   const [editBuffer, setEditBuffer] = useState("");
@@ -306,7 +332,10 @@ export function LyricsGeneratorPage() {
       });
       setGeneratedLyrics(result.lyrics);
       setStickinessAnalysis(result.stickinessAnalysis);
-      toast.success(rewriteMode ? "Re-vision complete!" : "Lyrics generated!");
+      // Scroll to output after a brief paint delay
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -674,6 +703,8 @@ export function LyricsGeneratorPage() {
               >
                 {isGenerating ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Writing your lyrics…</>
+                ) : generatedLyrics ? (
+                  <><Wand2 className="mr-2 h-5 w-5" />Regenerate Lyrics</>
                 ) : (
                   <><Wand2 className="mr-2 h-5 w-5" />Generate Lyrics</>
                 )}
@@ -683,7 +714,7 @@ export function LyricsGeneratorPage() {
 
           {/* ── Output Panel ── */}
           {(generatedLyrics || isGenerating) && (
-            <Card className="p-6 bg-[#160b1e]/80 border-[#2e1a4a]">
+            <Card ref={outputRef} className="p-6 bg-[#160b1e]/80 border-[#2e1a4a]">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-pink-500" />
@@ -746,9 +777,18 @@ export function LyricsGeneratorPage() {
               </div>
 
               {isGenerating && !generatedLyrics ? (
-                <div className="flex items-center gap-3 py-8 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>The Writing Team is crafting your lyrics…</span>
+                <div className="flex flex-col items-center gap-4 py-10 text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <span
+                    className="text-sm font-medium transition-opacity duration-300"
+                    style={{ opacity: waitingVisible ? 1 : 0 }}
+                  >
+                    {WAITING_LINES[waitingLineIndex]}
+                  </span>
                 </div>
               ) : (
                 <>

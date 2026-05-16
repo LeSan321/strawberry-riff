@@ -935,3 +935,13 @@ Manus-managed services so the site can run entirely independently long-term.
 ## Phase 94: Waiting Lines & Shareable Quote Card
 - [x] Generate page: replace polling indicator with rotating 3-word Riff-voice lines (max 3 words each)
 - [x] Landing page: add shareable quote card button to Riff Philosophy section
+
+## Phase 95
+
+- [x] Read and save Storytelling Bible as references/storytelling-bible.md
+- [x] Fix Lyrics page post-generation UX: auto-scroll to lyrics output after generation completes
+- [x] Fix Lyrics page: reset generate button state after generation (button should not remain highlighted)
+- [x] Add rotating 3-word waiting lines to Lyrics Generator generation wait state
+- [x] Add "Your track is ready" pulse/glow animation to new track cards on Generate page
+- [x] Implement canvas-based share card image for Riff Philosophy quote button (dark plum bg, gradient text, wordmark)
+- [x] Investigate and fix X/Twitter OG image issue for track share links

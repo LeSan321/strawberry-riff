@@ -193,32 +193,122 @@ const PLACEHOLDER_TRACKS = [
 ];
 
 // ─── Philosophy Share Button ───────────────────────────────────────────────────
-const PHILOSOPHY_QUOTE = `“Music is not a product.
-It is a conversation
-between a human heart
-and the world that needs it.”
+function generatePhilosophyCard(): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const W = 1200, H = 630;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { reject(new Error("No canvas context")); return; }
 
-— The Riff Philosophy
-strawberryriff.com`;
+    // Background — deep plum
+    ctx.fillStyle = "#0f0614";
+    ctx.fillRect(0, 0, W, H);
+
+    // Radial glow — left-centre
+    const glow = ctx.createRadialGradient(W * 0.15, H * 0.45, 0, W * 0.15, H * 0.45, W * 0.6);
+    glow.addColorStop(0, "rgba(74, 20, 104, 0.75)");
+    glow.addColorStop(0.5, "rgba(42, 10, 58, 0.4)");
+    glow.addColorStop(1, "transparent");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Bottom-right whisper
+    const whisper = ctx.createRadialGradient(W * 0.92, H * 0.92, 0, W * 0.92, H * 0.92, W * 0.35);
+    whisper.addColorStop(0, "rgba(42, 8, 56, 0.5)");
+    whisper.addColorStop(1, "transparent");
+    ctx.fillStyle = whisper;
+    ctx.fillRect(0, 0, W, H);
+
+    // Accent bar — bottom gradient
+    const bar = ctx.createLinearGradient(0, 0, W, 0);
+    bar.addColorStop(0, "#7c3aed");
+    bar.addColorStop(0.5, "#ec4899");
+    bar.addColorStop(1, "#f43f5e");
+    ctx.fillStyle = bar;
+    ctx.fillRect(0, H - 6, W, 6);
+
+    // Wordmark — top-left
+    ctx.font = "bold 28px 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif";
+    const wm = ctx.createLinearGradient(60, 0, 340, 0);
+    wm.addColorStop(0, "#c084fc");
+    wm.addColorStop(1, "#f472b6");
+    ctx.fillStyle = wm;
+    ctx.fillText("\uD83C\uDF53 Strawberry Riff", 60, 72);
+
+    // Quote lines with gradient colour
+    const lines = [
+      "\u201cMusic is not a product.",
+      "It is a conversation",
+      "between a human heart",
+      "and the world that needs it.\u201d",
+    ];
+    const lineH = 82;
+    const startY = 185;
+    lines.forEach((line, i) => {
+      const t = i / (lines.length - 1);
+      const r = Math.round(192 + t * (244 - 192));
+      const g = Math.round(132 + t * (63 - 132));
+      const b = Math.round(252 + t * (158 - 252));
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.font = `${i === 0 || i === lines.length - 1 ? "bold" : "normal"} 52px 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif`;
+      ctx.fillText(line, 60, startY + i * lineH);
+    });
+
+    // Attribution line
+    ctx.font = "italic 26px Georgia, 'Times New Roman', serif";
+    ctx.fillStyle = "rgba(240, 232, 245, 0.5)";
+    ctx.fillText("\u2014 The Riff Philosophy  \u00B7  strawberryriff.com", 60, startY + lines.length * lineH + 38);
+
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Canvas toBlob failed"));
+    }, "image/png");
+  });
+}
 
 function PhilosophyShareButton() {
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<"idle" | "generating" | "done" | "copied">("idle");
 
   const handleShare = async () => {
+    setStatus("generating");
     try {
-      if (navigator.share) {
+      const blob = await generatePhilosophyCard();
+      const file = new File([blob], "riff-philosophy.png", { type: "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: "The Riff Philosophy",
-          text: PHILOSOPHY_QUOTE,
+          text: "\u201cMusic is not a product. It is a conversation between a human heart and the world that needs it.\u201d \u2014 Strawberry Riff",
           url: "https://strawberryriff.com",
+          files: [file],
         });
+        setStatus("done");
+        setTimeout(() => setStatus("idle"), 2500);
       } else {
-        await navigator.clipboard.writeText(PHILOSOPHY_QUOTE);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        // Fallback: download the image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "riff-philosophy.png";
+        a.click();
+        URL.revokeObjectURL(url);
+        setStatus("done");
+        setTimeout(() => setStatus("idle"), 2500);
       }
-    } catch {
-      // user cancelled share — no action needed
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== "AbortError") {
+        try {
+          await navigator.clipboard.writeText(
+            "\u201cMusic is not a product. It is a conversation between a human heart and the world that needs it.\u201d\n\u2014 The Riff Philosophy\nstrawberryriff.com"
+          );
+          setStatus("copied");
+          setTimeout(() => setStatus("idle"), 2500);
+        } catch { setStatus("idle"); }
+      } else {
+        setStatus("idle");
+      }
     }
   };
 
@@ -228,15 +318,20 @@ function PhilosophyShareButton() {
         variant="outline"
         size="sm"
         onClick={handleShare}
+        disabled={status === "generating"}
         className="gap-2 border-pink-400/40 text-pink-300 hover:bg-pink-500/10 hover:text-pink-200 hover:border-pink-400/60 transition-all"
       >
-        {copied ? (
+        {status === "generating" ? (
+          <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-pink-400 border-t-transparent inline-block" />Building card\u2026</>
+        ) : status === "done" ? (
+          <><Check className="h-3.5 w-3.5" />Image ready \u2014 check your share sheet</>
+        ) : status === "copied" ? (
           <><Check className="h-3.5 w-3.5" />Copied to clipboard</>
         ) : (
           <><Share2 className="h-3.5 w-3.5" />Share this philosophy</>
         )}
       </Button>
-      <p className="text-xs text-muted-foreground/60">Copies as a shareable quote card for social media</p>
+      <p className="text-xs text-muted-foreground/60">Generates a designed image card for social media</p>
     </div>
   );
 }

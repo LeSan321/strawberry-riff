@@ -13,8 +13,10 @@ export function generateTrackOGMetaTags(
   const trackUrl = `${origin}/track/${trackId}`;
   const strawberry = "🍓";
 
-  // Use provided cover art, or fallback to a default branded image
-  const ogImageUrl = coverArtUrl || `${origin}/api/og-image/default`;
+  // Use provided cover art, or fallback to the generated track card image
+  const ogImageUrl = coverArtUrl
+    ? coverArtUrl
+    : `${origin}/api/og-image/track?title=${encodeURIComponent(trackTitle)}&artist=${encodeURIComponent(artistName)}`;
 
   // Format duration for display (e.g., "3:45")
   const formatDuration = (seconds?: number): string => {

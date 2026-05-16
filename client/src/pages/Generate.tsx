@@ -199,6 +199,7 @@ function GenerationCard({
   onRefine,
   onToggleFavorite,
   isPremium,
+  isNew,
 }: {
   gen: { id: number; title: string; prompt: string; lyrics: string; status: string; audioUrl: string | null; errorMessage?: string | null; createdAt: Date; isFavorited?: boolean; visualBrief?: string | null; isSplit?: boolean };
   onRegenerate: (settings: { title: string; prompt: string; lyrics: string }) => void;
@@ -206,6 +207,7 @@ function GenerationCard({
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
   onToggleFavorite: (id: number) => void;
   isPremium?: boolean;
+  isNew?: boolean;
 }) {
   const [, navigate] = useLocation();
   const [publishOpen, setPublishOpen] = useState(false);
@@ -248,7 +250,12 @@ function GenerationCard({
       : "bg-yellow-500/10 text-yellow-700 border-yellow-200";
 
   return (
-    <div className="rounded-lg border p-3 text-sm hover:bg-accent/50 transition-colors w-full overflow-hidden">
+    <div
+      className={[
+        "rounded-lg border p-3 text-sm hover:bg-accent/50 transition-all w-full overflow-hidden",
+        isNew ? "animate-[trackReady_3s_ease-out_forwards]" : "",
+      ].join(" ")}
+    >
       <div className="flex items-start justify-between gap-2">
         {editingTitle ? (
           <input
@@ -674,6 +681,7 @@ export function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<number | null>(null);
+  const [newlyCompletedId, setNewlyCompletedId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   // Reference audio state
@@ -820,8 +828,14 @@ export function GeneratePage() {
 
   // Poll until the active generation completes
   useGenerationPolling(pollingId, () => {
+    const completedId = pollingId;
     setPollingId(null);
-    toast.success("Music generation complete! Ready to publish.");
+    if (completedId) {
+      setNewlyCompletedId(completedId);
+      // Clear the pulse after 3 seconds
+      setTimeout(() => setNewlyCompletedId(null), 3000);
+    }
+    toast.success("Your track is ready.");
   });
 
   const handleRegenerate = useCallback(
@@ -1440,7 +1454,7 @@ export function GeneratePage() {
                     </p>
                   )}
                   {filteredGenerations.map((gen) => (
-                    <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} />
+                    <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} isNew={gen.id === newlyCompletedId} />
                   ))}
                 </div>
               ) : (
