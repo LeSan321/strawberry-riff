@@ -913,3 +913,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Increase "Your vibe:" label font size on Discover to match "Search By" heading
 - [x] Add jump-to anchor button at top of My Riffs page for Creative Identity panel
 - [x] Fix Creative Identity tag font color (too light/unreadable)
+
+## Phase 91: Platform Experience Bible Alignment
+- [x] Save Platform Experience Bible as references/platform-experience-bible.md
+- [x] Generate form: warm placeholder text ("What is this song carrying?" alongside example)
+- [x] Stems Studio: design revelation moment — beat of stillness + waveform animation before controls appear
+- [x] Landing page: replace "Everything You Need" with warmer copy
+- [x] Landing page: move a Sonic Soulprint near the hero section
+- [ ] Landing page: fill or remove the empty section
+- [ ] About page: rewrite "We're building the future of music creation" subtitle in Riff voice

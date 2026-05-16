@@ -157,8 +157,8 @@ export function StemSplitButton({
         ) : (
           <>
             <Music className="w-4 h-4" />
-            <span className="hidden sm:inline">Split Stems</span>
-            <span className="sm:hidden">Split</span>
+            <span className="hidden sm:inline">Reveal Stems</span>
+            <span className="sm:hidden">Reveal</span>
           </>
         )}
       </Button>

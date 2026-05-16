@@ -348,13 +348,13 @@ export default function Home() {
             className="text-center mb-14"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need to{" "}
+              Tools That Serve{" "}
               <span style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                Share Your Sound
+                the Creator
               </span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              From the first rough memo to a stadium-ready mix, every tool here serves one purpose: helping you be heard.
+              From the first rough memo to a fully split mix, every tool here exists for one reason: to help you hear what you already know is in there.
             </p>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -453,12 +453,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Sonic Soulprints (Testimonials) ───────────────────────────────── */}
+      {/* ── Sonic Soulprints (moved near hero per Platform Experience Bible) ── */}
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">Sonic Soulprints</h2>
-            <p className="text-muted-foreground mb-12">Real voices. Real feels.</p>
+            <p className="text-pink-400 text-sm font-semibold tracking-widest uppercase mb-3">Sonic Soulprints</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-2">Real voices. Real feels.</h2>
+            <p className="text-muted-foreground mb-12">The music made here carries something. These are the people who felt it.</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[

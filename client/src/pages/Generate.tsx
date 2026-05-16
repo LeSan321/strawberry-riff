@@ -944,7 +944,7 @@ export function GeneratePage() {
               <div>
                 <h1 className="text-3xl font-bold">Generate Music</h1>
                 <p className="mt-1 text-muted-foreground">
-                  Create full-length AI songs with vocals — just add a prompt and lyrics.
+                  What does this song already know? Give it a title, a sound, and the words — and let it become.
                 </p>
               </div>
             </div>
@@ -954,7 +954,7 @@ export function GeneratePage() {
               <div>
                 <label className="mb-2 block text-sm font-medium">Title</label>
                 <Input
-                  placeholder="e.g., Midnight Blues"
+                  placeholder="What is this song called? (e.g., Midnight Blues)"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={isGenerating}
@@ -967,7 +967,7 @@ export function GeneratePage() {
               <div>
                 <label className="mb-2 block text-sm font-medium">Music Style Prompt</label>
                 <Textarea
-                  placeholder="e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate"
+                  placeholder="What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   disabled={isGenerating}
@@ -1290,7 +1290,7 @@ export function GeneratePage() {
               {pollingId && (
                 <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-700 border border-yellow-200">
                   <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                  Generating your track — checking for updates every 5 seconds...
+                  Something is becoming — checking for updates every 5 seconds...
                 </div>
               )}
 
@@ -1302,13 +1302,13 @@ export function GeneratePage() {
                 className="w-full"
               >
                 {isGenerating ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Starting generation...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Something is becoming...</>
                 ) : pollingId ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generation in progress...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Your track is finding its shape...</>
                 ) : isAtLimit ? (
                   <><Crown className="mr-2 h-4 w-4" />Upgrade to Premium to Generate More</>
                 ) : (
-                  <><Music className="mr-2 h-4 w-4" />Generate Music</>
+                  <><Music className="mr-2 h-4 w-4" />Bring It to Life</>
                 )}
               </Button>
 

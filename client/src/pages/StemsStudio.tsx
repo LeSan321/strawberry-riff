@@ -95,6 +95,14 @@ export function StemsStudio() {
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
 
+  // ── Revelation moment state ─────────────────────────────────────────────────
+  // When stems first become available, show a brief 'beat of stillness' before
+  // the controls appear. This honors Stem Splitter Law 2 from the Platform
+  // Experience Bible: the user gets one breath to register what just happened.
+  const [revelationShown, setRevelationShown] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const revelationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Play/pause state tracked per WaveSurfer key
   const [playingKeys, setPlayingKeys] = useState<Set<string>>(new Set());
   // Track which waveforms have finished loading (ready event fired)
@@ -164,6 +172,21 @@ export function StemsStudio() {
       return next;
     });
   }, [stems]);
+
+  // Revelation moment — show stillness card, then reveal controls after 2.8s
+  useEffect(() => {
+    if (stems.length === 0 || revelationShown) return;
+    if (stemSplit?.status !== "completed") return;
+    setRevelationShown(true);
+    setShowControls(false);
+    revelationTimerRef.current = setTimeout(() => {
+      setShowControls(true);
+    }, 2800);
+    return () => {
+      if (revelationTimerRef.current) clearTimeout(revelationTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stems.length, stemSplit?.status]);
 
   // 7-day retention nudge — show once per session when stems expire within 7 days
   useEffect(() => {
@@ -498,8 +521,50 @@ export function StemsStudio() {
           </Card>
         </div>
 
+        {/* Revelation moment — beat of stillness before controls appear */}
+        {stemSplit?.status === "completed" && stems.length > 0 && revelationShown && !showControls && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col items-center justify-center py-16 text-center"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.7 }}
+              className="mb-6"
+            >
+              {/* Animated waveform bars */}
+              <div className="flex items-end justify-center gap-1 h-16 mb-6">
+                {[...Array(12)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 rounded-full bg-gradient-to-t from-violet-500 to-pink-400"
+                    initial={{ height: 8 }}
+                    animate={{ height: [8, 24 + Math.sin(i * 0.7) * 20, 8] }}
+                    transition={{
+                      duration: 1.4,
+                      repeat: Infinity,
+                      delay: i * 0.1,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-300 to-pink-300 bg-clip-text text-transparent mb-2">
+                What's inside this track
+              </h2>
+              <p className="text-purple-200/70 text-sm max-w-xs mx-auto">
+                The layers are separating. Take a breath — your stems are becoming.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+
         {/* Two-column layout: Individual Stems + Custom Mix */}
-        {stemSplit?.status === "completed" && stems.length > 0 && (
+        {stemSplit?.status === "completed" && stems.length > 0 && showControls && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Individual Stems — takes 2/3 width on xl */}
             <div className="xl:col-span-2 space-y-4">
