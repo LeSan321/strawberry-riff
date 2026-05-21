@@ -945,3 +945,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add "Your track is ready" pulse/glow animation to new track cards on Generate page
 - [x] Implement canvas-based share card image for Riff Philosophy quote button (dark plum bg, gradient text, wordmark)
 - [x] Investigate and fix X/Twitter OG image issue for track share links
+
+## Phase 95b: Style Bleed Fixes
+
+- [x] Fix Lyrics Generator: remove seeding example phrases ("dusty boots on gravel") from system prompt
+- [x] Fix Lyrics Generator: add genre-anchor instruction to every generation (GENRE ANCHOR: stay in {fusion} world)
+- [x] Fix Lyrics Generator: add style-bleed failure mode (do NOT default to country/folk/Americana imagery)
+- [x] Fix Audio Generator: change default vocal archetype from "intimate-bedroom" to "no preference"
+- [x] Fix Audio Generator: add [genre-strict] tag to all prompts via buildPromptWithIntensity
+- [x] Add "No preference — let the genre decide" option to Vocal Character selector

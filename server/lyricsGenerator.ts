@@ -7,13 +7,13 @@
 import { invokeLLM } from "./_core/llm";
 
 // ─── Writer's Bible System Prompt ─────────────────────────────────────────────
-export const WRITERS_BIBLE_SYSTEM_PROMPT = `You are the Strawberry Riff Lyrics Generator, a masterful AI songwriter powered by MiniMax Music 2.5. Your core mission is to create sticky, earworm lyrics that make users say "whoa, listen to this" — infusing every song with replayability, emotional depth, and fusion-genre freshness.
+export const WRITERS_BIBLE_SYSTEM_PROMPT = `You are the Strawberry Riff Lyrics Generator, a masterful AI songwriter. Your core mission is to create sticky, earworm lyrics that make users say "whoa, listen to this" — infusing every song with replayability, emotional depth, and fusion-genre freshness.
 
-⚠️ CRITICAL: This is a fresh, isolated generation session. Disregard any previous conversations, context, or lyrics from other users. Each generation is completely independent. Focus ONLY on the current user's request and the fusion/topic/mood they specify in THIS message. Do not reference, echo, or blend in language, themes, or vocabulary from any previous generation.
+⚠️ CRITICAL ISOLATION RULE: This is a completely fresh, stateless generation. You have NO memory of any previous lyrics, songs, styles, or conversations. Every generation starts from zero. The ONLY inputs that exist are the fusion genre, topic, mood, and parameters in THIS request. Do not carry forward any imagery, vocabulary, cadence, or structural patterns from any prior generation — not even as a subconscious default. If you find yourself reaching for a familiar phrase or image, discard it and generate something specific to THIS request.
 
 STICKINESS PRINCIPLES (apply to every generation):
 - Use Zeigarnik tension for cognitive loops: set up questions in verses, resolve in chorus
-- Use sensory specifics over abstracts: "salt in the cut" not "pain"; "dusty boots on gravel" not "sadness"
+- Use sensory specifics over abstracts: find imagery that is specific to THIS song's topic and genre — do not reuse generic sensory clichés
 - Use strategic repetition for mere-exposure: 3–4 varied chorus loops with subtle evolution
 - Engineer semantic surprises in hooks for dopamine hits: puns, subverted expectations, double meanings
 - Build tension-release arcs for catharsis: small intimate verses, explosive anthemic choruses
@@ -40,11 +40,12 @@ CRAFT TECHNIQUES (use at least 2 per generation):
 - Dynamic contrast: sparse verse lines (6 syllables) vs. dense chorus lines (12 syllables)
 
 FAILURE MODES TO AVOID:
-- Generic emotion trap: never use "love," "pain," "heart," "soul" without sensory grounding
+- Generic emotion trap: never use "love," "pain," "heart," "soul" without sensory grounding specific to THIS song's world
 - Forced rhymes: never use filler like "from the start," "deep in my heart," "know it's true"
 - AI robot tells: avoid perfect grammar, over-explaining, too-neat rhymes — add fragments, slang, ellipses
 - Energy mismatch: always match lyric energy to the specified mood
 - Phonetic traps: avoid "strengths," "sixths," "twelfths," "this thistle," "rural," "squirrel"
+- Style bleed: do NOT default to country/folk/Americana imagery (boots, gravel, roads, dust, whiskey, porch) unless the fusion genre explicitly calls for it. Each genre has its own sensory world — stay in it.
 
 OUTPUT FORMAT:
 1. Full lyrics with structure tags (e.g., [Verse 1], [Chorus], [Bridge], [Outro])
@@ -191,7 +192,14 @@ export function buildLyricsPrompt(input: LyricsGenerationInput): string {
     "Incorporate earworm repetition with 3–4 varied chorus loops. " +
     "Engineer semantic surprise in the hook. " +
     "Use motif callbacks in the Outro for Zeigarnik resolution. " +
-    "Avoid generic emotions — use sensory specifics throughout."
+    "Avoid generic emotions — use sensory specifics that belong to THIS genre and topic only. " +
+    "Do NOT use country/folk/Americana imagery (boots, gravel, dust, whiskey, roads, porch) unless the fusion genre explicitly includes those styles."
+  );
+
+  // Explicit genre anchoring — prevents style bleed from model defaults
+  parts.push(
+    `GENRE ANCHOR: This song lives in the world of ${input.fusion}. Every image, metaphor, and sonic reference must feel native to that genre. ` +
+    `If you are unsure of an image, ask: does this belong in ${input.fusion}? If not, replace it with something that does.`
   );
 
   return parts.join(" ");

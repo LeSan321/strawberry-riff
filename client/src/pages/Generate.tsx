@@ -675,7 +675,7 @@ export function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
-  const [vocalArchetype, setVocalArchetype] = useState<"intimate-bedroom" | "raw-emotional" | "soulful-belter" | "gritty-rock" | "confident-pop" | "lo-fi-whisper" | "powerful-anthem" | "storyteller-folk">("intimate-bedroom");
+  const [vocalArchetype, setVocalArchetype] = useState<"intimate-bedroom" | "raw-emotional" | "soulful-belter" | "gritty-rock" | "confident-pop" | "lo-fi-whisper" | "powerful-anthem" | "storyteller-folk" | "">("" as "");
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [vocalSpectrumValue, setVocalSpectrumValue] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -953,7 +953,7 @@ export function GeneratePage() {
         prompt: prompt.trim(),
         lyrics: lyrics.trim(),
         intensity,
-        vocalArchetype,
+        vocalArchetype: vocalArchetype || undefined,
         vocalGender,
         vocalSpectrumValue,
         referenceAudioUrl: referenceAudioUrl ?? undefined,
@@ -1057,9 +1057,10 @@ export function GeneratePage() {
                 <label className="mb-2 block text-sm font-medium">Vocal Character</label>
                 <Select value={vocalArchetype} onValueChange={(v) => setVocalArchetype(v as typeof vocalArchetype)} disabled={isGenerating}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="No preference — let the genre decide" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No preference — let the genre decide</SelectItem>
                     <SelectItem value="intimate-bedroom">Intimate Bedroom — Vulnerable, close-mic'd, breathy</SelectItem>
                     <SelectItem value="raw-emotional">Raw Emotional — Unpolished, honest, imperfect</SelectItem>
                     <SelectItem value="soulful-belter">Soulful Belter — Powerful, controlled, expressive runs</SelectItem>

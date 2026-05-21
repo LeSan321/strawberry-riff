@@ -23,14 +23,16 @@ const REFINEMENT_PREFIXES: Record<RefinementType, string> = {
 
 /**
  * Build a prompt with intensity prefix
- * Prepends a brief tag like "[subtle]" to guide the model
+ * Prepends a brief tag like "[subtle]" to guide the model.
+ * Also adds [genre-strict] to prevent MiniMax from bleeding its default
+ * acoustic/folk/country tendencies into unrelated genres.
  */
 export function buildPromptWithIntensity(
   userPrompt: string,
   intensity: IntensityLevel
 ): string {
   const prefix = INTENSITY_PREFIXES[intensity];
-  return `${prefix}${userPrompt}`;
+  return `${prefix}[genre-strict] ${userPrompt}`;
 }
 
 /**
