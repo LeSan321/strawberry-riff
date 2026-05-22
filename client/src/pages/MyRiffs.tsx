@@ -24,6 +24,7 @@ import {
   Flame,
   Pencil,
   ChevronDown,
+  Search,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -686,8 +687,20 @@ function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
 
 export default function MyRiffs() {
   const { isAuthenticated } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
   const tracksQuery = trpc.tracks.myTracks.useQuery(undefined, { enabled: isAuthenticated });
   const tracks = (tracksQuery.data ?? []) as Track[];
+  const filteredTracks = searchQuery.trim()
+    ? tracks.filter((t) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          t.title.toLowerCase().includes(q) ||
+          (t.artist ?? "").toLowerCase().includes(q) ||
+          (t.genre ?? "").toLowerCase().includes(q) ||
+          t.moodTags.some((tag) => tag.toLowerCase().includes(q))
+        );
+      })
+    : tracks;
   const previewLinksQuery = trpc.previewLinks.myActiveLinks.useQuery(undefined, { enabled: isAuthenticated });
   // Build a map of trackId → most recent active link (for badge display)
   const previewLinkByTrack = (previewLinksQuery.data ?? []).reduce<Record<number, { playsRemaining: number; playsTotal: number; token: string }>>((acc, link) => {
@@ -720,16 +733,19 @@ export default function MyRiffs() {
 
   return (
     <div className="container py-10">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-            My Riffs
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {tracks.length} {tracks.length === 1 ? "track" : "tracks"} uploaded
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+              My Riffs
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {searchQuery.trim()
+                ? `${filteredTracks.length} of ${tracks.length} ${tracks.length === 1 ? "track" : "tracks"}`
+                : `${tracks.length} ${tracks.length === 1 ? "track" : "tracks"} uploaded`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
           <button
             onClick={() => document.getElementById('creative-identity')?.scrollIntoView({ behavior: 'smooth' })}
             className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors"
@@ -745,7 +761,29 @@ export default function MyRiffs() {
               Upload New
             </Button>
           </Link>
+          </div>
         </div>
+        {/* Search bar */}
+        {tracks.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, artist, genre, or vibe tag…"
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {tracksQuery.isLoading ? (
@@ -770,11 +808,26 @@ export default function MyRiffs() {
             </Button>
           </Link>
         </motion.div>
+      ) : filteredTracks.length === 0 && searchQuery.trim() ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-purple-300" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No riffs match "{searchQuery}"</h3>
+          <p className="text-muted-foreground mb-4">Try a different title, artist, genre, or vibe tag.</p>
+          <Button variant="outline" onClick={() => setSearchQuery("")}>
+            Clear Search
+          </Button>
+        </motion.div>
       ) : (
         <>
           <AnimatePresence>
             <div className="space-y-3">
-              {tracks.map((track) => (
+              {filteredTracks.map((track) => (
                 <TrackCard key={track.id} track={track} previewLinkStatus={previewLinkByTrack[track.id]} />
               ))}
             </div>
