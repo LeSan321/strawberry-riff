@@ -299,13 +299,27 @@ const tracksRouter = router({
       return getTrackById(id);
     }),
 
-  delete: protectedProcedure
+   delete: protectedProcedure
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
       await deleteTrack(input.id, ctx.user.id);
       return { success: true };
     }),
-
+  bulkUpdateVisibility: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.number().int()).min(1).max(200),
+        visibility: z.enum(["private", "inner-circle", "public"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await Promise.all(
+        input.ids.map((id) =>
+          updateTrack(id, ctx.user.id, { visibility: input.visibility })
+        )
+      );
+      return { updated: input.ids.length };
+    }),
   like: protectedProcedure
     .input(z.object({ trackId: z.number().int() }))
     .mutation(async ({ ctx, input }) => {

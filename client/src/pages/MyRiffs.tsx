@@ -25,6 +25,8 @@ import {
   Pencil,
   ChevronDown,
   Search,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -304,68 +306,32 @@ function EditDialog({ track, onClose }: EditDialogProps) {
   );
 }
 
-function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStatus?: { playsRemaining: number; playsTotal: number; token: string } }) {
-  const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
+interface TrackCardProps {
+  track: Track;
+  previewLinkStatus?: { playsRemaining: number; playsTotal: number; token: string };
+  bulkMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
+}
+
+function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelect }: TrackCardProps) {
   const utils = trpc.useUtils();
+  const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
+  const isCurrentTrack = currentTrack?.id === track.id;
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareAnimating, setShareAnimating] = useState(false);
-  const [previewAnimating, setPreviewAnimating] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(track.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const renameMutation = trpc.tracks.update.useMutation({
-    onSuccess: () => {
-      utils.tracks.myTracks.invalidate();
-      toast.success("Title updated!");
-    },
+  const visConfig = VISIBILITY_CONFIG[track.visibility];
+  const VisIcon = visConfig.icon;
+
+  const updateMutation = trpc.tracks.update.useMutation({
+    onSuccess: () => utils.tracks.myTracks.invalidate(),
     onError: (e) => toast.error(e.message),
   });
-
-  const handleTitleSave = () => {
-    const trimmed = titleDraft.trim();
-    if (!trimmed || trimmed === track.title) { setEditingTitle(false); return; }
-    renameMutation.mutate({ id: track.id, title: trimmed });
-    setEditingTitle(false);
-  };
-
-  const createPreviewLinkMutation = trpc.previewLinks.create.useMutation();
-
-  const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const url = `${window.location.origin}/track/${track.id}`;
-    setShareAnimating(true);
-    setTimeout(() => setShareAnimating(false), 600);
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied — drop it somewhere good 🍓", { duration: 2500 });
-    } catch {
-      toast.info(`Share: ${url}`);
-    }
-  };
-
-  const handleCreatePreviewLink = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPreviewAnimating(true);
-    setTimeout(() => setPreviewAnimating(false), 600);
-    try {
-      const link = await createPreviewLinkMutation.mutateAsync({ trackId: track.id });
-      const url = `${window.location.origin}/preview/${link.token}`;
-      await navigator.clipboard.writeText(url);
-      toast.success(
-        <div>
-          <p className="font-semibold">Preview link created 🍓</p>
-          <p className="text-xs mt-0.5 opacity-80">3 plays — link copied to clipboard</p>
-        </div>,
-        { duration: 4000 }
-      );
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to create preview link");
-    }
-  };
-
-  const isCurrentTrack = currentTrack?.id === track.id;
 
   const deleteMutation = trpc.tracks.delete.useMutation({
     onSuccess: () => {
@@ -375,219 +341,255 @@ function TrackCard({ track, previewLinkStatus }: { track: Track; previewLinkStat
     onError: (e) => toast.error(e.message),
   });
 
-  const updateMutation = trpc.tracks.update.useMutation({
-    onSuccess: () => utils.tracks.myTracks.invalidate(),
-    onError: (e) => toast.error(e.message),
-  });
-
-  const visConfig = VISIBILITY_CONFIG[track.visibility];
-  const VisIcon = visConfig.icon;
-
   const cycleVisibility = () => {
     const order: Visibility[] = ["private", "inner-circle", "public"];
     const next = order[(order.indexOf(track.visibility) + 1) % order.length];
     updateMutation.mutate({ id: track.id, visibility: next });
   };
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/track/${track.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareAnimating(true);
+      toast.success("Link copied!");
+      setTimeout(() => setShareAnimating(false), 600);
+    });
+  };
+
+  const handleTitleSave = () => {
+    if (titleDraft.trim() && titleDraft !== track.title) {
+      updateMutation.mutate({ id: track.id, title: titleDraft.trim() });
+    }
+    setEditingTitle(false);
+  };
+
+  const handlePlay = () => {
+    if (isCurrentTrack && isPlaying) {
+      pause();
+    } else {
+      play({
+        id: track.id,
+        title: track.title,
+        artist: track.artist ?? undefined,
+        audioUrl: track.audioUrl,
+        gradient: track.gradient ?? undefined,
+        coverArtUrl: track.coverArtUrl ?? undefined,
+      });
+    }
+  };
+
   return (
     <>
       <motion.div
         layout
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.2 }}
       >
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
-          <CardContent className="p-0">
-            <div className="flex items-stretch">
-              {/* Cover art / color bar + play button */}
-              <div
-                className={`w-20 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer relative overflow-hidden`}
-                onClick={() => {
-                  if (isCurrentTrack && isPlaying) {
-                    pause();
-                  } else {
-                    play({
-                      id: track.id,
-                      title: track.title,
-                      artist: track.artist,
-                      audioUrl: track.audioUrl,
-                      gradient: track.gradient,
-                      moodTags: track.moodTags,
-                      coverArtUrl: track.coverArtUrl,
-                    });
-                  }
-                }}
-              >
-                {track.coverArtUrl && (
-                  <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
-                )}
-                {isCurrentTrack && isPlaying && (
-                  <div className="absolute inset-0 ring-2 ring-white/60 pointer-events-none animate-pulse" />
-                )}
-                <motion.div
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 rounded-full bg-white/30 backdrop-blur flex items-center justify-center relative z-10"
+        <Card
+          className={`transition-all duration-200 ${
+            bulkMode
+              ? selected
+                ? "ring-2 ring-purple-500 bg-purple-50/30"
+                : "hover:ring-1 hover:ring-purple-300"
+              : ""
+          }`}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              {/* Bulk select checkbox */}
+              {bulkMode && (
+                <button
+                  onClick={() => onToggleSelect?.(track.id)}
+                  className="flex-shrink-0 text-purple-500 hover:text-purple-700 transition-colors"
                 >
-                  {isCurrentTrack && isPlaying ? (
-                    <Pause className="w-5 h-5 text-white" />
+                  {selected ? (
+                    <CheckSquare className="w-5 h-5" />
                   ) : (
-                    <Play className="w-5 h-5 text-white ml-0.5" />
+                    <Square className="w-5 h-5 text-muted-foreground" />
                   )}
-                </motion.div>
-              </div>
+                </button>
+              )}
 
-              {/* Track info */}
-              <div className="flex-1 p-4 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    {/* Preview link play status badge */}
-                    {previewLinkStatus && track.visibility !== "public" && (
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="flex items-center gap-1 text-xs font-medium text-orange-500">
-                          <Flame className="w-3 h-3" />
-                          {previewLinkStatus.playsTotal - previewLinkStatus.playsRemaining}/{previewLinkStatus.playsTotal} plays used
-                        </span>
-                        {previewLinkStatus.playsRemaining > 0 ? (
-                          <span className="text-xs text-muted-foreground">· {previewLinkStatus.playsRemaining} left</span>
-                        ) : (
-                          <span className="text-xs text-orange-600 font-medium">· exhausted</span>
-                        )}
-                      </div>
-                    )}
-                    {editingTitle ? (
-                      <input
-                        ref={titleInputRef}
-                        value={titleDraft}
-                        onChange={(e) => setTitleDraft(e.target.value)}
-                        onBlur={handleTitleSave}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleTitleSave();
-                          if (e.key === "Escape") { setTitleDraft(track.title); setEditingTitle(false); }
-                        }}
-                        className="font-semibold text-foreground text-sm bg-transparent border-b border-pink-400 outline-none w-full min-w-0"
-                        autoFocus
-                      />
+              {/* Cover art / play button */}
+              <div
+                className={`w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0 cursor-pointer relative group`}
+                onClick={bulkMode ? () => onToggleSelect?.(track.id) : handlePlay}
+              >
+                {track.coverArtUrl ? (
+                  <img src={track.coverArtUrl} alt={track.title} className="w-full h-full object-cover" />
+                ) : (
+                  <Music className="w-5 h-5 text-white" />
+                )}
+                {!bulkMode && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    {isCurrentTrack && isPlaying ? (
+                      <Pause className="w-5 h-5 text-white" />
                     ) : (
-                      <button
-                        className="font-semibold text-foreground truncate text-left group flex items-center gap-1 hover:text-pink-600 transition-colors w-full min-w-0"
-                        onClick={(e) => { e.stopPropagation(); setTitleDraft(track.title); setEditingTitle(true); }}
-                        title="Click to rename"
-                      >
-                        <span className="truncate">{track.title}</span>
-                        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
-                      </button>
-                    )}
-                    {track.artist && (
-                      <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
+                      <Play className="w-5 h-5 text-white" />
                     )}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {/* Preview link button — only for private/inner-circle tracks */}
-                    {track.visibility !== "public" && (
-                      <motion.button
-                        onClick={handleCreatePreviewLink}
-                        animate={previewAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
-                        transition={{ duration: 0.4 }}
-                        disabled={createPreviewLinkMutation.isPending}
-                        className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${previewAnimating ? "text-orange-500" : "text-gray-400 hover:text-orange-500"}`}
-                        title="Create 3-play preview link — share with non-followers to invite them in"
-                      >
-                        {createPreviewLinkMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Flame className="w-4 h-4" />
-                        )}
-                      </motion.button>
-                    )}
+                )}
+              </div>
+
+              {/* Title + meta */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  {editingTitle ? (
+                    <input
+                      ref={titleInputRef}
+                      value={titleDraft}
+                      onChange={(e) => setTitleDraft(e.target.value)}
+                      onBlur={handleTitleSave}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleTitleSave();
+                        if (e.key === "Escape") { setTitleDraft(track.title); setEditingTitle(false); }
+                      }}
+                      className="text-sm font-semibold bg-transparent border-b border-purple-400 outline-none flex-1 min-w-0"
+                      autoFocus
+                    />
+                  ) : (
+                    <Link href={`/track/${track.id}`}>
+                      <span className="text-sm font-semibold hover:text-purple-600 transition-colors truncate block">
+                        {track.title}
+                      </span>
+                    </Link>
+                  )}
+                  {!bulkMode && (
+                    <button
+                      onClick={() => { setEditingTitle(true); setTimeout(() => titleInputRef.current?.focus(), 0); }}
+                      className="text-muted-foreground hover:text-purple-500 transition-colors flex-shrink-0"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                {track.artist && (
+                  <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                )}
+              </div>
+
+              {/* Preview link badge */}
+              {!bulkMode && previewLinkStatus && (
+                <div className="flex-shrink-0">
+                  <Link href={`/preview/${previewLinkStatus.token}`}>
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100 cursor-pointer"
+                      title={`Preview link active — ${previewLinkStatus.playsRemaining}/${previewLinkStatus.playsTotal} plays remaining`}
+                    >
+                      {previewLinkStatus.playsRemaining}/{previewLinkStatus.playsTotal} plays
+                    </Badge>
+                  </Link>
+                </div>
+              )}
+
+              {/* Actions */}
+              {!bulkMode && (
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {isCurrentTrack && isPlaying ? (
                     <motion.button
-                      onClick={handleShare}
-                      animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
-                      transition={{ duration: 0.4 }}
-                      className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
-                      title={track.visibility === "public" ? "Copy track link" : track.visibility === "inner-circle" ? "Copy link — Inner Circle only" : "Copy link — Private (only you can view)"}
+                      onClick={pause}
+                      className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-purple-500 hover:bg-purple-50 transition-colors"
                     >
-                      <LinkIcon className="w-4 h-4" />
+                      <Pause className="w-4 h-4" />
                     </motion.button>
-                    <AddToPlaylistButton trackId={track.id} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setEditOpen(true)}
+                  ) : (
+                    <motion.button
+                      onClick={handlePlay}
+                      className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-gray-400 hover:text-purple-500 transition-colors"
                     >
-                      <Edit2 className="w-4 h-4 text-gray-400 hover:text-purple-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setConfirmDelete(true)}
-                    >
-                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  {/* Visibility badge — clickable to cycle */}
-                  <button
-                    onClick={cycleVisibility}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${visConfig.color} hover:opacity-80 transition-opacity`}
-                    title="Click to change visibility"
-                  >
-                    {updateMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <VisIcon className="w-3 h-3" />
-                    )}
-                    {visConfig.label}
-                  </button>
-
-                  {track.genre && (
-                    <span className="text-xs text-muted-foreground">{track.genre}</span>
+                      <Play className="w-4 h-4" />
+                    </motion.button>
                   )}
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {formatDuration(track.duration)}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Heart className="w-3 h-3" />
-                    {track.likes}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <BarChart2 className="w-3 h-3" />
-                    {track.plays}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {formatDate(track.createdAt)}
-                  </span>
+                  <motion.button
+                    onClick={handleShare}
+                    animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
+                    transition={{ duration: 0.4 }}
+                    className={`h-8 w-8 p-0 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
+                    title={track.visibility === "public" ? "Copy track link" : track.visibility === "inner-circle" ? "Copy link — Inner Circle only" : "Copy link — Private (only you can view)"}
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                  </motion.button>
+                  <AddToPlaylistButton trackId={track.id} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Edit2 className="w-4 h-4 text-gray-400 hover:text-purple-500" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+                  </Button>
                 </div>
-
-                {track.moodTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {track.moodTags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="text-xs bg-purple-50 text-purple-600 border-0"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                {/* Blend description — shown for custom mix tracks */}
-                {track.description && (
-                  <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5 leading-relaxed">
-                    <span className="mt-0.5 shrink-0 text-pink-400">🎛️</span>
-                    <span>{track.description}</span>
-                  </p>
-                )}
-              </div>
+              )}
             </div>
+
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {/* Visibility badge — clickable to cycle */}
+              <button
+                onClick={bulkMode ? undefined : cycleVisibility}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${visConfig.color} ${!bulkMode ? "hover:opacity-80 transition-opacity" : ""}`}
+                title={bulkMode ? undefined : "Click to change visibility"}
+                disabled={bulkMode}
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <VisIcon className="w-3 h-3" />
+                )}
+                {visConfig.label}
+              </button>
+
+              {track.genre && (
+                <span className="text-xs text-muted-foreground">{track.genre}</span>
+              )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                {formatDuration(track.duration)}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Heart className="w-3 h-3" />
+                {track.likes}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <BarChart2 className="w-3 h-3" />
+                {track.plays}
+              </span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {formatDate(track.createdAt)}
+              </span>
+            </div>
+
+            {track.moodTags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {track.moodTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="text-xs bg-purple-50 text-purple-600 border-0"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Blend description — shown for custom mix tracks */}
+            {track.description && (
+              <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5 leading-relaxed">
+                <span className="mt-0.5 shrink-0 text-pink-400">🎛️</span>
+                <span>{track.description}</span>
+              </p>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -651,23 +653,19 @@ function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
     >
       <div className="flex items-center gap-2 mb-4">
         <Flame className="w-5 h-5 text-pink-500" />
-        <h2 className="text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-          Your Creative Identity
-        </h2>
+        <h3 className="text-lg font-bold text-gray-800">Your Creative Identity</h3>
       </div>
-      <p className="text-sm text-muted-foreground mb-5">
-        These are the vibes that define your sound — the emotional fingerprint across all your riffs.
+      <p className="text-sm text-muted-foreground mb-4">
+        Based on your vibe tags, here's what defines your sound:
       </p>
       <div className="space-y-2">
         {topTags.map(([tag, count]) => (
           <div key={tag} className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-800 w-28 truncate flex-shrink-0">{tag}</span>
-            <div className="flex-1 h-2 rounded-full bg-pink-100 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(count / maxCount) * 100}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="h-full rounded-full bg-gradient-to-r from-pink-400 to-purple-500"
+            <span className="text-sm font-medium text-gray-700 w-32 truncate">{tag}</span>
+            <div className="flex-1 bg-pink-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-pink-400 to-purple-500 rounded-full transition-all"
+                style={{ width: `${(count / maxCount) * 100}%` }}
               />
             </div>
             <span className="text-xs text-muted-foreground w-12 text-right flex-shrink-0">
@@ -685,22 +683,56 @@ function CreativeIdentityPanel({ tracks }: { tracks: Track[] }) {
   );
 }
 
+const VISIBILITY_FILTERS: { value: "all" | Visibility; label: string; icon: React.ElementType }[] = [
+  { value: "all", label: "All", icon: Music },
+  { value: "public", label: "Public", icon: Globe },
+  { value: "inner-circle", label: "Inner Circle", icon: Users },
+  { value: "private", label: "Private", icon: Lock },
+];
+
 export default function MyRiffs() {
   const { isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | Visibility>("all");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const tracksQuery = trpc.tracks.myTracks.useQuery(undefined, { enabled: isAuthenticated });
   const tracks = (tracksQuery.data ?? []) as Track[];
-  const filteredTracks = searchQuery.trim()
-    ? tracks.filter((t) => {
-        const q = searchQuery.toLowerCase();
-        return (
-          t.title.toLowerCase().includes(q) ||
-          (t.artist ?? "").toLowerCase().includes(q) ||
-          (t.genre ?? "").toLowerCase().includes(q) ||
-          t.moodTags.some((tag) => tag.toLowerCase().includes(q))
-        );
-      })
-    : tracks;
+
+  const bulkUpdateMutation = trpc.tracks.bulkUpdateVisibility.useMutation({
+    onSuccess: (data) => {
+      utils.tracks.myTracks.invalidate();
+      toast.success(`Updated ${data.updated} track${data.updated !== 1 ? "s" : ""}`);
+      setSelectedIds(new Set());
+      setBulkMode(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const filteredTracks = tracks.filter((t) => {
+    const matchesVisibility = visibilityFilter === "all" || t.visibility === visibilityFilter;
+    if (!matchesVisibility) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      t.title.toLowerCase().includes(q) ||
+      (t.artist ?? "").toLowerCase().includes(q) ||
+      (t.genre ?? "").toLowerCase().includes(q) ||
+      t.moodTags.some((tag) => tag.toLowerCase().includes(q))
+    );
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => setSelectedIds(new Set(filteredTracks.map((t) => t.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+
   const previewLinksQuery = trpc.previewLinks.myActiveLinks.useQuery(undefined, { enabled: isAuthenticated });
   // Build a map of trackId → most recent active link (for badge display)
   const previewLinkByTrack = (previewLinksQuery.data ?? []).reduce<Record<number, { playsRemaining: number; playsTotal: number; token: string }>>((acc, link) => {
@@ -734,35 +766,37 @@ export default function MyRiffs() {
   return (
     <div className="container py-10">
       <div className="flex flex-col gap-4 mb-8">
+        {/* Header row */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
               My Riffs
             </h1>
             <p className="text-muted-foreground mt-1">
-              {searchQuery.trim()
+              {searchQuery.trim() || visibilityFilter !== "all"
                 ? `${filteredTracks.length} of ${tracks.length} ${tracks.length === 1 ? "track" : "tracks"}`
                 : `${tracks.length} ${tracks.length === 1 ? "track" : "tracks"} uploaded`}
             </p>
           </div>
           <div className="flex items-center gap-2">
-          <button
-            onClick={() => document.getElementById('creative-identity')?.scrollIntoView({ behavior: 'smooth' })}
-            className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors"
-            title="Jump to Your Creative Identity"
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">My Vibe</span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-          <Link href="/upload">
-            <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0">
-              <Plus className="w-4 h-4 mr-2" />
-              Upload New
-            </Button>
-          </Link>
+            <button
+              onClick={() => document.getElementById("creative-identity")?.scrollIntoView({ behavior: "smooth" })}
+              className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors"
+              title="Jump to Your Creative Identity"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">My Vibe</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <Link href="/upload">
+              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0">
+                <Plus className="w-4 h-4 mr-2" />
+                Upload New
+              </Button>
+            </Link>
           </div>
         </div>
+
         {/* Search bar */}
         {tracks.length > 0 && (
           <div className="relative">
@@ -783,6 +817,99 @@ export default function MyRiffs() {
               </button>
             )}
           </div>
+        )}
+
+        {/* Visibility filter tabs */}
+        {tracks.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {VISIBILITY_FILTERS.map(({ value, label, icon: Icon }) => {
+              const count = value === "all" ? tracks.length : tracks.filter((t) => t.visibility === value).length;
+              const isActive = visibilityFilter === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setVisibilityFilter(value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                    isActive
+                      ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-sm"
+                      : "bg-card text-muted-foreground border-border hover:border-purple-300 hover:text-purple-600"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-muted"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* Bulk edit toggle */}
+            <button
+              onClick={() => {
+                setBulkMode((v) => !v);
+                clearSelection();
+              }}
+              className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                bulkMode
+                  ? "bg-purple-100 text-purple-700 border-purple-300"
+                  : "bg-card text-muted-foreground border-border hover:border-purple-300 hover:text-purple-600"
+              }`}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              {bulkMode ? "Cancel" : "Select"}
+            </button>
+          </div>
+        )}
+
+        {/* Bulk action bar */}
+        {bulkMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-200"
+          >
+            <span className="text-sm font-medium text-purple-700">
+              {selectedIds.size} selected
+            </span>
+            <button
+              onClick={selectedIds.size === filteredTracks.length ? clearSelection : selectAll}
+              className="text-xs text-purple-600 hover:text-purple-800 underline"
+            >
+              {selectedIds.size === filteredTracks.length ? "Deselect all" : "Select all"}
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Change visibility to:</span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || bulkUpdateMutation.isPending}
+                onClick={() => bulkUpdateMutation.mutate({ ids: Array.from(selectedIds), visibility: "private" })}
+                className="h-7 text-xs gap-1 border-gray-300"
+              >
+                <Lock className="w-3 h-3" /> Private
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || bulkUpdateMutation.isPending}
+                onClick={() => bulkUpdateMutation.mutate({ ids: Array.from(selectedIds), visibility: "inner-circle" })}
+                className="h-7 text-xs gap-1 border-blue-300 text-blue-600"
+              >
+                <Users className="w-3 h-3" /> Inner Circle
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || bulkUpdateMutation.isPending}
+                onClick={() => bulkUpdateMutation.mutate({ ids: Array.from(selectedIds), visibility: "public" })}
+                className="h-7 text-xs gap-1 border-green-300 text-green-600"
+              >
+                <Globe className="w-3 h-3" /> Public
+              </Button>
+              {bulkUpdateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-purple-500" />}
+            </div>
+          </motion.div>
         )}
       </div>
 
@@ -808,7 +935,7 @@ export default function MyRiffs() {
             </Button>
           </Link>
         </motion.div>
-      ) : filteredTracks.length === 0 && searchQuery.trim() ? (
+      ) : filteredTracks.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -817,18 +944,38 @@ export default function MyRiffs() {
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8 text-purple-300" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No riffs match "{searchQuery}"</h3>
-          <p className="text-muted-foreground mb-4">Try a different title, artist, genre, or vibe tag.</p>
-          <Button variant="outline" onClick={() => setSearchQuery("")}>
-            Clear Search
-          </Button>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            {searchQuery.trim() ? `No riffs match "${searchQuery}"` : `No ${visibilityFilter} tracks`}
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            {searchQuery.trim() ? "Try a different title, artist, genre, or vibe tag." : "You have no tracks with this visibility setting."}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            {searchQuery.trim() && (
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
+                Clear Search
+              </Button>
+            )}
+            {visibilityFilter !== "all" && (
+              <Button variant="outline" onClick={() => setVisibilityFilter("all")}>
+                Show All
+              </Button>
+            )}
+          </div>
         </motion.div>
       ) : (
         <>
           <AnimatePresence>
             <div className="space-y-3">
               {filteredTracks.map((track) => (
-                <TrackCard key={track.id} track={track} previewLinkStatus={previewLinkByTrack[track.id]} />
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  previewLinkStatus={previewLinkByTrack[track.id]}
+                  bulkMode={bulkMode}
+                  selected={selectedIds.has(track.id)}
+                  onToggleSelect={toggleSelect}
+                />
               ))}
             </div>
           </AnimatePresence>
