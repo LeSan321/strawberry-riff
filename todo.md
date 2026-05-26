@@ -967,4 +967,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add Generate Cover Art button to Upload page (calls frequency.generateCoverArt)
 - [x] Save Listening Bible (all 9 chapters) as project reference
 - [x] Save riff_studios_bridge_handoff.md as project reference
-- [ ] Validate bridge endpoints once Studios registers /api/bridge/* routes
+- [x] Validate bridge endpoints — /api/bridge/ping confirmed live, 3 bridge tests passing
