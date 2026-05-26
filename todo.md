@@ -954,3 +954,17 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix Audio Generator: change default vocal archetype from "intimate-bedroom" to "no preference"
 - [x] Fix Audio Generator: add [genre-strict] tag to all prompts via buildPromptWithIntensity
 - [x] Add "No preference — let the genre decide" option to Vocal Character selector
+
+## Phase 96 — Strawberry Studios Bridge
+
+- [x] Add STUDIOS_BRIDGE_URL and STUDIOS_BRIDGE_KEY secrets to Riff project
+- [x] Add studiosBridgeUrl and studiosBridgeKey to env.ts
+- [x] Create server/frequency/router.ts with getDefault, synthesize, save, generateCoverArt, ping procedures
+- [x] Wire frequencyRouter into appRouter in routers.ts
+- [x] Build FrequencyModal component (8-screen diagnostic flow: existing, q1-q4, reflection, vocabulary, name)
+- [x] Add "Your Frequency" entry point to Studio sidebar
+- [x] Import and render FrequencyModal in Studio.tsx
+- [x] Add Generate Cover Art button to Upload page (calls frequency.generateCoverArt)
+- [x] Save Listening Bible (all 9 chapters) as project reference
+- [x] Save riff_studios_bridge_handoff.md as project reference
+- [ ] Validate bridge endpoints once Studios registers /api/bridge/* routes

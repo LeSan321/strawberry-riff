@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { GeneratePage } from "./Generate";
 import { LyricsGeneratorPage } from "./LyricsGenerator";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
+import { FrequencyModal } from "@/components/FrequencyModal";
 import { StyleLibrary } from "./StyleLibrary";
 import { MyStemsPanel } from "@/components/MyStemsPanel";
 
@@ -185,12 +186,14 @@ function StudioSidebar({
   theme,
   onOpenThemePicker,
   onOpenFusions,
+  onOpenFrequency,
 }: {
   activeTool: "generate" | "lyrics" | "styles" | "stems";
   onToolChange: (t: "generate" | "lyrics" | "styles" | "stems") => void;
   theme: typeof STUDIO_THEMES[0];
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
+  onOpenFrequency: () => void;
 }) {
   const { user } = useAuth();
   const { data: monthlyUsage } = trpc.musicGeneration.monthlyUsage.useQuery(
@@ -269,6 +272,17 @@ function StudioSidebar({
           <div className="hidden md:block">
             <p className="text-sm font-medium leading-none">Writer's Bible</p>
             <p className="text-xs mt-0.5 text-gray-500">Craft guide</p>
+          </div>
+        </button>
+
+        <button
+          onClick={onOpenFrequency}
+          className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}
+        >
+          <Zap className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none">Your Frequency</p>
+            <p className="text-xs mt-0.5 opacity-60">Visual universe</p>
           </div>
         </button>
       </nav>
@@ -546,6 +560,7 @@ export default function Studio() {
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
+  const [frequencyOpen, setFrequencyOpen] = useState(false);
 
   const prefsQuery = trpc.studio.getPreferences.useQuery(undefined, {
     enabled: !!user,
@@ -640,6 +655,7 @@ export default function Studio() {
           theme={theme}
           onOpenThemePicker={() => setThemePickerOpen(true)}
           onOpenFusions={() => setFusionsOpen(true)}
+        onOpenFrequency={() => setFrequencyOpen(true)}
         />
       </div>
 
@@ -771,6 +787,11 @@ export default function Studio() {
         open={fusionsOpen}
         onClose={() => setFusionsOpen(false)}
       />
+
+      {/* Frequency / Visual Universe Modal */}
+      {frequencyOpen && (
+        <FrequencyModal onClose={() => setFrequencyOpen(false)} />
+      )}
     </div>
   );
 }

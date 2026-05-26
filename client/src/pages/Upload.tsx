@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle,
   ImagePlus,
+  Zap,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,9 @@ export default function Upload() {
   const getUploadUrl = trpc.tracks.getUploadUrl.useMutation();
   const createTrack = trpc.tracks.create.useMutation();
   const uploadCoverArt = trpc.tracks.uploadCoverArt.useMutation();
+  const generateCoverArtMutation = trpc.frequency.generateCoverArt.useMutation();
   const utils = trpc.useUtils();
+  const [generatingCover, setGeneratingCover] = useState(false);
 
   const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -492,10 +495,55 @@ export default function Upload() {
                     {uploadingCover ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <ImagePlus className="w-5 h-5 text-white" />}
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground flex-1">
                   <p className="font-medium text-foreground">Upload a cover image</p>
                   <p className="text-xs mt-0.5">JPG, PNG, or WebP — optional</p>
                   <p className="text-xs mt-0.5">Shown on your track card and in the player</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-2"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingCover || generatingCover}
+                    >
+                      {uploadingCover ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ImagePlus className="w-3 h-3 mr-1" />}
+                      Upload
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-2 border-purple-500/40 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+                      disabled={generatingCover || uploadingCover}
+                      onClick={async () => {
+                        setGeneratingCover(true);
+                        try {
+                          const result = await generateCoverArtMutation.mutateAsync({
+                            genre: form.genre || undefined,
+                          });
+                          if (result.coverArtUrl) {
+                            setCoverPreview(result.coverArtUrl);
+                            setForm((p) => ({ ...p, coverArtUrl: result.coverArtUrl }));
+                            toast.success(result.usedPersonalFrequency
+                              ? "Cover art generated using your Visual Universe"
+                              : "Cover art generated"
+                            );
+                          } else {
+                            toast.error("Cover art generation failed — try again");
+                          }
+                        } catch {
+                          toast.error("Cover art generation unavailable right now");
+                        } finally {
+                          setGeneratingCover(false);
+                        }
+                      }}
+                    >
+                      {generatingCover ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
+                      Generate
+                    </Button>
+                  </div>
                   {coverPreview && (
                     <button
                       className="text-xs text-red-400 hover:text-red-600 mt-2"

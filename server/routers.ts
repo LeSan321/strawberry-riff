@@ -77,6 +77,7 @@ import { mixerRouter } from "./routers/mixer";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { ogImageRouter } from "./routers/ogImage";
 import { coverArtRouter } from "./coverArt/router";
+import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { storagePut } from "./storage";
@@ -1482,6 +1483,7 @@ export const appRouter = router({
   previewLinks: previewLinksRouter,
   ogImage: ogImageRouter,
   coverArt: coverArtRouter,
+  frequency: frequencyRouter,
 });
 
 export type AppRouter = typeof appRouter;
