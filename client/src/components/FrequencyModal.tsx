@@ -4,33 +4,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, Zap, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { Loader2, Zap, ChevronRight, ChevronLeft, Sparkles, Radio } from "lucide-react";
 import { toast } from "sonner";
 
+// Spec-aligned questions — indirect approach, felt/remembered not performed
 const QUESTIONS = [
   {
     id: "q1_sound_space",
-    label: "Sound & Space",
-    question: "When your music plays in a room, what does that room feel like? Describe the space — its size, temperature, texture, and light.",
-    placeholder: "A cathedral at dusk. Stone walls that hold warmth. The kind of quiet that feels inhabited...",
+    label: "Question 1 of 4",
+    question: "Think of a piece of music — yours or someone else's — that felt like it already knew something about you. What was happening in your life when you found it?",
+    placeholder: "A season of life, a feeling, a moment. Whatever comes first...",
+    hint: "No right answer. Just what's true.",
   },
   {
     id: "q2_light_color",
-    label: "Light & Color",
-    question: "If your music had a color palette, what would it be? Not the genre's colors — your music's specific colors.",
-    placeholder: "Deep amber bleeding into violet. The color of old photographs left in sunlight...",
+    label: "Question 2 of 4",
+    question: "Where does a listener start when they enter your music — and where are they when it ends? Not what happens. What changes inside them.",
+    placeholder: "They arrive carrying something heavy. They leave with it still there, but held differently...",
+    hint: "The distance between those two states is the arc.",
   },
   {
     id: "q3_world_texture",
-    label: "World & Texture",
-    question: "What world does your music exist in? What are the surfaces, materials, and textures of that world?",
-    placeholder: "Worn leather and cold glass. Concrete that's been rained on. Something between industrial and sacred...",
+    label: "Question 3 of 4",
+    question: "What is your music moving against? Not what it is — what it refuses to be.",
+    placeholder: "Music that performs emotion rather than feeling it. Sound that decorates instead of means something...",
+    hint: "What you're moving away from shapes what you're building.",
   },
   {
     id: "q4_arc_time",
-    label: "Arc & Time",
-    question: "Where in a story does your music live? Is it the beginning of something, the middle, the resolution — or somewhere outside of narrative time entirely?",
-    placeholder: "Always the moment just before. The held breath. Not the arrival but the approach...",
+    label: "Question 4 of 4",
+    question: "If your music existed as a place — not a metaphor, an actual place — what would it look like? What time of day? What's the quality of the light?",
+    placeholder: "Late afternoon in a room with high ceilings. The kind of light that makes everything feel like it's about to mean something...",
+    hint: "Trust the first image that comes.",
   },
 ];
 
@@ -55,9 +60,7 @@ type SynthesisResult = {
   };
 };
 
-type Screen = "existing" | "q1" | "q2" | "q3" | "q4" | "reflection" | "vocabulary" | "name";
-
-const SCREEN_ORDER: Screen[] = ["existing", "q1", "q2", "q3", "q4", "reflection", "vocabulary", "name"];
+type Screen = "loading" | "existing" | "intro" | "q1" | "q2" | "q3" | "q4" | "synthesizing" | "reflection" | "vocabulary" | "name";
 
 const VOCAB_LABELS: Record<string, string> = {
   emotionalRegister: "Emotional Register",
@@ -68,13 +71,16 @@ const VOCAB_LABELS: Record<string, string> = {
   forbiddenTerms: "Avoid",
 };
 
-export function FrequencyModal({ onClose }: { onClose: () => void }) {
+export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
   const utils = trpc.useUtils();
-  const { data: existingFrequency, isLoading: loadingExisting } = trpc.frequency.getDefault.useQuery();
+  const { data: existingFrequency, isLoading: loadingExisting, isError: errorExisting } = trpc.frequency.getDefault.useQuery(undefined, {
+    retry: 1,
+    staleTime: 0,
+  });
   const synthesizeMutation = trpc.frequency.synthesize.useMutation();
   const saveMutation = trpc.frequency.save.useMutation();
 
-  const [screen, setScreen] = useState<Screen>("existing");
+  const [screen, setScreen] = useState<Screen>("loading");
   const [answers, setAnswers] = useState<Answers>({
     q1_sound_space: "",
     q2_light_color: "",
@@ -84,14 +90,28 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [frequencyName, setFrequencyName] = useState("");
 
+  // Transition from loading to correct screen once query resolves
+  if (screen === "loading" && !loadingExisting) {
+    if (errorExisting || !existingFrequency) {
+      // Bridge unreachable — go straight to intro so user isn't stuck
+      setTimeout(() => setScreen("intro"), 0);
+    } else if (existingFrequency.hasFrequency && existingFrequency.frequency) {
+      setTimeout(() => setScreen("existing"), 0);
+    } else {
+      setTimeout(() => setScreen("intro"), 0);
+    }
+  }
+
   const handleSynthesize = async () => {
+    setScreen("synthesizing");
     try {
       const result = await synthesizeMutation.mutateAsync(answers);
       setSynthesis(result.synthesis);
       setFrequencyName(result.synthesis.frequencyName);
       setScreen("reflection");
     } catch {
-      toast.error("Synthesis failed. Please try again.");
+      toast.error("Something went wrong. Please try again.");
+      setScreen("q4");
     }
   };
 
@@ -113,42 +133,45 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const goBack = () => {
-    const idx = SCREEN_ORDER.indexOf(screen);
-    setScreen(SCREEN_ORDER[Math.max(0, idx - 1)]);
-  };
-
-  const goNext = () => {
-    const idx = SCREEN_ORDER.indexOf(screen);
-    setScreen(SCREEN_ORDER[Math.min(SCREEN_ORDER.length - 1, idx + 1)]);
-  };
-
   const currentQ = QUESTIONS.find(q => q.id === screen);
   const currentAnswerKey = currentQ?.id as keyof Answers | undefined;
   const currentAnswer = currentAnswerKey ? answers[currentAnswerKey] : "";
 
-  const stepNumber = ["q1", "q2", "q3", "q4"].indexOf(screen as any) + 1;
-  const totalSteps = 4;
+  const questionIndex = QUESTIONS.findIndex(q => q.id === screen);
+
+  const goBackFromQuestion = () => {
+    if (questionIndex <= 0) setScreen("intro");
+    else setScreen(QUESTIONS[questionIndex - 1].id as Screen);
+  };
+
+  const goNextFromQuestion = () => {
+    if (questionIndex >= QUESTIONS.length - 1) {
+      handleSynthesize();
+    } else {
+      setScreen(QUESTIONS[questionIndex + 1].id as Screen);
+    }
+  };
 
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg bg-[#0d0a1a] border-purple-500/30 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
-            <Zap className="w-5 h-5 text-[#e91e8c]" />
-            {screen === "existing" ? "Your Visual Universe" : "Find Your Frequency"}
+            <Radio className="w-5 h-5 text-[#e91e8c]" />
+            Find Your Frequency
           </DialogTitle>
         </DialogHeader>
 
-        {/* Loading state */}
-        {screen === "existing" && loadingExisting && (
-          <div className="flex items-center justify-center py-8">
+        {/* Loading — bridge query in flight */}
+        {screen === "loading" && (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+            <p className="text-sm text-gray-500">A moment...</p>
           </div>
         )}
 
         {/* Existing frequency view */}
-        {screen === "existing" && !loadingExisting && existingFrequency?.hasFrequency && existingFrequency.frequency && (
+        {screen === "existing" && existingFrequency?.frequency && (
           <div className="space-y-4">
             <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4">
               <p className="text-xs text-purple-300 uppercase tracking-wider mb-1">Your Frequency</p>
@@ -189,36 +212,48 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
               } catch { return null; }
             })()}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-purple-500/30 text-gray-300 hover:text-white" onClick={onClose}>
+              <Button variant="outline" className="flex-1 border-purple-500/30 text-gray-300 hover:text-white bg-transparent" onClick={onClose}>
                 Close
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 border-[#e91e8c]/40 text-[#e91e8c] hover:bg-[#e91e8c]/10"
-                onClick={() => setScreen("q1")}
+                className="flex-1 border-[#e91e8c]/40 text-[#e91e8c] hover:bg-[#e91e8c]/10 bg-transparent"
+                onClick={() => {
+                  setAnswers({ q1_sound_space: "", q2_light_color: "", q3_world_texture: "", q4_arc_time: "" });
+                  setSynthesis(null);
+                  setScreen("intro");
+                }}
               >
-                Redo Diagnostic
+                Update My Frequency
               </Button>
             </div>
           </div>
         )}
 
-        {/* No frequency yet — start diagnostic */}
-        {screen === "existing" && !loadingExisting && !existingFrequency?.hasFrequency && (
-          <div className="space-y-4">
-            <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-[#e91e8c] flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-gray-200 leading-relaxed">
-                    Your Visual Universe is the visual language of your music. Answer four questions and the system will synthesize a personal vocabulary that guides your cover art AI.
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Takes about 3–5 minutes. No right answers.</p>
-                </div>
-              </div>
+        {/* Intro — spec-aligned copy */}
+        {screen === "intro" && (
+          <div className="space-y-5">
+            <div className="space-y-3">
+              <p className="text-xs text-purple-300 uppercase tracking-wider">Strawberry Studios</p>
+              <p className="text-2xl font-bold leading-tight">
+                Find Your<br />
+                <span className="text-[#e91e8c]">Frequency</span>
+              </p>
+              <p className="text-sm text-gray-400 italic">Same core identity. Spectrum of expression.</p>
+            </div>
+            <div className="space-y-3 text-sm text-gray-300 leading-relaxed">
+              <p>
+                Every creator has a visual world that belongs to their music — a specific quality of light, a particular kind of space, a way that things move or hold still. Most platforms ignore this. They generate cover art from genre tags and stock imagery grammar.
+              </p>
+              <p>
+                Find Your Frequency is different. It listens to how you talk about your music — not what genre it is, but what it feels like from the inside — and builds a persistent visual vocabulary from your own words. That vocabulary becomes the lens through which every piece of cover art is generated.
+              </p>
+              <p className="text-gray-500">
+                Four questions. No right answers. The platform reflects back what it hears.
+              </p>
             </div>
             <Button
-              className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white"
+              className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white h-12 text-base"
               onClick={() => setScreen("q1")}
             >
               Begin <ChevronRight className="w-4 h-4 ml-1" />
@@ -228,74 +263,76 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
 
         {/* Diagnostic questions */}
         {currentQ && currentAnswerKey && (
-          <div className="space-y-4">
-            {/* Progress */}
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map(n => (
-                  <div
-                    key={n}
-                    className={`h-1 w-8 rounded-full transition-colors ${n <= stepNumber ? "bg-[#e91e8c]" : "bg-white/10"}`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-gray-500">{stepNumber} of {totalSteps}</span>
+          <div className="space-y-5">
+            {/* Minimal progress — dots not a bar (spec: no progress bars that feel like obligations) */}
+            <div className="flex items-center gap-1.5">
+              {QUESTIONS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 rounded-full transition-all ${i <= questionIndex ? "w-6 bg-[#e91e8c]" : "w-3 bg-white/10"}`}
+                />
+              ))}
             </div>
-            <div>
-              <p className="text-xs text-purple-300 uppercase tracking-wider mb-2">{currentQ.label}</p>
-              <p className="text-sm text-gray-200 leading-relaxed mb-3">{currentQ.question}</p>
+            <div className="space-y-3">
+              <p className="text-xs text-purple-300 uppercase tracking-wider">{currentQ.label}</p>
+              <p className="text-base text-gray-100 leading-relaxed">{currentQ.question}</p>
+              <p className="text-xs text-gray-600 italic">{currentQ.hint}</p>
               <Textarea
                 value={currentAnswer}
                 onChange={(e) => setAnswers(prev => ({ ...prev, [currentQ.id]: e.target.value }))}
                 placeholder={currentQ.placeholder}
-                className="bg-white/5 border-purple-500/20 text-white placeholder:text-gray-600 min-h-[120px] resize-none"
+                className="bg-white/5 border-purple-500/20 text-white placeholder:text-gray-600 min-h-[130px] resize-none mt-1"
               />
             </div>
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="border-purple-500/30 text-gray-400 hover:text-white"
-                onClick={goBack}
+                className="border-purple-500/30 text-gray-400 hover:text-white bg-transparent"
+                onClick={goBackFromQuestion}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              {screen === "q4" ? (
-                <Button
-                  className="flex-1 bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white"
-                  onClick={handleSynthesize}
-                  disabled={!currentAnswer.trim() || synthesizeMutation.isPending}
-                >
-                  {synthesizeMutation.isPending ? (
-                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Synthesizing...</>
-                  ) : (
-                    <>Synthesize <Sparkles className="w-4 h-4 ml-1" /></>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  className="flex-1 bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white"
-                  onClick={goNext}
-                  disabled={!currentAnswer.trim()}
-                >
-                  Next <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              )}
+              <Button
+                className="flex-1 bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white"
+                onClick={goNextFromQuestion}
+                disabled={!currentAnswer.trim()}
+              >
+                {questionIndex >= QUESTIONS.length - 1 ? (
+                  <>Synthesize <Sparkles className="w-4 h-4 ml-1" /></>
+                ) : (
+                  <>Next <ChevronRight className="w-4 h-4 ml-1" /></>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Synthesizing — waiting state */}
+        {screen === "synthesizing" && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-[#e91e8c]" />
+            <div className="text-center space-y-1">
+              <p className="text-sm text-gray-300">Reading what you brought.</p>
+              <p className="text-xs text-gray-600">This takes a moment.</p>
             </div>
           </div>
         )}
 
         {/* Reflection screen */}
         {screen === "reflection" && synthesis && (
-          <div className="space-y-4">
-            <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4">
-              <p className="text-xs text-purple-300 uppercase tracking-wider mb-2">Your Visual Universe</p>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <p className="text-xs text-purple-300 uppercase tracking-wider">What we heard</p>
+              <p className="text-xs text-gray-600 italic">We noticed — you decide if it's true.</p>
+            </div>
+            <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-5">
               <p className="text-sm text-gray-200 leading-relaxed italic">"{synthesis.reflection}"</p>
             </div>
             <p className="text-xs text-gray-500 text-center">Does that feel true, or is something off?</p>
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 border-purple-500/30 text-gray-400 hover:text-white"
+                className="flex-1 border-purple-500/30 text-gray-400 hover:text-white bg-transparent"
                 onClick={() => setScreen("q4")}
               >
                 Something's off
@@ -312,9 +349,12 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
 
         {/* Vocabulary preview */}
         {screen === "vocabulary" && synthesis && (
-          <div className="space-y-3">
-            <p className="text-xs text-purple-300 uppercase tracking-wider">Your Vocabulary</p>
-            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="text-xs text-purple-300 uppercase tracking-wider">Your Vocabulary</p>
+              <p className="text-xs text-gray-600">Your language, ready to use.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
               {Object.entries({
                 "Emotional Register": synthesis.vocabulary.emotionalRegister,
                 "Color & Light": synthesis.vocabulary.colorAndLight,
@@ -324,7 +364,7 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
                 "Avoid": synthesis.vocabulary.forbiddenTerms,
               }).map(([label, terms]) => (
                 <div key={label} className="rounded-lg bg-white/5 border border-purple-500/10 p-3">
-                  <p className="text-xs text-purple-300 mb-1">{label}</p>
+                  <p className="text-xs text-purple-300 mb-1.5">{label}</p>
                   <div className="flex flex-wrap gap-1">
                     {terms.map(t => (
                       <span key={t} className="text-xs bg-purple-500/20 text-purple-200 rounded-full px-2 py-0.5">{t}</span>
@@ -344,22 +384,22 @@ export function FrequencyModal({ onClose }: { onClose: () => void }) {
 
         {/* Name screen */}
         {screen === "name" && synthesis && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-purple-300 uppercase tracking-wider mb-2">Name Your Frequency</p>
-              <p className="text-sm text-gray-400 mb-3">
+          <div className="space-y-5">
+            <div className="space-y-1">
+              <p className="text-xs text-purple-300 uppercase tracking-wider">Name Your Frequency</p>
+              <p className="text-sm text-gray-400">
                 We suggested <span className="text-purple-300">"{synthesis.frequencyName}"</span> — keep it or make it yours.
               </p>
-              <Input
-                value={frequencyName}
-                onChange={(e) => setFrequencyName(e.target.value)}
-                placeholder={synthesis.frequencyName}
-                className="bg-white/5 border-purple-500/20 text-white placeholder:text-gray-600"
-                maxLength={100}
-              />
             </div>
+            <Input
+              value={frequencyName}
+              onChange={(e) => setFrequencyName(e.target.value)}
+              placeholder={synthesis.frequencyName}
+              className="bg-white/5 border-purple-500/20 text-white placeholder:text-gray-600"
+              maxLength={100}
+            />
             <Button
-              className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white"
+              className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white h-12"
               onClick={handleSave}
               disabled={saveMutation.isPending}
             >

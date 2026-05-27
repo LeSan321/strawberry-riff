@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { FrequencyModal } from "@/components/FrequencyModal";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
@@ -93,6 +94,11 @@ export default function Upload() {
   const generateCoverArtMutation = trpc.frequency.generateCoverArt.useMutation();
   const utils = trpc.useUtils();
   const [generatingCover, setGeneratingCover] = useState(false);
+  const [showFrequencyModal, setShowFrequencyModal] = useState(false);
+  const { data: userFrequency } = trpc.frequency.getDefault.useQuery(undefined, {
+    retry: 1,
+    staleTime: 60_000,
+  });
 
   const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -291,7 +297,8 @@ export default function Upload() {
   }
 
   return (
-    <div className="container py-10">
+    <>
+      <div className="container py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -544,6 +551,28 @@ export default function Upload() {
                       Generate
                     </Button>
                   </div>
+                  {/* Frequency nudge */}
+                  {userFrequency && !userFrequency.hasFrequency && (
+                    <button
+                      type="button"
+                      className="text-xs text-purple-400 hover:text-purple-300 mt-2 text-left leading-relaxed block"
+                      onClick={() => setShowFrequencyModal(true)}
+                    >
+                      ✦ Find Your Frequency first for cover art that reflects your visual world
+                    </button>
+                  )}
+                  {userFrequency?.hasFrequency && (
+                    <p className="text-xs text-purple-400/70 mt-2">
+                      ✦ Visual Universe active —{" "}
+                      <button
+                        type="button"
+                        className="underline hover:text-purple-300"
+                        onClick={() => setShowFrequencyModal(true)}
+                      >
+                        {userFrequency.frequency?.frequencyName ?? "Your Frequency"}
+                      </button>
+                    </p>
+                  )}
                   {coverPreview && (
                     <button
                       className="text-xs text-red-400 hover:text-red-600 mt-2"
@@ -675,5 +704,9 @@ export default function Upload() {
         </div>
       </motion.div>
     </div>
+
+    {/* Frequency Modal */}
+    <FrequencyModal open={showFrequencyModal} onClose={() => setShowFrequencyModal(false)} />
+  </>
   );
 }
