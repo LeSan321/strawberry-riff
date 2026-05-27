@@ -3,11 +3,12 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Music, Share2, Trash2, RefreshCw, Sparkles, Download } from "lucide-react";
+import { Loader2, ArrowLeft, Music, Share2, Trash2, RefreshCw, Sparkles, Download, Play, Pause } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { StemSplitButton } from "@/components/StemSplitButton";
 import { StemsStudio } from "./StemsStudio";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 
 /**
  * TrackDetail Page
@@ -18,6 +19,7 @@ export default function TrackDetail() {
   const { generationId } = useParams<{ generationId: string }>();
   const [, navigate] = useLocation();
   const [showStemsView, setShowStemsView] = useState(false);
+  const { play, pause, currentTrack, isPlaying, isBuffering } = useAudioPlayer();
 
   const id = generationId ? parseInt(generationId, 10) : null;
 
@@ -178,11 +180,25 @@ export default function TrackDetail() {
                   <Music className="w-5 h-5" />
                   Playback
                 </h2>
-                <audio
-                  controls
-                  src={generation.audioUrl}
-                  className="w-full"
-                />
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    if (currentTrack?.id === generation.id && isPlaying) {
+                      pause();
+                    } else {
+                      play({ id: generation.id, title: generation.title, audioUrl: generation.audioUrl!, gradient: "from-purple-500 to-pink-500" });
+                    }
+                  }}
+                >
+                  {currentTrack?.id === generation.id && isBuffering ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : currentTrack?.id === generation.id && isPlaying ? (
+                    <><Pause className="w-4 h-4" /> Pause</>
+                  ) : (
+                    <><Play className="w-4 h-4" /> Play in Player</>
+                  )}
+                </Button>
               </Card>
             )}
 

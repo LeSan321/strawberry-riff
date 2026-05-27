@@ -20,11 +20,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -331,6 +332,9 @@ function GenerationCard({
   const [titleDraft, setTitleDraft] = useState(gen.title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
+  const { play, pause, currentTrack, isPlaying, isBuffering } = useAudioPlayer();
+  const isThisTrackPlaying = currentTrack?.id === gen.id && isPlaying;
+  const isThisTrackBuffering = currentTrack?.id === gen.id && isBuffering;
   const renameMutation = trpc.musicGeneration.rename.useMutation({
     onSuccess: (data) => {
       setTitleDraft(data.title);
@@ -432,9 +436,29 @@ function GenerationCard({
         <Clock className="h-3 w-3" />
         {new Date(gen.createdAt).toLocaleDateString()}
       </p>
-      {gen.status === "complete" && gen.audioUrl && (
-        <div className="mt-2 space-y-2">
-          <audio src={gen.audioUrl} controls className="w-full h-8" />
+        {gen.status === "complete" && gen.audioUrl && (
+          <div className="mt-2 space-y-2">
+            {/* Play via global player — no native <audio> element */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={() => {
+                if (isThisTrackPlaying) {
+                  pause();
+                } else {
+                  play({ id: gen.id, title: gen.title, audioUrl: gen.audioUrl!, gradient: "from-purple-500 to-pink-500" });
+                }
+              }}
+            >
+              {isThisTrackBuffering ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : isThisTrackPlaying ? (
+                <><Pause className="w-3.5 h-3.5" /> Pause</>
+              ) : (
+                <><Play className="w-3.5 h-3.5" /> Play</>
+              )}
+            </Button>
           <div className="space-y-1.5">
           <div className="flex gap-1.5">
             <Button

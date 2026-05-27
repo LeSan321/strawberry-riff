@@ -27,6 +27,7 @@ import {
   Sparkles,
   Repeat,
   Repeat1,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { SignInExplainerModal } from "./SignInExplainerModal";
@@ -269,7 +270,7 @@ function AppHeader() {
 
 function PersistentPlayer() {
   const {
-    currentTrack, isPlaying, progress, currentTime, duration, volume,
+    currentTrack, isPlaying, isBuffering, progress, currentTime, duration, volume,
     pause, resume, seek, setVolume,
     next, previous, toggleShuffle, toggleRepeat,
     shuffle, repeat, queue, queueIndex,
@@ -347,8 +348,15 @@ function PersistentPlayer() {
               size="sm"
               className="h-9 w-9 p-0 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0"
               onClick={() => (isPlaying ? pause() : resume())}
+              disabled={isBuffering && !isPlaying}
             >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isBuffering && isPlaying ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
             </Button>
             <Button
               variant="ghost"

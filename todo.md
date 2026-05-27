@@ -979,3 +979,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] No defensive mapping needed on Riff side — Studios fix is live
 - [x] Added coverArtUrl field to publish mutation input schema
 - [x] Wired cover art generation into Generate → Publish dialog (with frequency badge, generate/regenerate, preview)
+
+## Phase 99 — Ghost Audio / Dual Audio Fixes
+- [x] Rewrote AudioPlayerContext: added visibilitychange pause (tab hidden = pause), cleanup on unmount (pause + abort network), audio.load() before play() to reset buffer
+- [x] Added isBuffering state with onwaiting/onstalled/onplaying handlers; spinner on play button when buffering
+- [x] Removed native <audio> element from Generate.tsx GenerationCard — replaced with global player Play/Pause button
+- [x] Removed native <audio> element from TrackDetail.tsx — replaced with global player Play/Pause button
