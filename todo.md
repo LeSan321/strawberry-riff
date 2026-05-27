@@ -968,3 +968,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Save Listening Bible (all 9 chapters) as project reference
 - [x] Save riff_studios_bridge_handoff.md as project reference
 - [x] Validate bridge endpoints — /api/bridge/ping confirmed live, 3 bridge tests passing
+## Phase 97 — Stem Splitter Fixes + FrequencyModal Fix
+- [x] FrequencyModal: replace render-phase setTimeout with useEffect hooks for all screen transitions
+- [x] FrequencyModal: add 3s safety timeout fallback to prevent blank states
+- [x] Fix stem splitter toast error: SIX_STEMS requires quality BEST (was BALANCED) — updated server/stemsplit/client.ts
+- [x] Fix stem splitter button layout: changed grid-cols-4 to grid-cols-2 in Generate.tsx, added wrapperClassName prop to StemSplitButton, added w-full to button inside wrapper

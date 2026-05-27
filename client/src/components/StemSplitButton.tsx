@@ -20,6 +20,8 @@ interface StemSplitButtonProps {
   onSplitComplete?: (stems: any) => void;
   disabled?: boolean;
   className?: string;
+  /** Optional className applied to the outer wrapper div (useful for grid/flex layout) */
+  wrapperClassName?: string;
 }
 
 export function StemSplitButton({
@@ -29,6 +31,7 @@ export function StemSplitButton({
   onSplitComplete,
   disabled = false,
   className = "",
+  wrapperClassName = "",
 }: StemSplitButtonProps) {
   const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
@@ -124,7 +127,7 @@ export function StemSplitButton({
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${wrapperClassName}`}>
       {showUpgradePrompt && (
         <div className="mb-3">
           <StemSplitUpgradePrompt
@@ -141,7 +144,7 @@ export function StemSplitButton({
         disabled={disabled || isProcessing}
         variant="outline"
         size="sm"
-        className={`gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : ""} ${className}`}
+        className={`w-full gap-2 ${isProcessing ? "bg-purple-500/10 border-purple-500/30" : ""} ${className}`}
       >
         {isProcessing ? (
           <>

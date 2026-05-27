@@ -53,7 +53,7 @@ export async function startStemSplit(
   const payload = {
     sourceUrl: audioUrl,
     outputType: "SIX_STEMS", // vocals, drums, bass, other, piano, guitar
-    quality: "BALANCED",
+    quality: "BEST", // SIX_STEMS requires BEST quality per API constraint
     outputFormat: "MP3",
   };
 

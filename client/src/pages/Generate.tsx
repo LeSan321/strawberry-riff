@@ -425,7 +425,7 @@ function GenerationCard({
             )}
           </div>
           </div>
-          <div className="mt-2 grid grid-cols-4 gap-1">
+          <div className="mt-2 grid grid-cols-2 gap-1">
             <Button
               size="sm"
               variant="outline"
@@ -453,7 +453,7 @@ function GenerationCard({
             >
               🔄 Vibe
             </Button>
-            <StemSplitButton generationId={gen.id} isSplit={gen.isSplit ?? false} className="text-xs" />
+            <StemSplitButton generationId={gen.id} isSplit={gen.isSplit ?? false} className="text-xs" wrapperClassName="w-full" />
           </div>
           {gen.visualBrief ? (
             isPremium ? (
