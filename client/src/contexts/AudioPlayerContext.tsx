@@ -71,24 +71,23 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // ── Pause when tab is hidden, resume when visible again ──────────────────
+  // ── Stop audio only when the tab is closed/navigated away (not on tab switch) ──
+  // visibilitychange fires on tab switch too — we do NOT want to pause there.
+  // beforeunload fires only when the page is actually unloading.
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Tab hidden — pause playback to prevent ghost audio
-        if (audioRef.current && !audioRef.current.paused) {
-          audioRef.current.pause();
-          setState((s) => ({ ...s, isPlaying: false }));
-        }
+    const handleUnload = () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
       }
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleUnload);
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
     };
   }, []);
 
-  // ── Cleanup audio element on unmount ─────────────────────────────────────
+  // ── Cleanup audio element on React unmount ────────────────────────────────
   useEffect(() => {
     return () => {
       if (audioRef.current) {
