@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -90,17 +90,25 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [frequencyName, setFrequencyName] = useState("");
 
-  // Transition from loading to correct screen once query resolves
-  if (screen === "loading" && !loadingExisting) {
+  // Transition from loading to correct screen once query resolves — use useEffect to avoid render-phase side effects
+  useEffect(() => {
+    if (screen !== "loading") return;
+    if (loadingExisting) return;
     if (errorExisting || !existingFrequency) {
-      // Bridge unreachable — go straight to intro so user isn't stuck
-      setTimeout(() => setScreen("intro"), 0);
+      setScreen("intro");
     } else if (existingFrequency.hasFrequency && existingFrequency.frequency) {
-      setTimeout(() => setScreen("existing"), 0);
+      setScreen("existing");
     } else {
-      setTimeout(() => setScreen("intro"), 0);
+      setScreen("intro");
     }
-  }
+  }, [screen, loadingExisting, errorExisting, existingFrequency]);
+
+  // Safety timeout: if still loading after 3s, go to intro anyway
+  useEffect(() => {
+    if (screen !== "loading") return;
+    const t = setTimeout(() => setScreen("intro"), 3000);
+    return () => clearTimeout(t);
+  }, [screen]);
 
   const handleSynthesize = async () => {
     setScreen("synthesizing");
