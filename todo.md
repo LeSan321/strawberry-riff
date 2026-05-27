@@ -973,3 +973,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] FrequencyModal: add 3s safety timeout fallback to prevent blank states
 - [x] Fix stem splitter toast error: SIX_STEMS requires quality BEST (was BALANCED) — updated server/stemsplit/client.ts
 - [x] Fix stem splitter button layout: changed grid-cols-4 to grid-cols-2 in Generate.tsx, added wrapperClassName prop to StemSplitButton, added w-full to button inside wrapper
+
+## Phase 98 — Studios Bridge Fix + Cover Art in Publish Dialog
+- [x] Verified Studios bridge synthesize now returns correct arcType enum (erosive_revelatory etc.)
+- [x] No defensive mapping needed on Riff side — Studios fix is live
+- [x] Added coverArtUrl field to publish mutation input schema
+- [x] Wired cover art generation into Generate → Publish dialog (with frequency badge, generate/regenerate, preview)

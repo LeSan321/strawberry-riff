@@ -1091,6 +1091,7 @@ const musicGenerationRouter = router({
         generationId: z.number().int(),
         visibility: z.enum(["private", "inner-circle", "public"]).default("private"),
         moodTags: z.array(z.string()).optional(),
+        coverArtUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1113,7 +1114,7 @@ const musicGenerationRouter = router({
         moodTags: input.moodTags ? JSON.stringify(input.moodTags) : null,
         visibility: input.visibility,
         gradient: "from-purple-500 to-pink-500",
-        coverArtUrl: null,
+        coverArtUrl: input.coverArtUrl ?? null,
       });
 
       // Auto-infer cover art dimensions from the music generation

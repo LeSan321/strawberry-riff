@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
@@ -64,14 +64,23 @@ function PublishDialog({
   open,
   onClose,
   generationId,
+  genPrompt,
+  genLyrics,
 }: {
   open: boolean;
   onClose: () => void;
   generationId: number;
+  genPrompt: string;
+  genLyrics: string;
 }) {
   const [visibility, setVisibility] = useState<"private" | "inner-circle" | "public">("private");
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [coverArtUrl, setCoverArtUrl] = useState<string | null>(null);
+  const [coverArtState, setCoverArtState] = useState<"idle" | "generating" | "done" | "error">("idle");
   const publishMutation = trpc.musicGeneration.publish.useMutation();
+  const coverArtMutation = trpc.frequency.generateCoverArt.useMutation();
+  const { data: frequencyData } = trpc.frequency.getDefault.useQuery(undefined, { staleTime: 60_000 });
+  const hasFrequency = frequencyData?.hasFrequency ?? false;
 
   const toggleMood = (tag: string) => {
     setSelectedMoods((prev) =>
@@ -81,9 +90,31 @@ function PublishDialog({
     );
   };
 
+  const handleGenerateCoverArt = async () => {
+    setCoverArtState("generating");
+    try {
+      const result = await coverArtMutation.mutateAsync({
+        trackId: generationId,
+        lyrics: genLyrics || undefined,
+        genre: undefined,
+        arcPosition: "arriving",
+      });
+      setCoverArtUrl(result.coverArtUrl);
+      setCoverArtState("done");
+    } catch {
+      setCoverArtState("error");
+      toast.error("Cover art generation failed. You can publish without it.");
+    }
+  };
+
   const handlePublish = async () => {
     try {
-      await publishMutation.mutateAsync({ generationId, visibility, moodTags: selectedMoods });
+      await publishMutation.mutateAsync({
+        generationId,
+        visibility,
+        moodTags: selectedMoods,
+        coverArtUrl: coverArtUrl ?? undefined,
+      });
       toast.success("Published to My Riffs!");
       onClose();
     } catch (err) {
@@ -101,6 +132,88 @@ function PublishDialog({
           <p className="text-sm text-muted-foreground">
             This will add the generated track to your My Riffs library. You can edit the details there after publishing.
           </p>
+
+          {/* Cover Art */}
+          <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-purple-400" />
+                <span className="text-sm font-medium">Cover Art</span>
+                {hasFrequency && (
+                  <span className="flex items-center gap-1 text-xs text-[#e91e8c] bg-[#e91e8c]/10 border border-[#e91e8c]/20 rounded-full px-2 py-0.5">
+                    <Radio className="w-3 h-3" /> Your Frequency
+                  </span>
+                )}
+              </div>
+              {coverArtState === "idle" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                  onClick={handleGenerateCoverArt}
+                >
+                  <Sparkles className="w-3 h-3 mr-1" /> Generate
+                </Button>
+              )}
+              {coverArtState === "done" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => { setCoverArtUrl(null); setCoverArtState("idle"); }}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" /> Regenerate
+                </Button>
+              )}
+            </div>
+            <div className="p-4">
+              {coverArtState === "idle" && (
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <div className="w-16 h-16 rounded-lg bg-muted/30 border border-border flex items-center justify-center flex-shrink-0">
+                    <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-foreground/80">{hasFrequency ? "Generate cover art using your personal frequency vocabulary." : "Generate cover art for this track."}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Optional — you can add art later from My Riffs.</p>
+                  </div>
+                </div>
+              )}
+              {coverArtState === "generating" && (
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-muted/30 border border-border flex items-center justify-center flex-shrink-0 animate-pulse">
+                    <Sparkles className="w-5 h-5 text-purple-400 animate-spin" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-foreground/80">Generating your cover art...</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">This takes 15–30 seconds.</p>
+                  </div>
+                </div>
+              )}
+              {coverArtState === "done" && coverArtUrl && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={coverArtUrl}
+                    alt="Generated cover art"
+                    className="w-16 h-16 rounded-lg object-cover border border-border flex-shrink-0"
+                  />
+                  <p className="text-sm text-green-400">Cover art ready. Will be attached on publish.</p>
+                </div>
+              )}
+              {coverArtState === "error" && (
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-red-400">Generation failed.</p>
+                    <Button size="sm" variant="ghost" className="h-6 text-xs mt-1 px-0 text-muted-foreground" onClick={() => setCoverArtState("idle")}>
+                      Try again
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Visibility */}
           <div>
@@ -175,10 +288,10 @@ function PublishDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={publishMutation.isPending}>
+          <Button variant="outline" onClick={onClose} disabled={publishMutation.isPending || coverArtState === "generating"}>
             Cancel
           </Button>
-          <Button onClick={handlePublish} disabled={publishMutation.isPending}>
+          <Button onClick={handlePublish} disabled={publishMutation.isPending || coverArtState === "generating"}>
             {publishMutation.isPending ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Publishing...</>
             ) : (
@@ -513,6 +626,8 @@ function GenerationCard({
           open={publishOpen}
           onClose={() => setPublishOpen(false)}
           generationId={gen.id}
+          genPrompt={gen.prompt}
+          genLyrics={gen.lyrics}
         />
       )}
       {deleteConfirmOpen && (
