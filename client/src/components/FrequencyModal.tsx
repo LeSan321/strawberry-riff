@@ -74,10 +74,22 @@ const VOCAB_LABELS: Record<string, string> = {
 export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
   console.log("[FrequencyModal] Component rendered. open prop:", open);
   const utils = trpc.useUtils();
+  console.log("[FrequencyModal] Setting up getDefault query");
   const { data: existingFrequency, isLoading: loadingExisting, isError: errorExisting } = trpc.frequency.getDefault.useQuery(undefined, {
     retry: 1,
     staleTime: 0,
   });
+  // Log query state on every render to track when it resolves
+  useEffect(() => {
+    if (loadingExisting) {
+      console.log("[FrequencyModal] Query is loading");
+    } else if (errorExisting) {
+      console.error("[FrequencyModal] Query failed with error");
+    } else if (existingFrequency) {
+      console.log("[FrequencyModal] Query succeeded:", existingFrequency);
+    }
+  }, [loadingExisting, errorExisting, existingFrequency]);
+  console.log("[FrequencyModal] Query state - loading:", loadingExisting, "error:", errorExisting, "data:", existingFrequency);
   const synthesizeMutation = trpc.frequency.synthesize.useMutation();
   const saveMutation = trpc.frequency.save.useMutation();
 
