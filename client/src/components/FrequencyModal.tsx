@@ -291,7 +291,7 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
               className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white h-12 text-base"
               onClick={() => {
                 console.log("[FrequencyModal] Begin button clicked, transitioning to q1");
-                setScreen("q1");
+                setScreen(QUESTIONS[0].id as Screen);
               }}
             >
               Begin <ChevronRight className="w-4 h-4 ml-1" />
