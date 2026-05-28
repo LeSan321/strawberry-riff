@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 const BRIDGE_URL = process.env.STUDIOS_BRIDGE_URL ?? "";
-const BRIDGE_KEY = process.env.STUDIOS_BRIDGE_KEY ?? "";
+const BRIDGE_KEY = process.env.BRIDGE_API_KEY ?? "";
 
 describe("Studios Bridge Connection", () => {
   it("should have STUDIOS_BRIDGE_URL configured", () => {
@@ -9,7 +9,7 @@ describe("Studios Bridge Connection", () => {
     expect(BRIDGE_URL).toContain("manus.space");
   });
 
-  it("should have STUDIOS_BRIDGE_KEY configured", () => {
+  it("should have BRIDGE_API_KEY configured", () => {
     expect(BRIDGE_KEY).toBeTruthy();
     expect(BRIDGE_KEY.length).toBeGreaterThan(30);
   });

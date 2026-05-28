@@ -1001,4 +1001,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Show generating state on button, preview thumbnail after generation
 - [x] Fixed test expectations for promptTemplates and ogMetaTags (320 tests passing)
 - [ ] Test end-to-end: edit existing track → generate cover art → save with new art (manual browser test)
+- [x] Renamed STUDIOS_BRIDGE_KEY to BRIDGE_API_KEY for consistency across Riff, Studios, and Railway
 
