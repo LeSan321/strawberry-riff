@@ -72,6 +72,7 @@ const VOCAB_LABELS: Record<string, string> = {
 };
 
 export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
+  console.log("[FrequencyModal] Component rendered. open prop:", open);
   const utils = trpc.useUtils();
   const { data: existingFrequency, isLoading: loadingExisting, isError: errorExisting } = trpc.frequency.getDefault.useQuery(undefined, {
     retry: 1,
@@ -94,11 +95,15 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   useEffect(() => {
     if (screen !== "loading") return;
     if (loadingExisting) return;
+    console.log("[FrequencyModal] Query resolved. hasFrequency:", existingFrequency?.hasFrequency);
     if (errorExisting || !existingFrequency) {
+      console.log("[FrequencyModal] No existing frequency, showing intro");
       setScreen("intro");
     } else if (existingFrequency.hasFrequency && existingFrequency.frequency) {
+      console.log("[FrequencyModal] Existing frequency found, showing existing screen");
       setScreen("existing");
     } else {
+      console.log("[FrequencyModal] No frequency, showing intro");
       setScreen("intro");
     }
   }, [screen, loadingExisting, errorExisting, existingFrequency]);
@@ -111,13 +116,18 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   }, [screen]);
 
   const handleSynthesize = async () => {
+    console.log("[FrequencyModal] handleSynthesize called, setting screen to 'synthesizing'");
     setScreen("synthesizing");
     try {
+      console.log("[FrequencyModal] Calling synthesize mutation with answers:", answers);
       const result = await synthesizeMutation.mutateAsync(answers);
+      console.log("[FrequencyModal] Synthesize succeeded, result:", result);
       setSynthesis(result.synthesis);
       setFrequencyName(result.synthesis.frequencyName);
+      console.log("[FrequencyModal] Setting screen to 'reflection'");
       setScreen("reflection");
-    } catch {
+    } catch (err) {
+      console.error("[FrequencyModal] Synthesize failed:", err);
       toast.error("Something went wrong. Please try again.");
       setScreen("q4");
     }
@@ -153,10 +163,14 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   };
 
   const goNextFromQuestion = () => {
+    console.log("[FrequencyModal] goNextFromQuestion called, questionIndex:", questionIndex, "total:", QUESTIONS.length);
     if (questionIndex >= QUESTIONS.length - 1) {
+      console.log("[FrequencyModal] Last question answered, calling handleSynthesize");
       handleSynthesize();
     } else {
-      setScreen(QUESTIONS[questionIndex + 1].id as Screen);
+      const nextScreen = QUESTIONS[questionIndex + 1].id as Screen;
+      console.log("[FrequencyModal] Moving to next question:", nextScreen);
+      setScreen(nextScreen);
     }
   };
 
@@ -262,7 +276,10 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
             </div>
             <Button
               className="w-full bg-gradient-to-r from-[#e91e8c] to-[#7c3aed] text-white h-12 text-base"
-              onClick={() => setScreen("q1")}
+              onClick={() => {
+                console.log("[FrequencyModal] Begin button clicked, transitioning to q1");
+                setScreen("q1");
+              }}
             >
               Begin <ChevronRight className="w-4 h-4 ml-1" />
             </Button>

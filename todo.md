@@ -985,3 +985,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Added isBuffering state with onwaiting/onstalled/onplaying handlers; spinner on play button when buffering
 - [x] Removed native <audio> element from Generate.tsx GenerationCard — replaced with global player Play/Pause button
 - [x] Removed native <audio> element from TrackDetail.tsx — replaced with global player Play/Pause button
+
+## Phase 100 — FrequencyModal Dead State Diagnosis & Audio Tab Fix
+- [x] Fixed audio tab-switch behavior: removed visibilitychange pause, replaced with beforeunload (music continues across tabs, stops only on tab close)
+- [x] Added debug logging to FrequencyModal: console logs for Begin click, screen transitions, synthesize call, success/failure
+- [x] Confirmed STUDIOS_BRIDGE_KEY and STUDIOS_BRIDGE_URL now set on Railway with correct names
+- [ ] Awaiting Railway deploy to test with debug logs and identify exact failure point
+- [ ] Once bridge confirmed working: add Blooming Frontier fallback for cover art when user has no frequency
