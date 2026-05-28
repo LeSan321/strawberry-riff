@@ -164,6 +164,7 @@ export const frequencyRouter = router({
       // Use provided lyrics, or fall back to Blooming Frontier vocabulary
       const finalLyrics = input.lyrics || BLOOMING_FRONTIER_VOCABULARY;
 
+      // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
       const res = await bridgeFetch("/cover-art/generate", {
         method: "POST",
         body: JSON.stringify({
@@ -173,7 +174,7 @@ export const frequencyRouter = router({
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
         }),
-      });
+      }, 120000); // 120 seconds for Runway image generation
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error ?? "Cover art generation failed");
