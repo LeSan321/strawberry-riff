@@ -92,6 +92,7 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   const [frequencyName, setFrequencyName] = useState("");
 
   // Transition from loading to correct screen once query resolves — use useEffect to avoid render-phase side effects
+  // Only run when query finishes loading, not on every screen change
   useEffect(() => {
     if (screen !== "loading") return;
     if (loadingExisting) return;
@@ -106,14 +107,14 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
       console.log("[FrequencyModal] No frequency, showing intro");
       setScreen("intro");
     }
-  }, [screen, loadingExisting, errorExisting, existingFrequency]);
+  }, [loadingExisting, errorExisting, existingFrequency]);
 
   // Safety timeout: if still loading after 3s, go to intro anyway
   useEffect(() => {
     if (screen !== "loading") return;
     const t = setTimeout(() => setScreen("intro"), 3000);
     return () => clearTimeout(t);
-  }, [screen]);
+  }, []);
 
   const handleSynthesize = async () => {
     console.log("[FrequencyModal] handleSynthesize called, setting screen to 'synthesizing'");
