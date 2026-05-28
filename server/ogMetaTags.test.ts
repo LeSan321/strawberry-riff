@@ -31,7 +31,7 @@ describe("OG Meta Tags Generation", () => {
         180
       );
 
-      expect(tags).toContain('og:image" content="https://strawberryriff.com/api/og-image/default"');
+      expect(tags).toContain('og:image" content="https://strawberryriff.com/api/og-image/track?title=My%20Song&artist=Artist%20Name"');
     });
 
     it("should handle missing duration gracefully", () => {

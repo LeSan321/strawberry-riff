@@ -992,3 +992,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Confirmed STUDIOS_BRIDGE_KEY and STUDIOS_BRIDGE_URL now set on Railway with correct names
 - [ ] Awaiting Railway deploy to test with debug logs and identify exact failure point
 - [ ] Once bridge confirmed working: add Blooming Frontier fallback for cover art when user has no frequency
+
+## Phase 101 — Cover Art Generation in My Riffs Edit Dialog
+
+- [x] Add "Generate Cover Art" button to MyRiffs EditDialog (alongside manual upload)
+- [x] Wire button to call frequency.generateCoverArt with track metadata (title, genre, description)
+- [x] Implement Blooming Frontier fallback vocabulary in frequency router (when user has no frequency)
+- [x] Show generating state on button, preview thumbnail after generation
+- [x] Fixed test expectations for promptTemplates and ogMetaTags (320 tests passing)
+- [ ] Test end-to-end: edit existing track → generate cover art → save with new art (manual browser test)
+

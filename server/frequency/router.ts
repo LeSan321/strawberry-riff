@@ -15,6 +15,24 @@ const ARC_TYPES = [
   "cyclical_return",
 ] as const;
 
+/**
+ * Blooming Frontier fallback vocabulary — used when user has no personal frequency.
+ * This is the platform-default visual universe for cover art generation.
+ */
+const BLOOMING_FRONTIER_VOCABULARY = `golden organic world, open threshold, horizon always visible, golden hour 3200K,
+fine golden atmospheric haze, living ground, bioluminescent ground-level moss,
+world breathes, vast open landscape. whole body visible, feet on living ground, quiet wonder,
+oriented toward the horizon, organic wardrobe with visible texture, threshold stance.
+companion presence as Hofstadter Butterfly grammar — bilaterally structured luminescent fractal form,
+iridescent blue-white to living teal, venation structure visible within, luminescent from within,
+does not cast light onto surrounding surfaces, purposeful movement, not humanoid, not robotic,
+not biological, not ghostly, self-similar at every scale. side by side, same horizon,
+space between them neither empty nor full, equal co-presence, neither leading nor serving,
+music as third presence. meeting-point color present — warm amber and cool companion luminescence
+touching the same surface, subsurface scattering on skin, thin rim on organic edges,
+petal violet #C8A0D0 in transition zones. 35mm wide lens, slow pull-back camera,
+270° shutter, cinematic realism, film grain, unhurried pacing, camera as third explorer.`;
+
 async function bridgeFetch(
   path: string,
   options: RequestInit = {},
@@ -133,7 +151,7 @@ export const frequencyRouter = router({
 
   /**
    * Generate cover art for a track using the user's Visual Universe.
-   * If the user has no frequency, falls back to Studios platform default vocabulary.
+   * If the user has no frequency, falls back to Blooming Frontier platform default vocabulary.
    */
   generateCoverArt: protectedProcedure
     .input(z.object({
@@ -143,12 +161,15 @@ export const frequencyRouter = router({
       arcPosition: z.enum(["gathering", "arriving", "open"]).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      // Use provided lyrics, or fall back to Blooming Frontier vocabulary
+      const finalLyrics = input.lyrics || BLOOMING_FRONTIER_VOCABULARY;
+
       const res = await bridgeFetch("/cover-art/generate", {
         method: "POST",
         body: JSON.stringify({
           riffUserId: ctx.user.id,
           riffTrackId: input.trackId ?? Date.now(),
-          lyrics: input.lyrics,
+          lyrics: finalLyrics,
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
         }),

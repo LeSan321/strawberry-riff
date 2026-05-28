@@ -27,6 +27,7 @@ import {
   Search,
   CheckSquare,
   Square,
+  Sparkles,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -117,6 +118,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
   };
   const [coverPreview, setCoverPreview] = useState<string | null>(track.coverArtUrl ?? null);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const updateMutation = trpc.tracks.update.useMutation({
@@ -128,6 +130,8 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     onError: (e) => toast.error(e.message),
   });
   const uploadCoverArt = trpc.tracks.uploadCoverArt.useMutation();
+  const generateCoverArt = trpc.frequency.generateCoverArt.useMutation();
+  // Note: userFrequency query is not used here, but generateCoverArt will use it if available on the server side
 
   const handleCoverArtChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -147,6 +151,28 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     } catch {
       toast.error("Failed to upload cover art");
       setUploadingCover(false);
+    }
+  };
+
+  const handleGenerateCoverArt = async () => {
+    setGeneratingCover(true);
+    try {
+      const result = await generateCoverArt.mutateAsync({
+        trackId: track.id,
+        lyrics: form.description || form.title,
+        genre: form.genre || "ambient",
+      });
+      if (result.coverArtUrl) {
+        setCoverPreview(result.coverArtUrl);
+        setForm((p) => ({ ...p, coverArtUrl: result.coverArtUrl }));
+        toast.success("Cover art generated!");
+      } else {
+        toast.error("Cover art generation failed");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate cover art");
+    } finally {
+      setGeneratingCover(false);
     }
   };
 
@@ -186,12 +212,38 @@ function EditDialog({ track, onClose }: EditDialogProps) {
                 {uploadingCover ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <ImagePlus className="w-4 h-4 text-white" />}
               </div>
             </div>
-            <div className="text-xs text-muted-foreground">
-              <p>Click to {coverPreview ? "replace" : "upload"} cover art</p>
-              <p className="mt-0.5">JPG, PNG, or WebP</p>
+            <div className="flex-1 space-y-2">
+              <div className="text-xs text-muted-foreground">
+                <p>Click to {coverPreview ? "replace" : "upload"} cover art</p>
+                <p className="mt-0.5">JPG, PNG, or WebP</p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover || generatingCover}
+                  className="text-xs"
+                >
+                  {uploadingCover ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ImagePlus className="w-3 h-3 mr-1" />}
+                  Upload
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateCoverArt}
+                  disabled={uploadingCover || generatingCover}
+                  className="text-xs"
+                >
+                  {generatingCover ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                  Generate
+                </Button>
+              </div>
               {coverPreview && (
                 <button
-                  className="text-red-400 hover:text-red-600 mt-1"
+                  className="text-red-400 hover:text-red-600 text-xs mt-1"
                   onClick={() => { setCoverPreview(null); setForm((p) => ({ ...p, coverArtUrl: "" })); }}
                 >
                   Remove

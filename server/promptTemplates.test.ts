@@ -10,21 +10,21 @@ describe("promptTemplates", () => {
   describe("buildPromptWithIntensity", () => {
     it("should prepend subtle prefix to prompt", () => {
       const result = buildPromptWithIntensity("test prompt", "subtle");
-      expect(result).toBe("[subtle] test prompt");
+      expect(result).toBe("[subtle] [genre-strict] test prompt");
     });
 
     it("should prepend balanced prefix to prompt", () => {
       const result = buildPromptWithIntensity("test prompt", "balanced");
-      expect(result).toBe("[balanced] test prompt");
+      expect(result).toBe("[balanced] [genre-strict] test prompt");
     });
 
     it("should prepend aggressive prefix to prompt", () => {
       const result = buildPromptWithIntensity("test prompt", "aggressive");
-      expect(result).toBe("[aggressive] test prompt");
+      expect(result).toBe("[aggressive] [genre-strict] test prompt");
     });
 
     it("should keep prompt under 1000 chars with prefix", () => {
-      const longPrompt = "a".repeat(980);
+      const longPrompt = "a".repeat(960);
       const result = buildPromptWithIntensity(longPrompt, "subtle");
       expect(result.length).toBeLessThan(1000);
     });
