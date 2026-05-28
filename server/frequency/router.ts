@@ -147,7 +147,7 @@ export const frequencyRouter = router({
         method: "POST",
         body: JSON.stringify({
           riffUserId: ctx.user.id,
-          riffTrackId: input.trackId,
+          riffTrackId: input.trackId ?? Date.now(),
           lyrics: input.lyrics,
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
