@@ -17,17 +17,26 @@ const ARC_TYPES = [
 
 async function bridgeFetch(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeoutMs: number = 30000
 ): Promise<Response> {
   const url = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
-  return fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "x-bridge-key": ENV.studiosBridgeKey,
-      ...(options.headers ?? {}),
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "x-bridge-key": ENV.studiosBridgeKey,
+        ...(options.headers ?? {}),
+      },
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export const frequencyRouter = router({
@@ -72,7 +81,7 @@ export const frequencyRouter = router({
           riffUserId: ctx.user.id,
           answers: input,
         }),
-      });
+      }, 120000); // 120 seconds for LLM synthesis
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error ?? "Synthesis failed");
