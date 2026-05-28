@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -121,10 +121,14 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
     }
   }, [loadingExisting, errorExisting, existingFrequency]);
 
-  // Safety timeout: if still loading after 3s, go to intro anyway
+  // Safety timeout: if still loading after 8s, go to intro anyway
+  // Use a ref to track current screen so the timeout can check state when it fires
+  const screenRef = useRef(screen);
+  useEffect(() => { screenRef.current = screen; }, [screen]);
   useEffect(() => {
-    if (screen !== "loading") return;
-    const t = setTimeout(() => setScreen("intro"), 3000);
+    const t = setTimeout(() => {
+      if (screenRef.current === "loading") setScreen("intro");
+    }, 8000);
     return () => clearTimeout(t);
   }, []);
 
