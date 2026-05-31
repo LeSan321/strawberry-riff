@@ -403,10 +403,10 @@ export default function Upload() {
                 />
               </div>
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Art Direction</Label>
                 <Textarea
                   id="description"
-                  placeholder="Tell the story behind this riff..."
+                  placeholder="A few words to steer the image — mood, setting, color, moment. The system handles the rest."
                   value={form.description}
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   className="mt-1 resize-none"
@@ -529,6 +529,7 @@ export default function Upload() {
                         try {
                           const result = await generateCoverArtMutation.mutateAsync({
                             genre: form.genre || undefined,
+                            steeringNote: form.description?.trim() || undefined,
                           });
                           if (result.coverArtUrl) {
                             setCoverPreview(result.coverArtUrl);

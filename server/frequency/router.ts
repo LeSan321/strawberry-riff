@@ -159,6 +159,7 @@ export const frequencyRouter = router({
       lyrics: z.string().optional(),
       genre: z.string().optional(),
       arcPosition: z.enum(["gathering", "arriving", "open"]).optional(),
+      steeringNote: z.string().max(300).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       // Use provided lyrics, or fall back to Blooming Frontier vocabulary
@@ -173,6 +174,7 @@ export const frequencyRouter = router({
           lyrics: finalLyrics,
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
+          steeringNote: input.steeringNote,
         }),
       }, 120000); // 120 seconds for Runway image generation
       if (!res.ok) {

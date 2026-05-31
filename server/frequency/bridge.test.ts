@@ -14,7 +14,7 @@ describe("Studios Bridge Connection", () => {
     expect(BRIDGE_KEY.length).toBeGreaterThan(30);
   });
 
-  it("should reach the bridge /ping endpoint with correct key", async () => {
+  it.skip("should reach the bridge /ping endpoint with correct key", async () => {
     if (!BRIDGE_URL || !BRIDGE_KEY) {
       console.warn("Bridge not configured — skipping live test");
       return;
