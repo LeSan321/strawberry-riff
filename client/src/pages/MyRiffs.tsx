@@ -80,6 +80,7 @@ interface Track {
   artist?: string | null;
   genre?: string | null;
   description?: string | null;
+  lyrics?: string | null;
   audioUrl: string;
   duration?: number | null;
   moodTags: string[];
@@ -103,6 +104,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     artist: track.artist ?? "",
     genre: track.genre ?? "",
     description: track.description ?? "",
+    lyrics: track.lyrics ?? "",
     visibility: track.visibility,
     moodTags: track.moodTags,
     coverArtUrl: track.coverArtUrl ?? "",
@@ -183,6 +185,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
       artist: form.artist || undefined,
       genre: form.genre || undefined,
       description: form.description || undefined,
+      lyrics: form.lyrics || undefined,
       visibility: form.visibility as Visibility,
       moodTags: form.moodTags,
       coverArtUrl: form.coverArtUrl || undefined,

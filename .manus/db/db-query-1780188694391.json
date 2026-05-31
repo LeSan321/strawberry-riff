@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `tracks` ADD `lyrics` text;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute ALTER TABLE `tracks` ADD `lyrics` text;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 481
+}

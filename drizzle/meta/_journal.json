@@ -169,6 +169,13 @@
       "when": 1778801559659,
       "tag": "0023_true_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1780188688321,
+      "tag": "0024_ordinary_liz_osborn",
+      "breakpoints": true
     }
   ]
 }

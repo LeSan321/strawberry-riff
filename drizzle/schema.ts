@@ -53,6 +53,7 @@ export const tracks = mysqlTable("tracks", {
   artist: varchar("artist", { length: 200 }),
   genre: varchar("genre", { length: 100 }),
   description: text("description"),
+  lyrics: text("lyrics"), // Song lyrics for cover art generation
   audioUrl: text("audioUrl").notNull(),
   audioKey: text("audioKey").notNull(),
   duration: int("duration"), // seconds

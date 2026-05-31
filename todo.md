@@ -1011,7 +1011,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Pass steeringNote through bridge fetch body
 - [x] Update Upload.tsx: rename Description label to Art Direction with new placeholder
 - [x] Pass steeringNote in Upload mutation call (form.description?.trim() || undefined)
-- [x] Update MyRiffs generateCoverArt call to pass steeringNote ONLY (no lyrics field)
-- [x] Clarified: tracks table has no lyrics field; description is used as art direction steering note
+- [x] Add lyrics field to tracks table schema
+- [x] Add lyrics field to tracks.create input schema (max 10000 chars)
+- [x] Add lyrics field to tracks.update input schema
+- [x] Add lyrics input field to Upload page
+- [x] Add lyrics to Upload form state and createTrack call
+- [x] Add lyrics to MyRiffs EditDialog form state and updateMutation call
+- [x] Pass lyrics to generateCoverArt in both Upload and MyRiffs
 - [x] Skip flaky bridge ping test (network timeout issue)
 - [x] Run full test suite (319 tests passing, 1 skipped)

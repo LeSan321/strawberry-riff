@@ -78,6 +78,7 @@ export default function Upload() {
     artist: "",
     genre: "",
     description: "",
+    lyrics: "",
     visibility: "private" as "private" | "inner-circle" | "public",
     moodTags: [] as string[],
     customMood: "",
@@ -212,6 +213,7 @@ export default function Upload() {
         artist: form.artist.trim() || undefined,
         genre: form.genre.trim() || undefined,
         description: form.description.trim() || undefined,
+        lyrics: form.lyrics.trim() || undefined,
         audioUrl,
         audioKey,
         duration,
@@ -276,7 +278,7 @@ export default function Upload() {
                 setUploadState("idle");
                 setUploadProgress(0);
                 setForm({
-                  title: "", artist: "", genre: "", description: "",
+                  title: "", artist: "", genre: "", description: "", lyrics: "",
                   visibility: "private", moodTags: [], customMood: "", gradient: GRADIENTS[0], coverArtUrl: "",
                 });
                 setCoverPreview(null);
@@ -413,6 +415,17 @@ export default function Upload() {
                   rows={3}
                 />
               </div>
+              <div>
+                <Label htmlFor="lyrics">Lyrics (Optional)</Label>
+                <Textarea
+                  id="lyrics"
+                  placeholder="Paste your song lyrics here. The AI will use them to understand what your song is about."
+                  value={form.lyrics}
+                  onChange={(e) => setForm((p) => ({ ...p, lyrics: e.target.value }))}
+                  className="mt-1 resize-none"
+                  rows={4}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -530,6 +543,7 @@ export default function Upload() {
                           const result = await generateCoverArtMutation.mutateAsync({
                             genre: form.genre || undefined,
                             steeringNote: form.description?.trim() || undefined,
+                            lyrics: form.lyrics?.trim() || undefined,
                           });
                           if (result.coverArtUrl) {
                             setCoverPreview(result.coverArtUrl);
