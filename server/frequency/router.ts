@@ -5,6 +5,9 @@
 import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { ENV } from '../_core/env';
+import { getDb } from '../db';
+import { tracks, musicGenerations } from '../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 const ARC_TYPES = [
   "expansive_mythic",
@@ -162,8 +165,41 @@ export const frequencyRouter = router({
       steeringNote: z.string().max(300).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Use provided lyrics, or fall back to Blooming Frontier vocabulary
-      const finalLyrics = input.lyrics || BLOOMING_FRONTIER_VOCABULARY;
+      // Server-side lyrics resolution:
+      // 1. If caller passed lyrics directly, use them
+      // 2. If trackId provided, look up track.lyrics first, then join to musicGenerations.lyrics via musicGenerationId
+      // 3. Fall back to Blooming Frontier vocabulary if nothing found
+      let resolvedLyrics: string | null = input.lyrics || null;
+
+      if (!resolvedLyrics && input.trackId) {
+        const db = await getDb();
+        if (db) {
+          // Fetch the track record
+          const trackRows = await db
+            .select()
+            .from(tracks)
+            .where(eq(tracks.id, input.trackId))
+            .limit(1);
+          const track = trackRows[0];
+
+          if (track) {
+            if (track.lyrics) {
+              // Track has its own lyrics field populated
+              resolvedLyrics = track.lyrics;
+            } else if (track.musicGenerationId) {
+              // Track came from Studio generation — fetch lyrics from musicGenerations
+              const genRows = await db
+                .select({ lyrics: musicGenerations.lyrics })
+                .from(musicGenerations)
+                .where(eq(musicGenerations.id, track.musicGenerationId))
+                .limit(1);
+              resolvedLyrics = genRows[0]?.lyrics ?? null;
+            }
+          }
+        }
+      }
+
+      const finalLyrics = resolvedLyrics || BLOOMING_FRONTIER_VOCABULARY;
 
       // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
       const res = await bridgeFetch("/cover-art/generate", {
