@@ -159,7 +159,6 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     try {
       const result = await generateCoverArt.mutateAsync({
         trackId: track.id,
-        lyrics: form.description || form.title,
         genre: form.genre || "ambient",
         steeringNote: form.description?.trim() || undefined,
       });
