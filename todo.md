@@ -1018,5 +1018,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add lyrics to Upload form state and createTrack call
 - [x] Add lyrics to MyRiffs EditDialog form state and updateMutation call
 - [x] Pass lyrics to generateCoverArt in both Upload and MyRiffs
+- [x] Fix: MyRiffs generateCoverArt was not passing lyrics — now passes track.lyrics || form.lyrics
 - [x] Skip flaky bridge ping test (network timeout issue)
 - [x] Run full test suite (319 tests passing, 1 skipped)
