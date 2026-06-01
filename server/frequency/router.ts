@@ -69,7 +69,7 @@ export const frequencyRouter = router({
     if (!ENV.studiosBridgeUrl || !ENV.studiosBridgeKey) {
       return { hasFrequency: false, frequency: null };
     }
-    const res = await bridgeFetch(`/frequency/${ctx.user.id}`);
+    const res = await bridgeFetch(`/frequency/${String(ctx.user.id)}`);
     if (!res.ok) return { hasFrequency: false, frequency: null };
     return res.json() as Promise<{
       hasFrequency: boolean;
@@ -99,7 +99,7 @@ export const frequencyRouter = router({
       const res = await bridgeFetch("/frequency/synthesize", {
         method: "POST",
         body: JSON.stringify({
-          riffUserId: ctx.user.id,
+          riffUserId: String(ctx.user.id),
           answers: input,
         }),
       }, 120000); // 120 seconds for LLM synthesis
@@ -141,7 +141,7 @@ export const frequencyRouter = router({
       const res = await bridgeFetch("/frequency/save", {
         method: "POST",
         body: JSON.stringify({
-          riffUserId: ctx.user.id,
+          riffUserId: String(ctx.user.id),
           ...input,
         }),
       });
@@ -205,7 +205,7 @@ export const frequencyRouter = router({
       const res = await bridgeFetch("/cover-art/generate", {
         method: "POST",
         body: JSON.stringify({
-          riffUserId: ctx.user.id,
+          riffUserId: String(ctx.user.id),
           riffTrackId: input.trackId ?? Date.now(),
           lyrics: finalLyrics,
           genre: input.genre,
