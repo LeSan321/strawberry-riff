@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN musicGenerationId IS NOT NULL THEN 1 ELSE 0 END) as with_gen_id, SUM(CASE WHEN lyrics IS NOT NULL AND lyrics != '' THEN 1 ELSE 0 END) as with_lyrics FROM tracks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT COUNT(*) as total, SUM(CASE WHEN musicGenerationId IS NOT NULL THEN 1 ELSE 0 END) as with_gen_id, SUM(CASE WHEN lyrics IS NOT NULL AND lyrics != '' THEN 1 ELSE 0 END) as with_lyrics FROM tracks;",
+  "rows": [
+    {
+      "total": "142",
+      "with_gen_id": "33",
+      "with_lyrics": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\twith_gen_id\twith_lyrics\n142\t33\t0\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

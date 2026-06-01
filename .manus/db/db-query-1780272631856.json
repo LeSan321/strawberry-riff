@@ -1,0 +1,57 @@
+{
+  "query": "SELECT t.id, t.title, t.musicGenerationId, LEFT(mg.lyrics, 100) as gen_lyrics FROM tracks t JOIN music_generations mg ON t.musicGenerationId = mg.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT t.id, t.title, t.musicGenerationId, LEFT(mg.lyrics, 100) as gen_lyrics FROM tracks t JOIN music_generations mg ON t.musicGenerationId = mg.id LIMIT 5;",
+  "rows": [
+    {
+      "id": "1140001",
+      "title": "Testing My Soul",
+      "musicGenerationId": "1620007",
+      "gen_lyrics": "[Verse 1]"
+    },
+    {
+      "id": "1170001",
+      "title": "Digital Damnation",
+      "musicGenerationId": "1650001",
+      "gen_lyrics": "[Verse 1]"
+    },
+    {
+      "id": "1200001",
+      "title": "testing the meta data",
+      "musicGenerationId": "1680001",
+      "gen_lyrics": "[Verse 1]"
+    },
+    {
+      "id": "1260001",
+      "title": "Brand New Key",
+      "musicGenerationId": "1740001",
+      "gen_lyrics": "[Verse 1]"
+    },
+    {
+      "id": "1320001",
+      "title": "Split the Atom",
+      "musicGenerationId": "1800005",
+      "gen_lyrics": "[Verse 1]"
+    }
+  ],
+  "messages": [
+    "Sunrise bleeds across the screen",
+    "Another red flag, what does it mean?",
+    "My console’s burning",
+    "Static hums, a neon bleed",
+    "Cobalt skies, a bitter seed",
+    "My reflection, glitching slow",
+    "Where ",
+    "Sunrise bleeds across the screen",
+    "Another red flag, what does it mean?",
+    "My console’s burning",
+    "Static hums, a digital dawn,",
+    "Crimson pixels, where the old key's gone.",
+    "Fingers trace a gho",
+    "Static hum, a digital haze",
+    "Sun-baked screens through neon days",
+    "Fingers twitch on dusty key"
+  ],
+  "stdout": "id\ttitle\tmusicGenerationId\tgen_lyrics\n1140001\tTesting My Soul\t1620007\t[Verse 1]\nSunrise bleeds across the screen\nAnother red flag, what does it mean?\nMy console’s burning\n1170001\tDigital Damnation\t1650001\t[Verse 1]\nStatic hums, a neon bleed\nCobalt skies, a bitter seed\nMy reflection, glitching slow\nWhere \n1200001\ttesting the meta data\t1680001\t[Verse 1]\nSunrise bleeds across the screen\nAnother red flag, what does it mean?\nMy console’s burning\n1260001\tBrand New Key\t1740001\t[Verse 1]\nStatic hums, a digital dawn,\nCrimson pixels, where the old key's gone.\nFingers trace a gho\n1320001\tSplit the Atom\t1800005\t[Verse 1]\nStatic hum, a digital haze\nSun-baked screens through neon days\nFingers twitch on dusty key\n",
+  "stderr": "",
+  "execution_time_ms": 274
+}

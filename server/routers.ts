@@ -1111,6 +1111,7 @@ const musicGenerationRouter = router({
         artist: null,
         genre: null,
         description: null,
+        lyrics: generation.lyrics ?? null,  // Copy lyrics so cover art generator can find them without a join
         audioUrl: generation.audioUrl,
         audioKey: generation.audioKey,
         duration: generation.duration,

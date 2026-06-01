@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE tracks t JOIN music_generations mg ON t.musicGenerationId = mg.id SET t.lyrics = mg.lyrics WHERE t.musicGenerationId IS NOT NULL AND (t.lyrics IS NULL OR t.lyrics = '');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute UPDATE tracks t JOIN music_generations mg ON t.musicGenerationId = mg.id SET t.lyrics = mg.lyrics WHERE t.musicGenerationId IS NOT NULL AND (t.lyrics IS NULL OR t.lyrics = '');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1796
+}

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, musicGenerationId, lyrics FROM tracks LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, musicGenerationId, lyrics FROM tracks LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "title": "Waters",
+      "musicGenerationId": "NULL",
+      "lyrics": "NULL"
+    },
+    {
+      "id": "2",
+      "title": "Seasons",
+      "musicGenerationId": "NULL",
+      "lyrics": "NULL"
+    },
+    {
+      "id": "3",
+      "title": "Small Towns Right",
+      "musicGenerationId": "NULL",
+      "lyrics": "NULL"
+    },
+    {
+      "id": "30001",
+      "title": "Hometown Swagger",
+      "musicGenerationId": "NULL",
+      "lyrics": "NULL"
+    },
+    {
+      "id": "60001",
+      "title": "Magical Snohomish",
+      "musicGenerationId": "NULL",
+      "lyrics": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tmusicGenerationId\tlyrics\n1\tWaters\tNULL\tNULL\n2\tSeasons\tNULL\tNULL\n3\tSmall Towns Right\tNULL\tNULL\n30001\tHometown Swagger\tNULL\tNULL\n60001\tMagical Snohomish\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 287
+}
