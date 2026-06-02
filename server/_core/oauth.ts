@@ -60,18 +60,20 @@ export function registerOAuthRoutes(app: Express) {
         expiresInMs: ONE_YEAR_MS,
       });
 
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      // Parse returnPath from state if present (encoded as JSON { redirectUri, returnPath })
-      let redirectTo = "/";
+      // Parse state to extract returnPath and optional finalOrigin (for cross-domain relay)
+      let returnPath = "/";
+      let finalOrigin: string | undefined;
       try {
         const decoded = Buffer.from(state, "base64").toString("utf-8");
-        // Try JSON format first (new format with returnPath)
         if (decoded.startsWith("{")) {
-          const parsed = JSON.parse(decoded) as { redirectUri?: string; returnPath?: string };
+          const parsed = JSON.parse(decoded) as { redirectUri?: string; returnPath?: string; finalOrigin?: string };
           if (parsed.returnPath && parsed.returnPath.startsWith("/")) {
-            redirectTo = parsed.returnPath;
+            returnPath = parsed.returnPath;
+          }
+          // finalOrigin is set when this callback is acting as an OAuth relay for a different domain
+          // (e.g. strawriff-frnnwu2p.manus.space relaying for strawberryriff.com)
+          if (parsed.finalOrigin && parsed.finalOrigin.startsWith("https://")) {
+            finalOrigin = parsed.finalOrigin;
           }
         }
         // Otherwise it's the legacy btoa(redirectUri) format — stay at "/"
@@ -79,7 +81,20 @@ export function registerOAuthRoutes(app: Express) {
         // Malformed state — fall back to home
       }
 
-      res.redirect(302, redirectTo);
+      if (finalOrigin) {
+        // Cross-domain relay: redirect to the final origin's token-handoff endpoint
+        // The session token is passed as a query param so the final domain can set its own cookie
+        const handoffUrl = new URL(`${finalOrigin}/api/oauth/token-handoff`);
+        handoffUrl.searchParams.set("token", sessionToken);
+        handoffUrl.searchParams.set("returnPath", returnPath);
+        console.log(`[OAuth] Cross-domain relay: redirecting to ${finalOrigin}`);
+        res.redirect(302, handoffUrl.toString());
+      } else {
+        // Normal flow: set cookie on this domain and redirect
+        const cookieOptions = getSessionCookieOptions(req);
+        res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        res.redirect(302, returnPath);
+      }
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

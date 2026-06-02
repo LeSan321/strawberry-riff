@@ -77,6 +77,41 @@ async function startServer() {
   registerStorageProxy(app);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // OAuth token handoff endpoint — used when strawriff-frnnwu2p.manus.space relays login for strawberryriff.com
+  // The relay callback creates the session token and redirects here with it as a query param.
+  // This endpoint sets the cookie on the correct domain (strawberryriff.com) and redirects to the app.
+  app.get("/api/oauth/token-handoff", async (req, res) => {
+    const token = typeof req.query.token === "string" ? req.query.token : null;
+    const returnPath = typeof req.query.returnPath === "string" && req.query.returnPath.startsWith("/")
+      ? req.query.returnPath
+      : "/";
+
+    if (!token) {
+      console.warn("[OAuth Handoff] Missing token");
+      return res.redirect(302, "/");
+    }
+
+    try {
+      // Verify the token is valid before setting the cookie
+      const { sdk } = await import("./sdk");
+      const session = await sdk.verifySession(token);
+      if (!session) {
+        console.warn("[OAuth Handoff] Invalid token");
+        return res.redirect(302, "/");
+      }
+
+      const { COOKIE_NAME, ONE_YEAR_MS } = await import("../../shared/const");
+      const { getSessionCookieOptions } = await import("./cookies");
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      console.log(`[OAuth Handoff] Session established for openId: ${session.openId}, redirecting to ${returnPath}`);
+      res.redirect(302, returnPath);
+    } catch (error) {
+      console.error("[OAuth Handoff] Error:", error);
+      res.redirect(302, "/");
+    }
+  });
   // OG image generation endpoint
   app.get("/api/og-image/track", async (req, res) => {
     try {

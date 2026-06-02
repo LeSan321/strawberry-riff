@@ -1021,3 +1021,13 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix: MyRiffs generateCoverArt was not passing lyrics — now passes track.lyrics || form.lyrics
 - [x] Skip flaky bridge ping test (network timeout issue)
 - [x] Run full test suite (319 tests passing, 1 skipped)
+
+## Phase 103 — OAuth Token Handoff Workaround (strawberryriff.com login fix)
+
+- [x] Add VITE_OAUTH_CALLBACK_ORIGIN env var support in getLoginUrl() in const.ts
+- [x] Update getLoginUrl() to encode finalOrigin in state when using relay origin
+- [x] Update OAuth callback handler to redirect to finalOrigin/api/oauth/token-handoff when finalOrigin present
+- [x] Add /api/oauth/token-handoff endpoint to server index.ts (verifies JWT, sets cookie, redirects)
+- [ ] Set VITE_OAUTH_CALLBACK_ORIGIN=https://strawriff-frnnwu2p.manus.space in Railway env vars
+- [ ] Publish fresh checkpoint to Manus-hosted site so it has the relay callback code
+- [ ] Test full login flow: strawberryriff.com → Manus OAuth → manus.space callback → Railway token-handoff → logged in

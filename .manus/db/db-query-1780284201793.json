@@ -1,0 +1,110 @@
+{
+  "query": "SELECT id, name, createdAt FROM users ORDER BY createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, name, createdAt FROM users ORDER BY createdAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "32670021",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:40"
+    },
+    {
+      "id": "32670020",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:20"
+    },
+    {
+      "id": "32670019",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:20"
+    },
+    {
+      "id": "32670018",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:18"
+    },
+    {
+      "id": "32670016",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:12"
+    },
+    {
+      "id": "32670017",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:12"
+    },
+    {
+      "id": "32670015",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:20:07"
+    },
+    {
+      "id": "32670006",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:19:42"
+    },
+    {
+      "id": "32670005",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:18:24"
+    },
+    {
+      "id": "32670004",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:18:24"
+    },
+    {
+      "id": "32670002",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:18:21"
+    },
+    {
+      "id": "32670003",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:18:21"
+    },
+    {
+      "id": "32670001",
+      "name": "NULL",
+      "createdAt": "2026-06-01 03:18:18"
+    },
+    {
+      "id": "32640002",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:27:51"
+    },
+    {
+      "id": "32640001",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:27:15"
+    },
+    {
+      "id": "32610006",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:21:56"
+    },
+    {
+      "id": "32610005",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:21:56"
+    },
+    {
+      "id": "32610003",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:21:54"
+    },
+    {
+      "id": "32610004",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:21:54"
+    },
+    {
+      "id": "32610002",
+      "name": "NULL",
+      "createdAt": "2026-06-01 02:21:49"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcreatedAt\n32670021\tNULL\t2026-06-01 03:20:40\n32670020\tNULL\t2026-06-01 03:20:20\n32670019\tNULL\t2026-06-01 03:20:20\n32670018\tNULL\t2026-06-01 03:20:18\n32670016\tNULL\t2026-06-01 03:20:12\n32670017\tNULL\t2026-06-01 03:20:12\n32670015\tNULL\t2026-06-01 03:20:07\n32670006\tNULL\t2026-06-01 03:19:42\n32670005\tNULL\t2026-06-01 03:18:24\n32670004\tNULL\t2026-06-01 03:18:24\n32670002\tNULL\t2026-06-01 03:18:21\n32670003\tNULL\t2026-06-01 03:18:21\n32670001\tNULL\t2026-06-01 03:18:18\n32640002\tNULL\t2026-06-01 02:27:51\n32640001\tNULL\t2026-06-01 02:27:15\n32610006\tNULL\t2026-06-01 02:21:56\n32610005\tNULL\t2026-06-01 02:21:56\n32610003\tNULL\t2026-06-01 02:21:54\n32610004\tNULL\t2026-06-01 02:21:54\n32610002\tNULL\t2026-06-01 02:21:49\n",
+  "stderr": "",
+  "execution_time_ms": 888
+}

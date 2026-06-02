@@ -1,0 +1,73 @@
+{
+  "query": "SELECT COUNT(*) as total_users FROM users; SELECT id, name, createdAt FROM users WHERE name IS NOT NULL ORDER BY createdAt ASC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT COUNT(*) as total_users FROM users; SELECT id, name, createdAt FROM users WHERE name IS NOT NULL ORDER BY createdAt ASC LIMIT 20;",
+  "rows": [
+    {
+      "total_users": "20287"
+    },
+    {
+      "total_users": "id\tname\tcreatedAt"
+    },
+    {
+      "total_users": "1\tLeSan Riedmann\t2026-03-28 02:25:23"
+    },
+    {
+      "total_users": "660003\tCheryl Hansen\t2026-03-31 01:19:44"
+    },
+    {
+      "total_users": "690001\tDonna Rex\t2026-03-31 02:16:11"
+    },
+    {
+      "total_users": "1560038\tlarryriedmann60\t2026-04-01 20:36:33"
+    },
+    {
+      "total_users": "4200036\tLeSan Riedmann\t2026-04-19 19:21:07"
+    },
+    {
+      "total_users": "4860001\tmarrtians5\t2026-04-21 17:31:28"
+    },
+    {
+      "total_users": "5700017\tLeSan Riedmann\t2026-04-23 15:24:07"
+    },
+    {
+      "total_users": "5730001\tlesanr\t2026-04-23 15:34:33"
+    },
+    {
+      "total_users": "5730023\tlesanr\t2026-04-23 15:59:14"
+    },
+    {
+      "total_users": "5730057\tlesanr\t2026-04-23 16:08:32"
+    },
+    {
+      "total_users": "5760070\tLeSan Riedmann\t2026-04-23 17:38:48"
+    },
+    {
+      "total_users": "5760077\tlesanr\t2026-04-23 17:43:45"
+    },
+    {
+      "total_users": "5760086\tlesanr\t2026-04-23 17:49:01"
+    },
+    {
+      "total_users": "5790049\tLeSan Riedmann\t2026-04-23 18:51:37"
+    },
+    {
+      "total_users": "5880005\tLeSan Riedmann\t2026-04-24 01:24:20"
+    },
+    {
+      "total_users": "12750007\tlesanr\t2026-05-12 23:26:19"
+    },
+    {
+      "total_users": "13680053\tlesanr\t2026-05-14 17:42:59"
+    },
+    {
+      "total_users": "13680057\tLeSan Riedmann\t2026-05-14 17:43:36"
+    },
+    {
+      "total_users": "22290001\tmarybethbid\t2026-05-27 03:27:39"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_users\n20287\nid\tname\tcreatedAt\n1\tLeSan Riedmann\t2026-03-28 02:25:23\n660003\tCheryl Hansen\t2026-03-31 01:19:44\n690001\tDonna Rex\t2026-03-31 02:16:11\n1560038\tlarryriedmann60\t2026-04-01 20:36:33\n4200036\tLeSan Riedmann\t2026-04-19 19:21:07\n4860001\tmarrtians5\t2026-04-21 17:31:28\n5700017\tLeSan Riedmann\t2026-04-23 15:24:07\n5730001\tlesanr\t2026-04-23 15:34:33\n5730023\tlesanr\t2026-04-23 15:59:14\n5730057\tlesanr\t2026-04-23 16:08:32\n5760070\tLeSan Riedmann\t2026-04-23 17:38:48\n5760077\tlesanr\t2026-04-23 17:43:45\n5760086\tlesanr\t2026-04-23 17:49:01\n5790049\tLeSan Riedmann\t2026-04-23 18:51:37\n5880005\tLeSan Riedmann\t2026-04-24 01:24:20\n12750007\tlesanr\t2026-05-12 23:26:19\n13680053\tlesanr\t2026-05-14 17:42:59\n13680057\tLeSan Riedmann\t2026-05-14 17:43:36\n22290001\tmarybethbid\t2026-05-27 03:27:39\n",
+  "stderr": "",
+  "execution_time_ms": 290
+}
