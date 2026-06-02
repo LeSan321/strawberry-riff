@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
-import { COOKIE_NAME } from "../shared/const";
 import type { TrpcContext } from "./_core/context";
 
 // ─── Mock DB helpers ──────────────────────────────────────────────────────────
@@ -63,14 +62,13 @@ vi.mock("./storage", () => ({
 
 // ─── Context helpers ──────────────────────────────────────────────────────────
 function makeAuthCtx(overrides?: Partial<TrpcContext["user"]>): TrpcContext {
-  const clearedCookies: unknown[] = [];
   return {
     user: {
       id: 1,
       openId: "user-1",
       email: "test@example.com",
       name: "Test User",
-      loginMethod: "manus",
+      loginMethod: "clerk",
       role: "user",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -78,9 +76,7 @@ function makeAuthCtx(overrides?: Partial<TrpcContext["user"]>): TrpcContext {
       ...overrides,
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: {
-      clearCookie: (_name: string, _opts: unknown) => clearedCookies.push({ _name, _opts }),
-    } as TrpcContext["res"],
+    res: {} as TrpcContext["res"],
   };
 }
 
@@ -88,7 +84,7 @@ function makeAnonCtx(): TrpcContext {
   return {
     user: null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
+    res: {} as TrpcContext["res"],
   };
 }
 
@@ -108,23 +104,15 @@ describe("auth", () => {
     expect(result?.email).toBe("test@example.com");
   });
 
-  it("logout clears session cookie and returns success", async () => {
-    const clearedCookies: Array<{ name: string; options: Record<string, unknown> }> = [];
+  it("logout returns success (Clerk handles session invalidation client-side)", async () => {
     const ctx: TrpcContext = {
       user: null,
       req: { protocol: "https", headers: {} } as TrpcContext["req"],
-      res: {
-        clearCookie: (name: string, options: Record<string, unknown>) => {
-          clearedCookies.push({ name, options });
-        },
-      } as TrpcContext["res"],
+      res: {} as TrpcContext["res"],
     };
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.logout();
     expect(result).toEqual({ success: true });
-    expect(clearedCookies).toHaveLength(1);
-    expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
-    expect(clearedCookies[0]?.options).toMatchObject({ maxAge: -1, httpOnly: true });
   });
 });
 

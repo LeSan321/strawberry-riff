@@ -1,5 +1,4 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { Link } from "wouter";
@@ -15,7 +14,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import ConcertTicketEasterEgg from "@/components/ConcertTicketEasterEgg";
-import { SignInExplainerModal } from "@/components/SignInExplainerModal";
+import { useClerk } from "@clerk/clerk-react";
 
 // ─── Strawberry Band Members ─────────────────────────────────────────────────
 const BAND_MEMBERS = [
@@ -404,8 +403,8 @@ function PhilosophyShareButton() {
 // ─── Main component ─────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated } = useAuth();
+  const { openSignIn } = useClerk();
   const [easterEggOpen, setEasterEggOpen] = useState(false);
-  const [signInModalOpen, setSignInModalOpen] = useState(false);
   const [activeMember, setActiveMember] = useState(0);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -505,7 +504,7 @@ export default function Home() {
                     size="lg"
                     className="rounded-full px-8 text-base font-semibold shadow-lg shadow-pink-500/30 border-0 text-white"
                     style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-                    onClick={() => setSignInModalOpen(true)}
+                    onClick={() => openSignIn()}
                   >
                     Start Creating
                   </Button>
@@ -761,7 +760,7 @@ export default function Home() {
             </Link>
           ) : (
             <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold"
-              onClick={() => setSignInModalOpen(true)}>
+              onClick={() => openSignIn()}>
               Claim Your Sonic Space
             </Button>
           )}
@@ -892,12 +891,7 @@ export default function Home() {
 
       {/* ── Easter Egg ────────────────────────────────────────────────────── */}
       <ConcertTicketEasterEgg open={easterEggOpen} onClose={() => setEasterEggOpen(false)} />
-      <SignInExplainerModal
-        open={signInModalOpen}
-        onClose={() => setSignInModalOpen(false)}
-        loginUrl={getLoginUrl()}
-        reason="to start creating"
-      />
+
     </div>
   );
 }

@@ -3,7 +3,6 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -75,43 +74,6 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Storage proxy for /manus-storage/* paths
   registerStorageProxy(app);
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
-
-  // OAuth token handoff endpoint — used when strawriff-frnnwu2p.manus.space relays login for strawberryriff.com
-  // The relay callback creates the session token and redirects here with it as a query param.
-  // This endpoint sets the cookie on the correct domain (strawberryriff.com) and redirects to the app.
-  app.get("/api/oauth/token-handoff", async (req, res) => {
-    const token = typeof req.query.token === "string" ? req.query.token : null;
-    const returnPath = typeof req.query.returnPath === "string" && req.query.returnPath.startsWith("/")
-      ? req.query.returnPath
-      : "/";
-
-    if (!token) {
-      console.warn("[OAuth Handoff] Missing token");
-      return res.redirect(302, "/");
-    }
-
-    try {
-      // Verify the token is valid before setting the cookie
-      const { sdk } = await import("./sdk");
-      const session = await sdk.verifySession(token);
-      if (!session) {
-        console.warn("[OAuth Handoff] Invalid token");
-        return res.redirect(302, "/");
-      }
-
-      const { COOKIE_NAME, ONE_YEAR_MS } = await import("../../shared/const");
-      const { getSessionCookieOptions } = await import("./cookies");
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      console.log(`[OAuth Handoff] Session established for openId: ${session.openId}, redirecting to ${returnPath}`);
-      res.redirect(302, returnPath);
-    } catch (error) {
-      console.error("[OAuth Handoff] Error:", error);
-      res.redirect(302, "/");
-    }
-  });
   // OG image generation endpoint
   app.get("/api/og-image/track", async (req, res) => {
     try {
@@ -152,12 +114,23 @@ async function startServer() {
         return res.status(400).json({ message: "Missing generationId" });
       }
 
-      // Get auth context from request
-      const { sdk } = await import("./sdk");
+      // Get auth context from request via Clerk
+      const { verifyToken } = await import("@clerk/express");
+      const { ENV } = await import("./env");
+      const { getUserByOpenId } = await import("../db");
       let user = null;
       try {
-        user = await sdk.authenticateRequest(req);
-      } catch (error) {
+        const authHeader = req.headers.authorization;
+        const sessionToken = authHeader?.startsWith("Bearer ")
+          ? authHeader.slice(7)
+          : req.cookies?.["__session"] ?? null;
+        if (sessionToken) {
+          const verifiedToken = await verifyToken(sessionToken, { secretKey: ENV.clerkSecretKey });
+          if (verifiedToken.sub) {
+            user = await getUserByOpenId(verifiedToken.sub);
+          }
+        }
+      } catch {
         // Continue - user will be null
       }
 

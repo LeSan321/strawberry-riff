@@ -1031,3 +1031,17 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Set VITE_OAUTH_CALLBACK_ORIGIN=https://strawriff-frnnwu2p.manus.space in Railway env vars
 - [ ] Publish fresh checkpoint to Manus-hosted site so it has the relay callback code
 - [ ] Test full login flow: strawberryriff.com → Manus OAuth → manus.space callback → Railway token-handoff → logged in
+
+## Phase 104 — Clerk Auth Migration
+
+- [ ] Install @clerk/express and @clerk/clerk-react packages
+- [ ] Store CLERK_SECRET_KEY and VITE_CLERK_PUBLISHABLE_KEY as secrets
+- [ ] Replace Manus OAuth server-side session with Clerk backend SDK
+- [ ] Replace Manus OAuth frontend login/logout with Clerk React components
+- [ ] Update tRPC context to use Clerk session instead of JWT cookie
+- [ ] Update protectedProcedure to use Clerk auth
+- [ ] Sync Clerk user data (id, email, name) to local users table on first request
+- [ ] Update useAuth() hook to use Clerk user data
+- [ ] Remove VITE_OAUTH_CALLBACK_ORIGIN and token-handoff endpoint (no longer needed)
+- [ ] Run full test suite
+- [ ] Save checkpoint and deploy to Railway

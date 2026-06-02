@@ -1,61 +1,78 @@
 import { trpc } from "@/lib/trpc";
-import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { ClerkProvider, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import { createRoot } from "react-dom/client";
+import { useMemo, useRef } from "react";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
 import "./index.css";
 
+const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+// QueryClient is stable — created once outside any component
 const queryClient = new QueryClient();
 
-const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
-  if (typeof window === "undefined") return;
+// Inner component that has access to Clerk auth context
+function AppWithTrpc() {
+  const { getToken } = useClerkAuth();
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  // Keep a stable ref to getToken so the useMemo dependency doesn't change
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
-  if (!isUnauthorized) return;
+  // Stabilize the tRPC client so it is created only once.
+  // Creating it inside the component without useMemo causes a new proxy on
+  // every render; React DevTools then diffs old vs new props and calls the
+  // proxy with unexpected property names, triggering "client[procedureType]
+  // is not a function".
+  const trpcClient = useMemo(
+    () =>
+      trpc.createClient({
+        links: [
+          httpBatchLink({
+            url: "/api/trpc",
+            transformer: superjson,
+            async fetch(input, init) {
+              let token: string | null = null;
+              try {
+                token = await getTokenRef.current();
+              } catch {
+                // Not signed in — proceed without token
+              }
 
-  window.location.href = getLoginUrl();
-};
+              const headers: Record<string, string> = {
+                ...(init?.headers as Record<string, string> ?? {}),
+              };
+              if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+              }
 
-queryClient.getQueryCache().subscribe(event => {
-  if (event.type === "updated" && event.action.type === "error") {
-    const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
-  }
-});
+              return globalThis.fetch(input, {
+                ...(init ?? {}),
+                headers,
+              });
+            },
+          }),
+        ],
+      }),
+    // Empty deps: client is intentionally created once. getToken is accessed
+    // via ref so we always use the latest version without recreating the client.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
-queryClient.getMutationCache().subscribe(event => {
-  if (event.type === "updated" && event.action.type === "error") {
-    const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
-  }
-});
-
-const trpcClient = trpc.createClient({
-  links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
-      },
-    }),
-  ],
-});
+  return (
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
+}
 
 createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </trpc.Provider>
+  <ClerkProvider publishableKey={publishableKey}>
+    <AppWithTrpc />
+  </ClerkProvider>
 );

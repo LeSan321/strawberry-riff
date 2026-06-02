@@ -1,6 +1,6 @@
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { useClerk } from "@clerk/clerk-react";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -30,7 +30,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useState } from "react";
-import { SignInExplainerModal } from "./SignInExplainerModal";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -60,9 +59,9 @@ const studioNavItem = { href: "/studio", label: "Studio", icon: Sparkles };
 
 function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { openSignIn } = useClerk();
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [signInModalOpen, setSignInModalOpen] = useState(false);
 
   const profileQuery = trpc.profiles.get.useQuery(
     { userId: user?.id },
@@ -187,7 +186,7 @@ function AppHeader() {
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground hover:text-primary"
-                  onClick={() => setSignInModalOpen(true)}
+                  onClick={() => openSignIn()}
                 >
                   Sign In
                 </Button>
@@ -195,7 +194,7 @@ function AppHeader() {
                   size="sm"
                   className="rounded-full px-4 text-white border-0 font-semibold"
                   style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
-                  onClick={() => setSignInModalOpen(true)}
+                  onClick={() => openSignIn()}
                 >
                   Get Started
                 </Button>
@@ -259,11 +258,6 @@ function AppHeader() {
         </AnimatePresence>
       </div>
     </header>
-    <SignInExplainerModal
-      open={signInModalOpen}
-      onClose={() => setSignInModalOpen(false)}
-      loginUrl={getLoginUrl()}
-    />
     </>
   );
 }

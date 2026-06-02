@@ -91,9 +91,8 @@ import { createLyricsDraft, getLyricsDraftsByUserId, getLyricsDraftById, deleteL
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
   me: publicProcedure.query((opts) => opts.ctx.user),
-  logout: publicProcedure.mutation(({ ctx }) => {
-    const cookieOptions = getSessionCookieOptions(ctx.req);
-    ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+  logout: publicProcedure.mutation(() => {
+    // Clerk handles session invalidation client-side via useClerk().signOut()
     return { success: true } as const;
   }),
 });

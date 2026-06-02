@@ -9,4 +9,5 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   studiosBridgeUrl: process.env.STUDIOS_BRIDGE_URL ?? "",
   studiosBridgeKey: process.env.BRIDGE_API_KEY ?? "",
+  clerkSecretKey: process.env.CLERK_SECRET_KEY ?? "",
 };
