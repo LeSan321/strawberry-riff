@@ -161,8 +161,19 @@ const plugins = [
   ...(isProduction ? [] : [jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()]),
 ];
 
+// Build-time env var injection: Vite only reads VITE_ vars from .env files via envDir.
+// On Railway (and other CI/CD hosts) there are no .env files — vars are injected as
+// process.env at build time. The `define` block below bridges that gap by explicitly
+// forwarding any VITE_ process.env vars into the client bundle.
+const buildTimeEnv = Object.fromEntries(
+  Object.entries(process.env)
+    .filter(([k]) => k.startsWith("VITE_"))
+    .map(([k, v]) => [`import.meta.env.${k}`, JSON.stringify(v)])
+);
+
 export default defineConfig({
   plugins,
+  define: buildTimeEnv,
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
