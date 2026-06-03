@@ -253,6 +253,32 @@ function AppHeader() {
                   Enter Studio
                 </div>
               </Link>
+              {/* Auth buttons in mobile nav */}
+              {!isAuthenticated && (
+                <div className="flex flex-col gap-2 px-3 py-3 mt-2 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-primary"
+                    onClick={() => {
+                      openSignIn();
+                      setMobileOpen(false);
+                    }}
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                  <Button
+                    className="w-full rounded-full text-white border-0 font-semibold"
+                    style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                    onClick={() => {
+                      openSignIn();
+                      setMobileOpen(false);
+                    }}
+                  >
+                    Get Started
+                  </Button>
+                </div>
+              )}
             </motion.nav>
           )}
         </AnimatePresence>

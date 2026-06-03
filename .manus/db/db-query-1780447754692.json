@@ -1,0 +1,37 @@
+{
+  "query": "\nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.openId,\n  u.loginMethod,\n  u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nGROUP BY u.id\nHAVING track_count > 0 OR u.name LIKE '%Randall%' OR u.name LIKE '%Marrs%' OR u.email LIKE '%maritan%'\nORDER BY track_count DESC\nLIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.openId,\n  u.loginMethod,\n  u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nGROUP BY u.id\nHAVING track_count > 0 OR u.name LIKE '%Randall%' OR u.name LIKE '%Marrs%' OR u.email LIKE '%maritan%'\nORDER BY track_count DESC\nLIMIT 20;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "isPremium": "1",
+      "track_count": "142"
+    },
+    {
+      "id": "4860001",
+      "name": "marrtians5",
+      "email": "marrtians5@yahoo.com",
+      "openId": "FyDGTmvrk6Z8TdyN9L7QEP",
+      "loginMethod": "email",
+      "isPremium": "1",
+      "track_count": "4"
+    },
+    {
+      "id": "34230003",
+      "name": "Randall Marrs",
+      "email": "marrsr13@gmail.com",
+      "openId": "RooPWfmV2gwokGftyhq3tQ",
+      "loginMethod": "google",
+      "isPremium": "0",
+      "track_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\topenId\tloginMethod\tisPremium\ttrack_count\n1\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\t1\t142\n4860001\tmarrtians5\tmarrtians5@yahoo.com\tFyDGTmvrk6Z8TdyN9L7QEP\temail\t1\t4\n34230003\tRandall Marrs\tmarrsr13@gmail.com\tRooPWfmV2gwokGftyhq3tQ\tgoogle\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 325
+}

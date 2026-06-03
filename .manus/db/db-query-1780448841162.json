@@ -1,0 +1,110 @@
+{
+  "query": "\nSELECT u.id, u.name, u.email, u.openId, u.loginMethod, u.role, u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nGROUP BY u.id\nORDER BY u.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT u.id, u.name, u.email, u.openId, u.loginMethod, u.role, u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nGROUP BY u.id\nORDER BY u.id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "loginMethod": "clerk",
+      "role": "admin",
+      "isPremium": "1",
+      "track_count": "142"
+    },
+    {
+      "id": "660003",
+      "name": "Cheryl Hansen",
+      "email": "cyhansen.ch@gmail.com",
+      "openId": "DWuVbL9ZnFYXnA3MCPPYFm",
+      "loginMethod": "google",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "690001",
+      "name": "Donna Rex",
+      "email": "donnarex@gmail.com",
+      "openId": "JsexzMcEXmJPdDkh4e7cYu",
+      "loginMethod": "google",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "1560038",
+      "name": "larryriedmann60",
+      "email": "larryriedmann60@gmail.com",
+      "openId": "ESU5vMDerisHLbskGbjMhZ",
+      "loginMethod": "email",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "2220021",
+      "name": "NULL",
+      "email": "NULL",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "NULL",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "4860001",
+      "name": "marrtians5",
+      "email": "marrtians5@yahoo.com",
+      "openId": "FyDGTmvrk6Z8TdyN9L7QEP",
+      "loginMethod": "email",
+      "role": "user",
+      "isPremium": "1",
+      "track_count": "4"
+    },
+    {
+      "id": "5730001",
+      "name": "lesanr",
+      "email": "lesanr@protonmail.com",
+      "openId": "2jeqdC23QXeh6R6sWi7dMh",
+      "loginMethod": "email",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "22290001",
+      "name": "marybethbid",
+      "email": "marybethbid@gmail.com",
+      "openId": "RiUcLkunxwehNfjHfN5eN7",
+      "loginMethod": "email",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "34230003",
+      "name": "Randall Marrs",
+      "email": "marrsr13@gmail.com",
+      "openId": "RooPWfmV2gwokGftyhq3tQ",
+      "loginMethod": "google",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    },
+    {
+      "id": "34620001",
+      "name": "LeSan Riedmann",
+      "email": "lesanr@protonmail.com",
+      "openId": "user_3EbWDWA0u21OvwEK18ZES1gFLBe",
+      "loginMethod": "clerk",
+      "role": "user",
+      "isPremium": "0",
+      "track_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\topenId\tloginMethod\trole\tisPremium\ttrack_count\n1\tLeSan Riedmann\tlesansemail@gmail.com\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\tclerk\tadmin\t1\t142\n660003\tCheryl Hansen\tcyhansen.ch@gmail.com\tDWuVbL9ZnFYXnA3MCPPYFm\tgoogle\tuser\t0\t0\n690001\tDonna Rex\tdonnarex@gmail.com\tJsexzMcEXmJPdDkh4e7cYu\tgoogle\tuser\t0\t0\n1560038\tlarryriedmann60\tlarryriedmann60@gmail.com\tESU5vMDerisHLbskGbjMhZ\temail\tuser\t0\t0\n2220021\tNULL\tNULL\tmpYa77MuSngajE8ZPthPdM\tNULL\tuser\t0\t0\n4860001\tmarrtians5\tmarrtians5@yahoo.com\tFyDGTmvrk6Z8TdyN9L7QEP\temail\tuser\t1\t4\n5730001\tlesanr\tlesanr@protonmail.com\t2jeqdC23QXeh6R6sWi7dMh\temail\tuser\t0\t0\n22290001\tmarybethbid\tmarybethbid@gmail.com\tRiUcLkunxwehNfjHfN5eN7\temail\tuser\t0\t0\n34230003\tRandall Marrs\tmarrsr13@gmail.com\tRooPWfmV2gwokGftyhq3tQ\tgoogle\tuser\t0\t0\n34620001\tLeSan Riedmann\tlesanr@protonmail.com\tuser_3EbWDWA0u21OvwEK18ZES1gFLBe\tclerk\tuser\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

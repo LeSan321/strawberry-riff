@@ -1,0 +1,60 @@
+{
+  "query": "\nSELECT \n  openId,\n  MIN(id) as keep_id,\n  COUNT(*) as total_rows\nFROM users\nGROUP BY openId\nORDER BY total_rows DESC\nLIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  openId,\n  MIN(id) as keep_id,\n  COUNT(*) as total_rows\nFROM users\nGROUP BY openId\nORDER BY total_rows DESC\nLIMIT 20;\n",
+  "rows": [
+    {
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "keep_id": "2220021",
+      "total_rows": "19810"
+    },
+    {
+      "openId": "FyDGTmvrk6Z8TdyN9L7QEP",
+      "keep_id": "4860001",
+      "total_rows": "501"
+    },
+    {
+      "openId": "2jeqdC23QXeh6R6sWi7dMh",
+      "keep_id": "5730001",
+      "total_rows": "317"
+    },
+    {
+      "openId": "ESU5vMDerisHLbskGbjMhZ",
+      "keep_id": "1560038",
+      "total_rows": "52"
+    },
+    {
+      "openId": "RiUcLkunxwehNfjHfN5eN7",
+      "keep_id": "22290001",
+      "total_rows": "24"
+    },
+    {
+      "openId": "RooPWfmV2gwokGftyhq3tQ",
+      "keep_id": "34230003",
+      "total_rows": "12"
+    },
+    {
+      "openId": "user_3EbWDWA0u21OvwEK18ZES1gFLBe",
+      "keep_id": "34620001",
+      "total_rows": "10"
+    },
+    {
+      "openId": "JsexzMcEXmJPdDkh4e7cYu",
+      "keep_id": "690001",
+      "total_rows": "1"
+    },
+    {
+      "openId": "DWuVbL9ZnFYXnA3MCPPYFm",
+      "keep_id": "660003",
+      "total_rows": "1"
+    },
+    {
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "keep_id": "1",
+      "total_rows": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "openId\tkeep_id\ttotal_rows\nmpYa77MuSngajE8ZPthPdM\t2220021\t19810\nFyDGTmvrk6Z8TdyN9L7QEP\t4860001\t501\n2jeqdC23QXeh6R6sWi7dMh\t5730001\t317\nESU5vMDerisHLbskGbjMhZ\t1560038\t52\nRiUcLkunxwehNfjHfN5eN7\t22290001\t24\nRooPWfmV2gwokGftyhq3tQ\t34230003\t12\nuser_3EbWDWA0u21OvwEK18ZES1gFLBe\t34620001\t10\nJsexzMcEXmJPdDkh4e7cYu\t690001\t1\nDWuVbL9ZnFYXnA3MCPPYFm\t660003\t1\nuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 275
+}

@@ -1,0 +1,38 @@
+{
+  "query": "\nSELECT id, title, artist, visibility, createdAt FROM tracks WHERE userId = 4860001 ORDER BY createdAt;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT id, title, artist, visibility, createdAt FROM tracks WHERE userId = 4860001 ORDER BY createdAt;\n",
+  "rows": [
+    {
+      "id": "1980001",
+      "title": "On a dogs behind",
+      "artist": "NULL",
+      "visibility": "inner-circle",
+      "createdAt": "2026-05-26 21:30:26"
+    },
+    {
+      "id": "2010001",
+      "title": "Coming home to Snohomish",
+      "artist": "NULL",
+      "visibility": "inner-circle",
+      "createdAt": "2026-05-27 00:57:34"
+    },
+    {
+      "id": "2040001",
+      "title": "Coming home to Snohomish",
+      "artist": "NULL",
+      "visibility": "private",
+      "createdAt": "2026-05-27 01:11:19"
+    },
+    {
+      "id": "2070001",
+      "title": "On a dogs behind",
+      "artist": "NULL",
+      "visibility": "private",
+      "createdAt": "2026-05-27 01:17:18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tartist\tvisibility\tcreatedAt\n1980001\tOn a dogs behind\tNULL\tinner-circle\t2026-05-26 21:30:26\n2010001\tComing home to Snohomish\tNULL\tinner-circle\t2026-05-27 00:57:34\n2040001\tComing home to Snohomish\tNULL\tprivate\t2026-05-27 01:11:19\n2070001\tOn a dogs behind\tNULL\tprivate\t2026-05-27 01:17:18\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

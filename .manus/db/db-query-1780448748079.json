@@ -1,0 +1,120 @@
+{
+  "query": "\nSELECT id, name, email, openId, loginMethod, role, isPremium, createdAt \nFROM users \nWHERE openId = 'user_3EbVWbR4l4YyhQHiMTO3vvvafF5' \n   OR email = 'lesansemail@gmail.com'\nORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT id, name, email, openId, loginMethod, role, isPremium, createdAt \nFROM users \nWHERE openId = 'user_3EbVWbR4l4YyhQHiMTO3vvvafF5' \n   OR email = 'lesansemail@gmail.com'\nORDER BY id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "loginMethod": "clerk",
+      "role": "admin",
+      "isPremium": "1",
+      "createdAt": "2026-03-28 02:25:23"
+    },
+    {
+      "id": "4200036",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "user",
+      "isPremium": "0",
+      "createdAt": "2026-04-19 19:21:07"
+    },
+    {
+      "id": "5700017",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "admin",
+      "isPremium": "0",
+      "createdAt": "2026-04-23 15:24:07"
+    },
+    {
+      "id": "5760070",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "admin",
+      "isPremium": "0",
+      "createdAt": "2026-04-23 17:38:48"
+    },
+    {
+      "id": "5790049",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "admin",
+      "isPremium": "0",
+      "createdAt": "2026-04-23 18:51:37"
+    },
+    {
+      "id": "5880005",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "admin",
+      "isPremium": "0",
+      "createdAt": "2026-04-24 01:24:20"
+    },
+    {
+      "id": "13680057",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "admin",
+      "isPremium": "0",
+      "createdAt": "2026-05-14 17:43:36"
+    },
+    {
+      "id": "34080001",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "mpYa77MuSngajE8ZPthPdM",
+      "loginMethod": "google",
+      "role": "user",
+      "isPremium": "0",
+      "createdAt": "2026-06-02 17:08:13"
+    },
+    {
+      "id": "34590001",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "loginMethod": "clerk",
+      "role": "user",
+      "isPremium": "0",
+      "createdAt": "2026-06-03 00:41:30"
+    },
+    {
+      "id": "34590002",
+      "name": "NULL",
+      "email": "NULL",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "loginMethod": "NULL",
+      "role": "user",
+      "isPremium": "0",
+      "createdAt": "2026-06-03 00:41:31"
+    },
+    {
+      "id": "34590003",
+      "name": "NULL",
+      "email": "NULL",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "loginMethod": "NULL",
+      "role": "user",
+      "isPremium": "0",
+      "createdAt": "2026-06-03 00:41:36"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\topenId\tloginMethod\trole\tisPremium\tcreatedAt\n1\tLeSan Riedmann\tlesansemail@gmail.com\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\tclerk\tadmin\t1\t2026-03-28 02:25:23\n4200036\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tuser\t0\t2026-04-19 19:21:07\n5700017\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tadmin\t0\t2026-04-23 15:24:07\n5760070\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tadmin\t0\t2026-04-23 17:38:48\n5790049\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tadmin\t0\t2026-04-23 18:51:37\n5880005\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tadmin\t0\t2026-04-24 01:24:20\n13680057\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tadmin\t0\t2026-05-14 17:43:36\n34080001\tLeSan Riedmann\tlesansemail@gmail.com\tmpYa77MuSngajE8ZPthPdM\tgoogle\tuser\t0\t2026-06-02 17:08:13\n34590001\tLeSan Riedmann\tlesansemail@gmail.com\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\tclerk\tuser\t0\t2026-06-03 00:41:30\n34590002\tNULL\tNULL\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\tNULL\tuser\t0\t2026-06-03 00:41:31\n34590003\tNULL\tNULL\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\tNULL\tuser\t0\t2026-06-03 00:41:36\n",
+  "stderr": "",
+  "execution_time_ms": 281
+}

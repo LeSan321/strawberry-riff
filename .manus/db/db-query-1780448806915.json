@@ -1,0 +1,24 @@
+{
+  "query": "\nSELECT u.openId, u.id as user_id, u.name, u.email, COUNT(t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nWHERE u.openId IN ('mpYa77MuSngajE8ZPthPdM', 'FyDGTmvrk6Z8TdyN9L7QEP', '2jeqdC23QXeh6R6sWi7dMh', 'ESU5vMDerisHLbskGbjMhZ', 'user_3EbVWbR4l4YyhQHiMTO3vvvafF5')\nGROUP BY u.id\nHAVING track_count > 0\nORDER BY u.openId, track_count DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT u.openId, u.id as user_id, u.name, u.email, COUNT(t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nWHERE u.openId IN ('mpYa77MuSngajE8ZPthPdM', 'FyDGTmvrk6Z8TdyN9L7QEP', '2jeqdC23QXeh6R6sWi7dMh', 'ESU5vMDerisHLbskGbjMhZ', 'user_3EbVWbR4l4YyhQHiMTO3vvvafF5')\nGROUP BY u.id\nHAVING track_count > 0\nORDER BY u.openId, track_count DESC;\n",
+  "rows": [
+    {
+      "openId": "FyDGTmvrk6Z8TdyN9L7QEP",
+      "user_id": "4860001",
+      "name": "marrtians5",
+      "email": "marrtians5@yahoo.com",
+      "track_count": "4"
+    },
+    {
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "user_id": "1",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "track_count": "142"
+    }
+  ],
+  "messages": [],
+  "stdout": "openId\tuser_id\tname\temail\ttrack_count\nFyDGTmvrk6Z8TdyN9L7QEP\t4860001\tmarrtians5\tmarrtians5@yahoo.com\t4\nuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\t1\tLeSan Riedmann\tlesansemail@gmail.com\t142\n",
+  "stderr": "",
+  "execution_time_ms": 291
+}

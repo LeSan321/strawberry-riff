@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.open_id,\n  u.login_method,\n  u.role,\n  u.created_at,\n  COUNT(DISTINCT t.id) as track_count,\n  COUNT(DISTINCT p.id) as playlist_count\nFROM users u\nLEFT JOIN tracks t ON t.user_id = u.id\nLEFT JOIN playlists p ON p.user_id = u.id\nGROUP BY u.id\nORDER BY u.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.open_id,\n  u.login_method,\n  u.role,\n  u.created_at,\n  COUNT(DISTINCT t.id) as track_count,\n  COUNT(DISTINCT p.id) as playlist_count\nFROM users u\nLEFT JOIN tracks t ON t.user_id = u.id\nLEFT JOIN playlists p ON p.user_id = u.id\nGROUP BY u.id\nORDER BY u.id;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 't.user_id' in 'on clause'"
+  ]
+}

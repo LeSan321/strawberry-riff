@@ -1,0 +1,9 @@
+{
+  "query": "\nDELETE u FROM users u\nINNER JOIN (\n  SELECT openId, MIN(id) as keep_id\n  FROM users\n  GROUP BY openId\n) keeper ON u.openId = keeper.openId AND u.id != keeper.keep_id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nDELETE u FROM users u\nINNER JOIN (\n  SELECT openId, MIN(id) as keep_id\n  FROM users\n  GROUP BY openId\n) keeper ON u.openId = keeper.openId AND u.id != keeper.keep_id;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 385
+}

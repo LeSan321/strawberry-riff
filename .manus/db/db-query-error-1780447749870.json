@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.openId,\n  u.loginMethod,\n  u.role,\n  u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nWHERE u.track_count > 0 \n   OR u.name LIKE '%Randall%' \n   OR u.name LIKE '%Marrs%'\n   OR u.email LIKE '%maritan%'\n   OR u.email LIKE '%maritans%'\nGROUP BY u.id\nHAVING track_count > 0 OR u.name LIKE '%Randall%' OR u.name LIKE '%Marrs%'\nORDER BY track_count DESC\nLIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  u.id,\n  u.name,\n  u.email,\n  u.openId,\n  u.loginMethod,\n  u.role,\n  u.isPremium,\n  COUNT(DISTINCT t.id) as track_count\nFROM users u\nLEFT JOIN tracks t ON t.userId = u.id\nWHERE u.track_count > 0 \n   OR u.name LIKE '%Randall%' \n   OR u.name LIKE '%Marrs%'\n   OR u.email LIKE '%maritan%'\n   OR u.email LIKE '%maritans%'\nGROUP BY u.id\nHAVING track_count > 0 OR u.name LIKE '%Randall%' OR u.name LIKE '%Marrs%'\nORDER BY track_count DESC\nLIMIT 20;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'u.track_count' in 'where clause'"
+  ]
+}
