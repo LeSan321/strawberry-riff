@@ -306,6 +306,16 @@ export default function TrackPage() {
               </div>
             )}
 
+            {/* Lyrics */}
+            {fullTrack!.lyrics && fullTrack!.showLyricsOnShare && (
+              <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
+                <p className="text-xs font-semibold text-purple-600 mb-3 uppercase tracking-wider">Lyrics</p>
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-mono text-muted-foreground">
+                  {fullTrack!.lyrics}
+                </p>
+              </div>
+            )}
+
             {/* Cover Art Dimensions */}
             {fullTrack!.coverArtDimensions && (
               <div className="mt-6">

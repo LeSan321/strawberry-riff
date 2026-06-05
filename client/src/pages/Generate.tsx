@@ -75,6 +75,7 @@ function PublishDialog({
   genLyrics: string;
 }) {
   const [visibility, setVisibility] = useState<"private" | "inner-circle" | "public">("private");
+  const [showLyricsOnShare, setShowLyricsOnShare] = useState(true);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [coverArtUrl, setCoverArtUrl] = useState<string | null>(null);
   const [coverArtState, setCoverArtState] = useState<"idle" | "generating" | "done" | "error">("idle");
@@ -115,6 +116,7 @@ function PublishDialog({
         visibility,
         moodTags: selectedMoods,
         coverArtUrl: coverArtUrl ?? undefined,
+        showLyricsOnShare,
       });
       toast.success("Published to My Riffs!");
       onClose();
@@ -232,6 +234,21 @@ function PublishDialog({
                 <SelectItem value="public">Public — everyone</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Show Lyrics on Share */}
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+            <input
+              type="checkbox"
+              id="showLyricsOnShare"
+              checked={showLyricsOnShare}
+              onChange={(e) => setShowLyricsOnShare(e.target.checked)}
+              className="w-4 h-4 rounded cursor-pointer"
+            />
+            <label htmlFor="showLyricsOnShare" className="flex-1 cursor-pointer text-sm">
+              <span className="font-medium">Include lyrics</span>
+              <p className="text-xs text-muted-foreground mt-0.5">Allow others to see lyrics when viewing this track</p>
+            </label>
           </div>
 
           {/* Mood Tags */}

@@ -89,6 +89,7 @@ interface Track {
   plays: number;
   gradient?: string | null;
   coverArtUrl?: string | null;
+  showLyricsOnShare?: boolean;
   createdAt: Date;
 }
 
@@ -108,6 +109,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
     visibility: track.visibility,
     moodTags: track.moodTags,
     coverArtUrl: track.coverArtUrl ?? "",
+    showLyricsOnShare: track.showLyricsOnShare ?? true,
   });
 
   const toggleEditMood = (tag: string) => {
@@ -190,6 +192,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
       visibility: form.visibility as Visibility,
       moodTags: form.moodTags,
       coverArtUrl: form.coverArtUrl || undefined,
+      showLyricsOnShare: form.showLyricsOnShare,
     });
   };
 
@@ -343,6 +346,19 @@ function EditDialog({ track, onClose }: EditDialogProps) {
               <SelectItem value="public">Public — Everyone</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+          <input
+            type="checkbox"
+            id="showLyricsOnShare"
+            checked={form.showLyricsOnShare}
+            onChange={(e) => setForm((p) => ({ ...p, showLyricsOnShare: e.target.checked }))}
+            className="w-4 h-4 rounded cursor-pointer"
+          />
+          <label htmlFor="showLyricsOnShare" className="flex-1 cursor-pointer text-sm">
+            <span className="font-medium">Show lyrics publicly</span>
+            <p className="text-xs text-muted-foreground mt-0.5">Allow others to see lyrics when sharing this track</p>
+          </label>
         </div>
       </div>
       <DialogFooter>

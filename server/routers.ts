@@ -290,14 +290,16 @@ const tracksRouter = router({
         visibility: z.enum(["private", "inner-circle", "public"]).optional(),
         gradient: z.string().optional(),
         coverArtUrl: z.string().url().optional().or(z.literal("")),
+        showLyricsOnShare: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, moodTags, coverArtUrl, ...rest } = input;
+      const { id, moodTags, coverArtUrl, showLyricsOnShare, ...rest } = input;
       await updateTrack(id, ctx.user.id, {
         ...rest,
         moodTags: moodTags ? JSON.stringify(moodTags) : undefined,
         coverArtUrl: coverArtUrl !== undefined ? (coverArtUrl || null) : undefined,
+        showLyricsOnShare: showLyricsOnShare !== undefined ? showLyricsOnShare : undefined,
       });
       return getTrackById(id);
     }),
@@ -1094,6 +1096,7 @@ const musicGenerationRouter = router({
         visibility: z.enum(["private", "inner-circle", "public"]).default("private"),
         moodTags: z.array(z.string()).optional(),
         coverArtUrl: z.string().url().optional(),
+        showLyricsOnShare: z.boolean().optional().default(true),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1118,6 +1121,7 @@ const musicGenerationRouter = router({
         visibility: input.visibility,
         gradient: "from-purple-500 to-pink-500",
         coverArtUrl: input.coverArtUrl ?? null,
+        showLyricsOnShare: input.showLyricsOnShare ?? true,
       });
 
       // Auto-infer cover art dimensions from the music generation
