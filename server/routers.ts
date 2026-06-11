@@ -80,7 +80,7 @@ import { coverArtRouter } from "./coverArt/router";
 import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { storagePut } from "./storage";
+import { storagePut, storageGet } from "./storage";
 import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
@@ -169,6 +169,13 @@ const tracksRouter = router({
       const ext = input.mimeType.split("/")[1] || "jpg";
       const key = `cover-art/${ctx.user.id}/${nanoid(12)}.${ext}`;
       const { url } = await storagePut(key, buffer, input.mimeType);
+      return { url };
+    }),
+
+  getAudioUrl: publicProcedure
+    .input(z.object({ audioKey: z.string() }))
+    .query(async ({ input }) => {
+      const { url } = await storageGet(input.audioKey);
       return { url };
     }),
 

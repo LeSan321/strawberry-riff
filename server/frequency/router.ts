@@ -39,21 +39,30 @@ petal violet #C8A0D0 in transition zones. 35mm wide lens, slow pull-back camera,
 async function bridgeFetch(
   path: string,
   options: RequestInit = {},
-  timeoutMs: number = 30000
+  timeoutMs: number = 30000,
+  clerkToken?: string
 ): Promise<Response> {
   const url = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string> ?? {}),
+    };
+    
+    // Use Clerk Bearer token if provided, otherwise fall back to x-bridge-key for backward compatibility
+    if (clerkToken) {
+      headers["Authorization"] = `Bearer ${clerkToken}`;
+    } else if (ENV.studiosBridgeKey) {
+      headers["x-bridge-key"] = ENV.studiosBridgeKey;
+    }
+    
     return await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-bridge-key": ENV.studiosBridgeKey,
-        ...(options.headers ?? {}),
-      },
+      headers,
     });
   } finally {
     clearTimeout(timeoutId);
@@ -165,6 +174,17 @@ export const frequencyRouter = router({
       steeringNote: z.string().max(300).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      // Get Clerk session token for Studios bridge authentication
+      let clerkToken: string | undefined;
+      try {
+        // Extract token from the Authorization header that was set by the tRPC client
+        const authHeader = (ctx as any).authHeader;
+        if (authHeader?.startsWith("Bearer ")) {
+          clerkToken = authHeader.substring(7);
+        }
+      } catch {
+        // Token extraction failed, will fall back to x-bridge-key
+      }
       // Server-side lyrics resolution:
       // 1. If caller passed lyrics directly, use them
       // 2. If trackId provided, look up track.lyrics first, then join to musicGenerations.lyrics via musicGenerationId
@@ -212,18 +232,20 @@ export const frequencyRouter = router({
           arcPosition: input.arcPosition ?? "arriving",
           steeringNote: input.steeringNote,
         }),
-      }, 120000); // 120 seconds for Runway image generation
+      }, 120000, clerkToken); // 120 seconds for Runway image generation, pass Clerk token
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error ?? "Cover art generation failed");
       }
-      return res.json() as Promise<{
-        success: boolean;
-        coverArtUrl: string;
-        riffTrackId: number;
-        arcPosition: string;
-        usedPersonalFrequency: boolean;
-      }>;
+      // Studios now returns { imageUrl: "..." } directly
+      const data = await res.json() as { imageUrl: string };
+      return {
+        success: true,
+        coverArtUrl: data.imageUrl,
+        riffTrackId: input.trackId ?? Date.now(),
+        arcPosition: input.arcPosition ?? "arriving",
+        usedPersonalFrequency: false,
+      };
     }),
 
   /**
