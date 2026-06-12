@@ -222,7 +222,8 @@ export const frequencyRouter = router({
       const finalLyrics = resolvedLyrics || BLOOMING_FRONTIER_VOCABULARY;
 
       // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
-      const res = await bridgeFetch("/cover-art/generate", {
+      // Call Studios' tRPC endpoint: POST /api/trpc/frequency.generateCoverArt
+      const res = await bridgeFetch("/trpc/frequency.generateCoverArt", {
         method: "POST",
         body: JSON.stringify({
           riffUserId: String(ctx.user.id),
