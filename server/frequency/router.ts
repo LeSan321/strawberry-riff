@@ -36,6 +36,12 @@ touching the same surface, subsurface scattering on skin, thin rim on organic ed
 petal violet #C8A0D0 in transition zones. 35mm wide lens, slow pull-back camera,
 270° shutter, cinematic realism, film grain, unhurried pacing, camera as third explorer.`;
 
+/** Extract Clerk token from tRPC context auth header */
+function extractClerkToken(ctx: { authHeader?: string }): string | undefined {
+  const authHeader = (ctx as any).authHeader as string | undefined;
+  return authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+}
+
 async function bridgeFetch(
   path: string,
   options: RequestInit = {},
@@ -72,28 +78,43 @@ async function bridgeFetch(
 export const frequencyRouter = router({
   /**
    * Get the current user's default frequency from Studios.
-   * Returns null if the user hasn't completed Find Your Frequency yet.
+   * Returns { hasFrequency: false, frequency: null } on any error — never throws.
+   * This ensures the FrequencyModal always resolves and never freezes.
    */
   getDefault: protectedProcedure.query(async ({ ctx }) => {
     if (!ENV.studiosBridgeUrl) {
+      console.log("[Frequency] getDefault: bridge URL not configured, returning no-frequency");
       return { hasFrequency: false, frequency: null };
     }
-    // Get Clerk token from auth header
-    const authHeader = (ctx as any).authHeader as string | undefined;
-    const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
-    const res = await bridgeFetch(`/frequency/default`, {}, 30000, clerkToken);
-    if (!res.ok) return { hasFrequency: false, frequency: null };
-    return res.json() as Promise<{
-      hasFrequency: boolean;
-      frequency: {
-        id: number;
-        frequencyName: string;
-        arcType: string;
-        synthesisFingerprint: string | null;
-        vocabularyJson: string;
-        createdAt: string;
-      } | null;
-    }>;
+    const clerkToken = extractClerkToken(ctx);
+    if (!clerkToken) {
+      console.log("[Frequency] getDefault: no Clerk token in context, returning no-frequency");
+      return { hasFrequency: false, frequency: null };
+    }
+    try {
+      const res = await bridgeFetch(`/frequency/default`, {}, 15000, clerkToken);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "(unreadable)");
+        console.warn(`[Frequency] getDefault: Studios returned ${res.status} — body: ${body.slice(0, 300)}`);
+        return { hasFrequency: false, frequency: null };
+      }
+      const data = await res.json() as {
+        hasFrequency: boolean;
+        frequency: {
+          id: number;
+          frequencyName: string;
+          arcType: string;
+          synthesisFingerprint: string | null;
+          vocabularyJson: string;
+          createdAt: string;
+        } | null;
+      };
+      console.log(`[Frequency] getDefault: hasFrequency=${data.hasFrequency}`);
+      return data;
+    } catch (err) {
+      console.error("[Frequency] getDefault: bridge call failed:", err);
+      return { hasFrequency: false, frequency: null };
+    }
   }),
 
   /**
@@ -108,8 +129,7 @@ export const frequencyRouter = router({
       q4_arc_time: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
-      const authHeader = (ctx as any).authHeader as string | undefined;
-      const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+      const clerkToken = extractClerkToken(ctx);
       const res = await bridgeFetch("/frequency/synthesize", {
         method: "POST",
         body: JSON.stringify({
@@ -117,8 +137,11 @@ export const frequencyRouter = router({
         }),
       }, 120000, clerkToken); // 120 seconds for LLM synthesis
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).error ?? "Synthesis failed");
+        const body = await res.text().catch(() => "{}");
+        console.error(`[Frequency] synthesize: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
+        let errMsg = "Synthesis failed";
+        try { errMsg = (JSON.parse(body) as any).error ?? errMsg; } catch { /* ignore */ }
+        throw new Error(errMsg);
       }
       return res.json() as Promise<{
         success: boolean;
@@ -151,15 +174,17 @@ export const frequencyRouter = router({
       diagnosticAnswersJson: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const authHeader = (ctx as any).authHeader as string | undefined;
-      const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+      const clerkToken = extractClerkToken(ctx);
       const res = await bridgeFetch("/frequency/save", {
         method: "POST",
         body: JSON.stringify(input),
       }, 30000, clerkToken);
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).error ?? "Save failed");
+        const body = await res.text().catch(() => "{}");
+        console.error(`[Frequency] save: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
+        let errMsg = "Save failed";
+        try { errMsg = (JSON.parse(body) as any).error ?? errMsg; } catch { /* ignore */ }
+        throw new Error(errMsg);
       }
       return res.json() as Promise<{ success: boolean; frequencyId: number }>;
     }),
@@ -178,16 +203,12 @@ export const frequencyRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       // Get Clerk session token for Studios bridge authentication
-      let clerkToken: string | undefined;
-      try {
-        // Extract token from the Authorization header that was set by the tRPC client
-        const authHeader = (ctx as any).authHeader;
-        if (authHeader?.startsWith("Bearer ")) {
-          clerkToken = authHeader.substring(7);
-        }
-      } catch {
-        // Token extraction failed, will fall back to x-bridge-key
+      const clerkToken = extractClerkToken(ctx);
+      if (!clerkToken) {
+        console.error("[Frequency] generateCoverArt: no Clerk token available");
+        throw new Error("Authentication required for cover art generation");
       }
+
       // Server-side lyrics resolution:
       // 1. If caller passed lyrics directly, use them
       // 2. If trackId provided, look up track.lyrics first, then join to musicGenerations.lyrics via musicGenerationId
@@ -223,6 +244,7 @@ export const frequencyRouter = router({
       }
 
       const finalLyrics = resolvedLyrics || BLOOMING_FRONTIER_VOCABULARY;
+      console.log(`[Frequency] generateCoverArt: lyrics resolved (${resolvedLyrics ? "from track" : "Blooming Frontier fallback"}), calling Studios bridge`);
 
       // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
       // Use Studios' REST bridge endpoint — plain JSON, no tRPC wire format needed
@@ -235,12 +257,18 @@ export const frequencyRouter = router({
           steeringNote: input.steeringNote,
         }),
       }, 120000, clerkToken); // 120 seconds for Runway image generation, pass Clerk token
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).error ?? "Cover art generation failed");
+        const body = await res.text().catch(() => "{}");
+        console.error(`[Frequency] generateCoverArt: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
+        let errMsg = "Cover art generation failed";
+        try { errMsg = (JSON.parse(body) as any).error ?? errMsg; } catch { /* ignore */ }
+        throw new Error(errMsg);
       }
+
       // Studios now returns { imageUrl: "..." } directly
       const data = await res.json() as { imageUrl: string };
+      console.log(`[Frequency] generateCoverArt: success, imageUrl=${data.imageUrl?.slice(0, 60)}...`);
       return {
         success: true,
         coverArtUrl: data.imageUrl,

@@ -1045,3 +1045,24 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Remove VITE_OAUTH_CALLBACK_ORIGIN and token-handoff endpoint (no longer needed)
 - [ ] Run full test suite
 - [ ] Save checkpoint and deploy to Railway
+
+## Phase 105 — Clerk Auth + Studios Bridge Hardening
+
+- [x] Clerk migration complete: @clerk/express server-side, @clerk/clerk-react frontend
+- [x] Fixed VITE_CLERK_PUBLISHABLE_KEY not reaching Railway build (added define block in vite.config.ts)
+- [x] Cleaned up ~20,700 duplicate ghost user rows; added UNIQUE index on openId
+- [x] Migrated LeSan Riedmann account (DB ID 1) to Clerk ID — 142 tracks restored
+- [x] Fixed mobile sign-in: added Sign In button to hamburger menu in AppLayout.tsx
+- [x] Implemented lyrics visibility toggle (showLyricsOnShare) in Generate.tsx, MyRiffs.tsx, TrackPage.tsx, server routers, and db.ts
+- [x] Updated all bridge calls in frequency/router.ts to use Clerk Bearer tokens instead of x-bridge-key
+- [x] Fixed bridgeFetch to use correct REST bridge endpoint /api/bridge/cover-art/generate
+- [x] Added authHeader to tRPC context so procedures can forward Clerk tokens to Studios
+- [x] Improved frequency/router.ts error handling: getDefault never throws, logs Studios response body on failure, graceful fallback to { hasFrequency: false } on any error
+- [x] Extracted extractClerkToken() helper to deduplicate token extraction across all procedures
+- [x] Confirmed Studios' CLERK_PUBLISHABLE_KEY fix deployed (was missing without VITE_ prefix)
+- [x] Confirmed /api/bridge/cover-art/generate is live on Studios and returns proper JSON errors
+- [ ] Studios to deploy /api/bridge/frequency/default, /synthesize, /save bridge routes (currently returning SPA HTML — routes not registered)
+- [ ] Live test: cover art generation end-to-end with valid Clerk token
+- [ ] Live test: Find Your Frequency flow end-to-end once Studios deploys frequency bridge routes
+- [ ] Fix audio player 401 errors (S3 presigned URL expiration — planned: on-demand URL generation)
+- [ ] Migrate Randall Marrs (marrtians5@yahoo.com, DB ID 4860001, 4 tracks) to Clerk when he signs up
