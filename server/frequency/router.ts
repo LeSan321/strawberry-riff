@@ -75,10 +75,13 @@ export const frequencyRouter = router({
    * Returns null if the user hasn't completed Find Your Frequency yet.
    */
   getDefault: protectedProcedure.query(async ({ ctx }) => {
-    if (!ENV.studiosBridgeUrl || !ENV.studiosBridgeKey) {
+    if (!ENV.studiosBridgeUrl) {
       return { hasFrequency: false, frequency: null };
     }
-    const res = await bridgeFetch(`/frequency/${String(ctx.user.id)}`);
+    // Get Clerk token from auth header
+    const authHeader = (ctx as any).authHeader as string | undefined;
+    const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+    const res = await bridgeFetch(`/frequency/default`, {}, 30000, clerkToken);
     if (!res.ok) return { hasFrequency: false, frequency: null };
     return res.json() as Promise<{
       hasFrequency: boolean;
@@ -105,13 +108,14 @@ export const frequencyRouter = router({
       q4_arc_time: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
+      const authHeader = (ctx as any).authHeader as string | undefined;
+      const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
       const res = await bridgeFetch("/frequency/synthesize", {
         method: "POST",
         body: JSON.stringify({
-          riffUserId: String(ctx.user.id),
           answers: input,
         }),
-      }, 120000); // 120 seconds for LLM synthesis
+      }, 120000, clerkToken); // 120 seconds for LLM synthesis
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error ?? "Synthesis failed");
@@ -147,13 +151,12 @@ export const frequencyRouter = router({
       diagnosticAnswersJson: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
+      const authHeader = (ctx as any).authHeader as string | undefined;
+      const clerkToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
       const res = await bridgeFetch("/frequency/save", {
         method: "POST",
-        body: JSON.stringify({
-          riffUserId: String(ctx.user.id),
-          ...input,
-        }),
-      });
+        body: JSON.stringify(input),
+      }, 30000, clerkToken);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error ?? "Save failed");
@@ -222,12 +225,10 @@ export const frequencyRouter = router({
       const finalLyrics = resolvedLyrics || BLOOMING_FRONTIER_VOCABULARY;
 
       // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
-      // Call Studios' tRPC endpoint: POST /api/trpc/frequency.generateCoverArt
-      const res = await bridgeFetch("/trpc/frequency.generateCoverArt", {
+      // Use Studios' REST bridge endpoint — plain JSON, no tRPC wire format needed
+      const res = await bridgeFetch("/cover-art/generate", {
         method: "POST",
         body: JSON.stringify({
-          riffUserId: String(ctx.user.id),
-          riffTrackId: input.trackId ?? Date.now(),
           lyrics: finalLyrics,
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
