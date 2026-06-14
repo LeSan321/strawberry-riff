@@ -140,29 +140,29 @@ export const frequencyRouter = router({
           q4: input.q4_arc_time,
         }),
       }, 120000, clerkToken); // 120 seconds for LLM synthesis
+      const responseText = await res.text().catch(() => "{}");
+      console.log(`[Frequency] synthesize: Studios returned ${res.status} — body: ${responseText.slice(0, 800)}`);
       if (!res.ok) {
-        const body = await res.text().catch(() => "{}");
-        console.error(`[Frequency] synthesize: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
         let errMsg = "Synthesis failed";
-        try { errMsg = (JSON.parse(body) as any).error ?? errMsg; } catch { /* ignore */ }
+        try { errMsg = (JSON.parse(responseText) as any).error ?? errMsg; } catch { /* ignore */ }
         throw new Error(errMsg);
       }
-      return res.json() as Promise<{
-        success: boolean;
+      let parsed: any;
+      try { parsed = JSON.parse(responseText); } catch {
+        throw new Error("Studios returned invalid JSON from synthesize");
+      }
+      // Normalise response — Studios may return the synthesis at top level or nested under 'synthesis'
+      const synthesis = parsed.synthesis ?? parsed;
+      console.log(`[Frequency] synthesize: synthesis keys: ${Object.keys(synthesis).join(", ")}`);
+      return {
+        success: true,
         synthesis: {
-          reflection: string;
-          frequencyName: string;
-          arcType: typeof ARC_TYPES[number];
-          vocabulary: {
-            emotionalRegister: string[];
-            colorAndLight: string[];
-            environment: string[];
-            texture: string[];
-            arcTerms: string[];
-            forbiddenTerms: string[];
-          };
-        };
-      }>;
+          reflection: synthesis.reflection ?? synthesis.synthesisFingerprint ?? "",
+          frequencyName: synthesis.frequencyName ?? synthesis.name ?? "My Frequency",
+          arcType: synthesis.arcType ?? "expansive_mythic",
+          vocabulary: synthesis.vocabulary ?? synthesis.vocabularyJson ?? {},
+        },
+      };
     }),
 
   /**
