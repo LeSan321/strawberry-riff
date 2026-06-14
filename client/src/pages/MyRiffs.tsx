@@ -443,7 +443,7 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
         id: track.id,
         title: track.title,
         artist: track.artist ?? undefined,
-        audioUrl: track.audioUrl,
+        audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
         gradient: track.gradient ?? undefined,
         coverArtUrl: track.coverArtUrl ?? undefined,
       });

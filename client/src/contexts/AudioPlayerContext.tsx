@@ -5,9 +5,22 @@ export interface PlayerTrack {
   title: string;
   artist?: string | null;
   audioUrl: string;
+  audioKey?: string | null; // S3 key — used to generate a fresh proxy URL on every play
   gradient?: string | null;
   moodTags?: string[];
   coverArtUrl?: string | null;
+}
+
+/**
+ * Returns a server-proxied audio URL that never expires.
+ * The /manus-storage/* proxy fetches a fresh presigned URL on every request,
+ * so stored presigned URLs in the DB (which expire after ~1 hour) are bypassed.
+ */
+export function getProxyAudioUrl(track: Pick<PlayerTrack, 'audioUrl' | 'audioKey'>): string {
+  if (track.audioKey) {
+    return `/manus-storage/${track.audioKey}`;
+  }
+  return track.audioUrl;
 }
 
 export type RepeatMode = "off" | "one" | "all";
@@ -167,7 +180,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
             progress: 0,
             currentTime: 0,
           }));
-          audio.src = nextTrack.audioUrl;
+          audio.src = getProxyAudioUrl(nextTrack);
           audio.load();
           audio.play().catch(console.error);
         } else if (repeat === "all") {
@@ -183,7 +196,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
             progress: 0,
             currentTime: 0,
           }));
-          audio.src = firstTrack.audioUrl;
+          audio.src = getProxyAudioUrl(firstTrack);
           audio.load();
           audio.play().catch(console.error);
         } else {
@@ -198,7 +211,8 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const loadAndPlay = useCallback((track: PlayerTrack) => {
     const audio = getOrCreateAudio();
     audio.pause();
-    audio.src = track.audioUrl;
+    // Use proxy URL if audioKey is available — this bypasses expired presigned URLs
+    audio.src = getProxyAudioUrl(track);
     audio.volume = stateRef.current.volume;
     // Call load() to reset the element and start buffering from the new src
     audio.load();

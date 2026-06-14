@@ -75,7 +75,7 @@ function TrackCard({
         id: track.id,
         title: track.title,
         artist: track.artist ?? "Unknown",
-        audioUrl: track.audioUrl,
+        audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
         gradient,
         coverArtUrl: track.coverArtUrl,
       });
