@@ -192,6 +192,9 @@ export const frequencyRouter = router({
           frequencyName: synthesis.suggestedName ?? synthesis.frequencyName ?? synthesis.name ?? "My Frequency",
           arcType: synthesis.arcType ?? "expansive_mythic",
           vocabulary: safeVocab,
+          // Pass the raw vocabulary back so the save call can send it to Studios unchanged
+          // (Studios expects the original { term, instruction } object format, not flattened strings)
+          rawVocabularyJson: JSON.stringify(vocab),
         },
       };
     }),

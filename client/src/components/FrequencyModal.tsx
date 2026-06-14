@@ -58,6 +58,8 @@ type SynthesisResult = {
     arcTerms: string[];
     forbiddenTerms: string[];
   };
+  /** Raw vocabulary JSON in Studios' original { term, instruction } format — used for save */
+  rawVocabularyJson?: string;
 };
 
 type Screen = "loading" | "existing" | "intro" | "q1" | "q2" | "q3" | "q4" | "synthesizing" | "reflection" | "vocabulary" | "name";
@@ -156,7 +158,8 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
       await saveMutation.mutateAsync({
         frequencyName: frequencyName.trim() || synthesis.frequencyName,
         arcType: synthesis.arcType as any,
-        vocabularyJson: JSON.stringify(synthesis.vocabulary),
+        // Use rawVocabularyJson (original { term, instruction } format) — Studios rejects flattened strings
+        vocabularyJson: synthesis.rawVocabularyJson ?? JSON.stringify(synthesis.vocabulary),
         synthesisFingerprint: synthesis.reflection,
         diagnosticAnswersJson: JSON.stringify(answers),
       });
