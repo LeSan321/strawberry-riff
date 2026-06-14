@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, name, email, openId, isPremium, stripeCustomerId, stripeSubscriptionId, createdAt FROM users WHERE name LIKE '%Larry%' OR name LIKE '%Riedmann%' OR email LIKE '%riedmann%' OR email LIKE '%larry%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, name, email, openId, isPremium, stripeCustomerId, stripeSubscriptionId, createdAt FROM users WHERE name LIKE '%Larry%' OR name LIKE '%Riedmann%' OR email LIKE '%riedmann%' OR email LIKE '%larry%';",
+  "rows": [
+    {
+      "id": "1",
+      "name": "LeSan Riedmann",
+      "email": "lesansemail@gmail.com",
+      "openId": "user_3EbVWbR4l4YyhQHiMTO3vvvafF5",
+      "isPremium": "1",
+      "stripeCustomerId": "cus_UFzxWGM5Gal7qA",
+      "stripeSubscriptionId": "NULL",
+      "createdAt": "2026-03-28 02:25:23"
+    },
+    {
+      "id": "1560038",
+      "name": "larryriedmann60",
+      "email": "larryriedmann60@gmail.com",
+      "openId": "ESU5vMDerisHLbskGbjMhZ",
+      "isPremium": "0",
+      "stripeCustomerId": "NULL",
+      "stripeSubscriptionId": "NULL",
+      "createdAt": "2026-04-01 20:36:33"
+    },
+    {
+      "id": "34620001",
+      "name": "LeSan Riedmann",
+      "email": "lesanr@protonmail.com",
+      "openId": "user_3EbWDWA0u21OvwEK18ZES1gFLBe",
+      "isPremium": "0",
+      "stripeCustomerId": "NULL",
+      "stripeSubscriptionId": "NULL",
+      "createdAt": "2026-06-03 00:47:11"
+    },
+    {
+      "id": "35730001",
+      "name": "Larry Riedmann",
+      "email": "larryriedmann60@gmail.com",
+      "openId": "user_3EeO4aQLRH0hzCfOACe1fe4AFgi",
+      "isPremium": "0",
+      "stripeCustomerId": "NULL",
+      "stripeSubscriptionId": "NULL",
+      "createdAt": "2026-06-04 01:09:41"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\topenId\tisPremium\tstripeCustomerId\tstripeSubscriptionId\tcreatedAt\n1\tLeSan Riedmann\tlesansemail@gmail.com\tuser_3EbVWbR4l4YyhQHiMTO3vvvafF5\t1\tcus_UFzxWGM5Gal7qA\tNULL\t2026-03-28 02:25:23\n1560038\tlarryriedmann60\tlarryriedmann60@gmail.com\tESU5vMDerisHLbskGbjMhZ\t0\tNULL\tNULL\t2026-04-01 20:36:33\n34620001\tLeSan Riedmann\tlesanr@protonmail.com\tuser_3EbWDWA0u21OvwEK18ZES1gFLBe\t0\tNULL\tNULL\t2026-06-03 00:47:11\n35730001\tLarry Riedmann\tlarryriedmann60@gmail.com\tuser_3EeO4aQLRH0hzCfOACe1fe4AFgi\t0\tNULL\tNULL\t2026-06-04 01:09:41\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

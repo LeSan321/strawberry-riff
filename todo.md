@@ -1066,3 +1066,21 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Live test: Find Your Frequency flow end-to-end once Studios deploys frequency bridge routes
 - [ ] Fix audio player 401 errors (S3 presigned URL expiration — planned: on-demand URL generation)
 - [ ] Migrate Randall Marrs (marrtians5@yahoo.com, DB ID 4860001, 4 tracks) to Clerk when he signs up
+
+## Phase 106 — Studios Integration Fixes (Jun 14, 2026)
+
+- [x] Migrate lyric generator from Manus Forge to Anthropic Claude (@anthropic-ai/sdk)
+- [x] Add ANTHROPIC_API_KEY secret to Railway environment
+- [x] Create server/_core/anthropic.ts helper (callClaude)
+- [x] Update server/lyricsGenerator.ts to use callClaude instead of invokeLLM
+- [x] Update server/lyrics.test.ts to mock callClaude (geo-block note added)
+- [x] Wire steeringNote: genPrompt in Generate.tsx PublishDialog cover art call
+- [x] Fixed frequency synthesize: Studios expects q1/q2/q3/q4 (not q1_sound_space etc.)
+- [x] Fixed frequency synthesize response: use suggestedName not frequencyName
+- [x] Fixed vocabulary .map() crash: parse vocabularyJson string, ensure all array fields exist
+- [x] Fixed vocabulary term objects: flatten {term, instruction} to plain strings for display
+- [x] Fixed frequency save: send vocabulary as parsed object not JSON string to Studios
+- [x] Fixed audio 401 errors: use /manus-storage proxy URL instead of expired presigned S3 URLs
+- [x] Added diagnostic auth logging to context.ts (secretKey prefix, tokenLen, clerkUserId)
+- [x] Promoted Larry Riedmann (larryriedmann60@gmail.com) to isPremium=true (comped account)
+- [x] All 321 tests passing (1 skipped: MiniMax geo-block)

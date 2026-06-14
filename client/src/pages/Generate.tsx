@@ -98,6 +98,7 @@ function PublishDialog({
       const result = await coverArtMutation.mutateAsync({
         trackId: generationId,
         lyrics: genLyrics || undefined,
+        steeringNote: genPrompt || undefined,
         genre: undefined,
         arcPosition: "arriving",
       });

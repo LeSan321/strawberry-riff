@@ -4,7 +4,7 @@
  * Uses the 5-Layer Writer's Formula to construct prompts for invokeLLM
  */
 
-import { invokeLLM } from "./_core/llm";
+import { callClaude } from "./_core/anthropic";
 
 // ─── Writer's Bible System Prompt ─────────────────────────────────────────────
 export const WRITERS_BIBLE_SYSTEM_PROMPT = `You are the Strawberry Riff Lyrics Generator, a masterful AI songwriter. Your core mission is to create sticky, earworm lyrics that make users say "whoa, listen to this" — infusing every song with replayability, emotional depth, and fusion-genre freshness.
@@ -242,24 +242,15 @@ export async function generateLyrics(input: LyricsGenerationInput): Promise<{
 }> {
   const userPrompt = buildLyricsPrompt(input);
 
-  // Generate a unique conversation ID for this generation to prevent context bleed
-  // This ensures each generation is isolated from previous ones
-  const conversationId = `lyrics-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
   const systemPrompt = input.rewriteMode ? REWRITE_MODE_SYSTEM_PROMPT : WRITERS_BIBLE_SYSTEM_PROMPT;
 
-  const response = await invokeLLM({
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    conversationId,
+  const response = await callClaude({
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+    maxTokens: 2048,
   });
 
-  const fullResponse: string =
-    typeof response.choices[0]?.message?.content === "string"
-      ? response.choices[0].message.content
-      : "";
+  const fullResponse: string = response.content;
 
   // Parse out the stickiness analysis section if present
   const stickinessMatch = fullResponse.match(
