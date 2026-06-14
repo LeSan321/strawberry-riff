@@ -164,21 +164,32 @@ export const frequencyRouter = router({
         } catch { vocab = {}; }
       }
       vocab = vocab ?? {};
+
+      /**
+       * Flatten vocabulary entries — Studios returns each term as either:
+       *   a) a plain string: "New Frontier"
+       *   b) an object: { term: "New Frontier", instruction: "Depict..." }
+       * The FrequencyModal renders plain strings, so flatten objects to their .term value.
+       */
+      const flattenTerms = (arr: any[]): string[] =>
+        arr.map((t) => (typeof t === "string" ? t : t?.term ?? String(t)));
+
       // Ensure every expected array field exists so the UI never crashes on .map()
       const safeVocab = {
-        emotionalRegister: Array.isArray(vocab.emotionalRegister) ? vocab.emotionalRegister : [],
-        colorAndLight: Array.isArray(vocab.colorAndLight) ? vocab.colorAndLight : [],
-        environment: Array.isArray(vocab.environment) ? vocab.environment : [],
-        texture: Array.isArray(vocab.texture) ? vocab.texture : [],
-        arcTerms: Array.isArray(vocab.arcTerms) ? vocab.arcTerms : [],
-        forbiddenTerms: Array.isArray(vocab.forbiddenTerms) ? vocab.forbiddenTerms : [],
+        emotionalRegister: flattenTerms(Array.isArray(vocab.emotionalRegister) ? vocab.emotionalRegister : []),
+        colorAndLight: flattenTerms(Array.isArray(vocab.colorAndLight) ? vocab.colorAndLight : []),
+        environment: flattenTerms(Array.isArray(vocab.environment) ? vocab.environment : []),
+        texture: flattenTerms(Array.isArray(vocab.texture) ? vocab.texture : []),
+        arcTerms: flattenTerms(Array.isArray(vocab.arcTerms) ? vocab.arcTerms : []),
+        forbiddenTerms: flattenTerms(Array.isArray(vocab.forbiddenTerms) ? vocab.forbiddenTerms : []),
       };
-      console.log(`[Frequency] synthesize: vocab keys: ${Object.keys(safeVocab).join(", ")}, emotionalRegister count: ${safeVocab.emotionalRegister.length}`);
+      console.log(`[Frequency] synthesize: vocab keys: ${Object.keys(safeVocab).join(", ")}, environment count: ${safeVocab.environment.length}, sample: ${safeVocab.environment[0] ?? "none"}`);
       return {
         success: true,
         synthesis: {
           reflection: synthesis.reflection ?? synthesis.synthesisFingerprint ?? "",
-          frequencyName: synthesis.frequencyName ?? synthesis.name ?? "My Frequency",
+          // Studios returns 'suggestedName', not 'frequencyName'
+          frequencyName: synthesis.suggestedName ?? synthesis.frequencyName ?? synthesis.name ?? "My Frequency",
           arcType: synthesis.arcType ?? "expansive_mythic",
           vocabulary: safeVocab,
         },
