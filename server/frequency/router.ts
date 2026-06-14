@@ -213,9 +213,20 @@ export const frequencyRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const clerkToken = extractClerkToken(ctx);
+      // Studios expects `vocabulary` as a parsed object, NOT `vocabularyJson` as a string
+      let vocabularyObj: unknown = {};
+      try { vocabularyObj = JSON.parse(input.vocabularyJson); } catch { /* use empty object */ }
+      const studiosPayload = {
+        frequencyName: input.frequencyName,
+        arcType: input.arcType,
+        vocabulary: vocabularyObj,
+        synthesisFingerprint: input.synthesisFingerprint,
+        diagnosticAnswersJson: input.diagnosticAnswersJson,
+      };
+      console.log(`[Frequency] save: sending to Studios — frequencyName: ${input.frequencyName}, arcType: ${input.arcType}, vocabKeys: ${Object.keys(vocabularyObj as object).join(",")}`);
       const res = await bridgeFetch("/frequency/save", {
         method: "POST",
-        body: JSON.stringify(input),
+        body: JSON.stringify(studiosPayload),
       }, 30000, clerkToken);
       if (!res.ok) {
         const body = await res.text().catch(() => "{}");
