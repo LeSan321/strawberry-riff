@@ -25,11 +25,16 @@ export async function createContext(
       : opts.req.cookies?.["__session"] ?? null;
 
     if (sessionToken) {
+      // Diagnostic: log key presence and token prefix so we can trace Railway failures
+      const secretKeyPrefix = ENV.clerkSecretKey?.slice(0, 12) ?? "(empty)";
+      console.log(`[Auth] Verifying token. secretKey prefix: ${secretKeyPrefix}, tokenLen: ${sessionToken.length}`);
+
       // Verify the Clerk session token
       const verifiedToken = await verifyToken(sessionToken, {
         secretKey: ENV.clerkSecretKey,
       });
       const clerkUserId = verifiedToken.sub;
+      console.log(`[Auth] Token verified OK. clerkUserId: ${clerkUserId}`);
 
       if (clerkUserId) {
         // Look up or create the local user record using Clerk ID as openId
@@ -65,10 +70,18 @@ export async function createContext(
         }
 
         user = localUser ?? null;
+        console.log(`[Auth] User resolved: ${user ? `id=${user.id} openId=${user.openId}` : "null (not in DB)"}`);
+      }
+    } else {
+      // No token present — public request
+      const hasAuthHeader = !!opts.req.headers.authorization;
+      if (hasAuthHeader) {
+        console.warn(`[Auth] Authorization header present but not a Bearer token: ${opts.req.headers.authorization?.slice(0, 20)}`);
       }
     }
-  } catch {
+  } catch (authErr) {
     // Authentication is optional for public procedures.
+    console.error(`[Auth] Token verification failed: ${authErr instanceof Error ? authErr.message : String(authErr)}`);
     user = null;
   }
 
