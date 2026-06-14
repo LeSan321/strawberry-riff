@@ -130,10 +130,14 @@ export const frequencyRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const clerkToken = extractClerkToken(ctx);
+      // Studios expects q1/q2/q3/q4 — map from Riff's verbose field names
       const res = await bridgeFetch("/frequency/synthesize", {
         method: "POST",
         body: JSON.stringify({
-          answers: input,
+          q1: input.q1_sound_space,
+          q2: input.q2_light_color,
+          q3: input.q3_world_texture,
+          q4: input.q4_arc_time,
         }),
       }, 120000, clerkToken); // 120 seconds for LLM synthesis
       if (!res.ok) {
