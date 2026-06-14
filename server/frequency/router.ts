@@ -154,13 +154,33 @@ export const frequencyRouter = router({
       // Normalise response — Studios may return the synthesis at top level or nested under 'synthesis'
       const synthesis = parsed.synthesis ?? parsed;
       console.log(`[Frequency] synthesize: synthesis keys: ${Object.keys(synthesis).join(", ")}`);
+      // Resolve vocabulary — Studios may return it as a parsed object OR as a JSON string
+      let vocab = synthesis.vocabulary;
+      if (!vocab && synthesis.vocabularyJson) {
+        try {
+          vocab = typeof synthesis.vocabularyJson === "string"
+            ? JSON.parse(synthesis.vocabularyJson)
+            : synthesis.vocabularyJson;
+        } catch { vocab = {}; }
+      }
+      vocab = vocab ?? {};
+      // Ensure every expected array field exists so the UI never crashes on .map()
+      const safeVocab = {
+        emotionalRegister: Array.isArray(vocab.emotionalRegister) ? vocab.emotionalRegister : [],
+        colorAndLight: Array.isArray(vocab.colorAndLight) ? vocab.colorAndLight : [],
+        environment: Array.isArray(vocab.environment) ? vocab.environment : [],
+        texture: Array.isArray(vocab.texture) ? vocab.texture : [],
+        arcTerms: Array.isArray(vocab.arcTerms) ? vocab.arcTerms : [],
+        forbiddenTerms: Array.isArray(vocab.forbiddenTerms) ? vocab.forbiddenTerms : [],
+      };
+      console.log(`[Frequency] synthesize: vocab keys: ${Object.keys(safeVocab).join(", ")}, emotionalRegister count: ${safeVocab.emotionalRegister.length}`);
       return {
         success: true,
         synthesis: {
           reflection: synthesis.reflection ?? synthesis.synthesisFingerprint ?? "",
           frequencyName: synthesis.frequencyName ?? synthesis.name ?? "My Frequency",
           arcType: synthesis.arcType ?? "expansive_mythic",
-          vocabulary: synthesis.vocabulary ?? synthesis.vocabularyJson ?? {},
+          vocabulary: safeVocab,
         },
       };
     }),
