@@ -198,11 +198,11 @@ function EditDialog({ track, onClose }: EditDialogProps) {
   };
 
   return (
-    <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
       <DialogHeader>
         <DialogTitle>Edit Track</DialogTitle>
       </DialogHeader>
-      <div className="space-y-4 py-2">
+      <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
         {/* Cover art */}
         <div>
           <Label>Cover Art</Label>
