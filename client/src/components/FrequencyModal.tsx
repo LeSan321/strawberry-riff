@@ -74,24 +74,13 @@ const VOCAB_LABELS: Record<string, string> = {
 };
 
 export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
-  console.log("[FrequencyModal] Component rendered. open prop:", open);
   const utils = trpc.useUtils();
-  console.log("[FrequencyModal] Setting up getDefault query");
   const { data: existingFrequency, isLoading: loadingExisting, isError: errorExisting } = trpc.frequency.getDefault.useQuery(undefined, {
     retry: 1,
     staleTime: 0,
+    // Only fetch when the modal is actually open
+    enabled: open,
   });
-  // Log query state on every render to track when it resolves
-  useEffect(() => {
-    if (loadingExisting) {
-      console.log("[FrequencyModal] Query is loading");
-    } else if (errorExisting) {
-      console.error("[FrequencyModal] Query failed with error");
-    } else if (existingFrequency) {
-      console.log("[FrequencyModal] Query succeeded:", existingFrequency);
-    }
-  }, [loadingExisting, errorExisting, existingFrequency]);
-  console.log("[FrequencyModal] Query state - loading:", loadingExisting, "error:", errorExisting, "data:", existingFrequency);
   const synthesizeMutation = trpc.frequency.synthesize.useMutation();
   const saveMutation = trpc.frequency.save.useMutation();
 
@@ -105,34 +94,48 @@ export function FrequencyModal({ open = true, onClose }: { open?: boolean; onClo
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [frequencyName, setFrequencyName] = useState("");
 
-  // Transition from loading to correct screen once query resolves — use useEffect to avoid render-phase side effects
-  // Only run when query finishes loading, not on every screen change
+  // Reset screen to "loading" every time the modal opens so we always re-check Studios
+  useEffect(() => {
+    if (open) {
+      setScreen("loading");
+      setSynthesis(null);
+      setAnswers({ q1_sound_space: "", q2_light_color: "", q3_world_texture: "", q4_arc_time: "" });
+      setFrequencyName("");
+      // Force a fresh fetch from Studios each time the modal opens
+      utils.frequency.getDefault.invalidate();
+    }
+  }, [open]);
+
+  // Transition from loading to correct screen once query resolves
   useEffect(() => {
     if (screen !== "loading") return;
     if (loadingExisting) return;
-    console.log("[FrequencyModal] Query resolved. hasFrequency:", existingFrequency?.hasFrequency);
     if (errorExisting || !existingFrequency) {
-      console.log("[FrequencyModal] No existing frequency, showing intro");
+      console.log("[FrequencyModal] Bridge error or no data — showing intro");
       setScreen("intro");
     } else if (existingFrequency.hasFrequency && existingFrequency.frequency) {
-      console.log("[FrequencyModal] Existing frequency found, showing existing screen");
+      console.log("[FrequencyModal] Frequency found:", existingFrequency.frequency.frequencyName);
       setScreen("existing");
     } else {
-      console.log("[FrequencyModal] No frequency, showing intro");
+      console.log("[FrequencyModal] No frequency saved yet — showing intro");
       setScreen("intro");
     }
-  }, [loadingExisting, errorExisting, existingFrequency]);
+  }, [loadingExisting, errorExisting, existingFrequency, screen]);
 
-  // Safety timeout: if still loading after 8s, go to intro anyway
-  // Use a ref to track current screen so the timeout can check state when it fires
+  // Safety timeout: if still on loading screen after 20s (Studios bridge slow/down), go to intro
+  // 20s gives the bridge enough time even on cold Railway starts
   const screenRef = useRef(screen);
   useEffect(() => { screenRef.current = screen; }, [screen]);
   useEffect(() => {
+    if (!open) return;
     const t = setTimeout(() => {
-      if (screenRef.current === "loading") setScreen("intro");
-    }, 8000);
+      if (screenRef.current === "loading") {
+        console.warn("[FrequencyModal] 20s timeout — Studios bridge did not respond, showing intro");
+        setScreen("intro");
+      }
+    }, 20000);
     return () => clearTimeout(t);
-  }, []);
+  }, [open]);
 
   const handleSynthesize = async () => {
     console.log("[FrequencyModal] handleSynthesize called, setting screen to 'synthesizing'");

@@ -789,9 +789,7 @@ export default function Studio() {
       />
 
       {/* Frequency / Visual Universe Modal */}
-      {frequencyOpen && (
-        <FrequencyModal onClose={() => setFrequencyOpen(false)} />
-      )}
+      <FrequencyModal open={frequencyOpen} onClose={() => setFrequencyOpen(false)} />
     </div>
   );
 }

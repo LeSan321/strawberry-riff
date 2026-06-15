@@ -1119,3 +1119,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Constrained DialogContent in MyRiffs.tsx to max-h-[90vh] with flex-col layout
 - [x] Inner content area is overflow-y-auto so it scrolls within the viewport
 - [x] Save/Cancel buttons are now always accessible
+
+## Bug Fix: Frequency Not Showing in Modal Even When Saved
+- [x] Root cause 1: 8-second safety timeout fired before Studios bridge responded on cold Railway starts, forcing screen to "intro" and hiding the saved frequency
+- [x] Root cause 2: FrequencyModal in Upload.tsx stays mounted with open prop — screen state was never reset to "loading" on reopen, so the transition useEffect (which guards on screen === "loading") never re-ran
+- [x] Fix: Added useEffect that resets screen to "loading" and invalidates the query every time open changes to true
+- [x] Fix: Extended safety timeout from 8s to 20s to accommodate Railway cold starts
+- [x] Fix: Added enabled: open to the getDefault query so it only fetches when modal is actually visible
+- [x] Fix: Studio.tsx now mounts FrequencyModal always with open prop (consistent with Upload.tsx pattern) instead of conditional rendering
+- [x] TypeScript clean (0 errors)
