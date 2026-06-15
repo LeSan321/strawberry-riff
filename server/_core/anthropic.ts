@@ -10,7 +10,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 
-const MODEL = "claude-sonnet-4-5";
+const MODEL = "claude-3-5-sonnet-20241022";
 
 let _client: Anthropic | null = null;
 
@@ -20,7 +20,7 @@ function getClient(): Anthropic {
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY is not set");
     }
-    _client = new Anthropic({ apiKey });
+    _client = new Anthropic({ apiKey: apiKey.trim() });
   }
   return _client;
 }
@@ -41,7 +41,7 @@ export interface ClaudeCallResult {
 }
 
 /**
- * Call Claude claude-sonnet-4-5 with a system prompt and message history.
+ * Call Claude claude-3-5-sonnet-20241022 with a system prompt and message history.
  * Returns the assistant's text response.
  */
 export async function callClaude(params: ClaudeCallParams): Promise<ClaudeCallResult> {
