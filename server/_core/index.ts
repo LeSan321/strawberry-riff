@@ -356,7 +356,13 @@ async function startServer() {
       res.status(500).json({ message: "Failed to proxy stem audio" });
     }
   });
-    // tRPC API
+    // tRPC API — log method+path for debugging GET-mutation issue
+  app.use("/api/trpc", (req, _res, next) => {
+    if (req.path.includes("lyrics.generate")) {
+      console.log(`[tRPC Debug] ${req.method} ${req.path} body=${JSON.stringify(req.body)?.slice(0, 100)}`);
+    }
+    next();
+  });
   app.use(
     "/api/trpc",
     createExpressMiddleware({

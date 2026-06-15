@@ -46,19 +46,29 @@ export interface ClaudeCallResult {
  */
 export async function callClaude(params: ClaudeCallParams): Promise<ClaudeCallResult> {
   const client = getClient();
+  const rawKey = process.env.ANTHROPIC_API_KEY ?? "";
+  const keySnippet = rawKey.trim().slice(0, 20);
+  console.log(`[Anthropic] callClaude: model=${MODEL} keyPrefix=${keySnippet}... keyLen=${rawKey.trim().length} maxTokens=${params.maxTokens ?? 2048}`);
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: params.maxTokens ?? 2048,
-    system: params.system,
-    messages: params.messages,
-  });
+  try {
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: params.maxTokens ?? 2048,
+      system: params.system,
+      messages: params.messages,
+    });
 
-  const content = response.content
-    .filter((block) => block.type === "text")
-    .map((block) => (block as { type: "text"; text: string }).text)
-    .join("");
+    const content = response.content
+      .filter((block) => block.type === "text")
+      .map((block) => (block as { type: "text"; text: string }).text)
+      .join("");
 
-  return { content };
+    console.log(`[Anthropic] callClaude: success, content length=${content.length}`);
+    return { content };
+  } catch (err: unknown) {
+    const status = (err as { status?: number })?.status;
+    const message = (err as { message?: string })?.message ?? String(err);
+    console.error(`[Anthropic] callClaude ERROR: status=${status} message=${message}`);
+    throw err;
+  }
 }
-
