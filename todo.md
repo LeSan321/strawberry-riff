@@ -1092,3 +1092,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add `audioKey` to `previewLinks.resolve` tRPC response (PreviewPage.tsx was getting undefined)
 - [x] Remove all `(track as any).audioKey` casts across all pages — now properly typed
 - [x] TypeScript clean (0 errors)
+
+## Bug Fix: manus-storage Proxy Breaks on Railway (Forge Keys Sandbox-Only)
+- [x] Remove /manus-storage/* proxy usage from AudioPlayerContext — use audioUrl directly (S3 bucket is public)
+- [x] Replace all four Studio.tsx header image /manus-storage/ paths with permanent manuscdn.com CDN URLs
+- [x] All manus-storage references removed from client code (only comment remains in AudioPlayerContext)
+- [x] TypeScript clean (0 errors)

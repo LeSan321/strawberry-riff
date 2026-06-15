@@ -12,14 +12,12 @@ export interface PlayerTrack {
 }
 
 /**
- * Returns a server-proxied audio URL that never expires.
- * The /manus-storage/* proxy fetches a fresh presigned URL on every request,
- * so stored presigned URLs in the DB (which expire after ~1 hour) are bypassed.
+ * Returns the audio URL for playback.
+ * The S3 bucket is public, so audioUrl is used directly.
+ * The /manus-storage/* proxy requires BUILT_IN_FORGE_API_KEY which is
+ * a Manus sandbox-only variable and does not exist on Railway.
  */
 export function getProxyAudioUrl(track: Pick<PlayerTrack, 'audioUrl' | 'audioKey'>): string {
-  if (track.audioKey) {
-    return `/manus-storage/${track.audioKey}`;
-  }
   return track.audioUrl;
 }
 
