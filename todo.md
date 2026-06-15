@@ -1084,3 +1084,11 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Added diagnostic auth logging to context.ts (secretKey prefix, tokenLen, clerkUserId)
 - [x] Promoted Larry Riedmann (larryriedmann60@gmail.com) to isPremium=true (comped account)
 - [x] All 321 tests passing (1 skipped: MiniMax geo-block)
+
+## Bug Fix: Discover Audio Player Not Producing Sound
+- [x] Add `audioKey` field to `DiscoverTrack` interface in Discover.tsx (was missing, causing `(track as any).audioKey` casts)
+- [x] Add `audioKey` field to `Track` interface in Friends.tsx, MyRiffs.tsx, Playlists.tsx
+- [x] Add `audioKey` to inline track type in CreatorProfile.tsx
+- [x] Add `audioKey` to `previewLinks.resolve` tRPC response (PreviewPage.tsx was getting undefined)
+- [x] Remove all `(track as any).audioKey` casts across all pages — now properly typed
+- [x] TypeScript clean (0 errors)

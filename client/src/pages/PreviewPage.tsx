@@ -69,7 +69,7 @@ export default function PreviewPage() {
       id: track.id,
       title: track.title,
       artist: track.artist ?? data.creator.username ?? "Unknown",
-      audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
+      audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
       gradient: track.gradient ?? CARD_GRADIENTS[track.id % CARD_GRADIENTS.length],
       coverArtUrl: track.coverArtUrl,
     });

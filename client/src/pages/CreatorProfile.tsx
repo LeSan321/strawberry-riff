@@ -50,6 +50,7 @@ function TrackCard({
     title: string;
     artist?: string | null;
     audioUrl: string;
+    audioKey?: string | null;
     duration?: number | null;
     moodTags: string[];
     gradient?: string | null;
@@ -75,7 +76,7 @@ function TrackCard({
         id: track.id,
         title: track.title,
         artist: track.artist ?? "Unknown",
-        audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
+        audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
         gradient,
         coverArtUrl: track.coverArtUrl,
       });

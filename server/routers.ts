@@ -1451,6 +1451,7 @@ const previewLinksRouter = router({
           title: track.title,
           artist: track.artist,
           audioUrl: track.audioUrl,
+          audioKey: track.audioKey,
           duration: track.duration,
           gradient: track.gradient,
           coverArtUrl: track.coverArtUrl,

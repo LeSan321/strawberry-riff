@@ -30,6 +30,7 @@ interface DiscoverTrack {
   title: string;
   artist?: string | null;
   audioUrl: string;
+  audioKey?: string | null;
   duration?: number | null;
   moodTags: string[];
   gradient?: string | null;
@@ -65,8 +66,8 @@ function TrackCard({ track, index, queue, onTagClick }: {
       pause();
     } else {
       play(
-        { id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined, gradient: track.gradient, moodTags: track.moodTags, coverArtUrl: track.coverArtUrl },
-        queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: (t as any).audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags, coverArtUrl: t.coverArtUrl }))
+        { id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined, gradient: track.gradient, moodTags: track.moodTags, coverArtUrl: track.coverArtUrl },
+        queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags, coverArtUrl: t.coverArtUrl }))
       );
     }
   };
@@ -276,7 +277,7 @@ export default function Discover() {
 
   const handlePlayAll = useCallback(() => {
     if (filtered.length === 0) return;
-    const queue = filtered.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: (t as any).audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags }));
+    const queue = filtered.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags }));
     play(queue[0], queue);
     toast.success(`Playing ${filtered.length} riff${filtered.length > 1 ? "s" : ""}`);
   }, [filtered, play]);

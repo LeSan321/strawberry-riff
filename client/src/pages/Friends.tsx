@@ -38,6 +38,7 @@ interface Track {
   title: string;
   artist?: string | null;
   audioUrl: string;
+  audioKey?: string | null;
   visibility: string;
   gradient?: string | null;
   coverArtUrl?: string | null;
@@ -145,7 +146,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
                       id: track.id,
                       title: track.title,
                       artist: track.artist,
-                      audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
+                      audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
                       gradient: track.gradient,
                       moodTags: track.moodTags,
                       coverArtUrl: track.coverArtUrl,
@@ -154,7 +155,7 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
                       id: t.id,
                       title: t.title,
                       artist: t.artist,
-                      audioUrl: t.audioUrl, audioKey: (t as any).audioKey ?? undefined,
+                      audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined,
                       gradient: t.gradient,
                       moodTags: t.moodTags,
                       coverArtUrl: t.coverArtUrl,

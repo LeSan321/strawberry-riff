@@ -82,6 +82,7 @@ interface Track {
   description?: string | null;
   lyrics?: string | null;
   audioUrl: string;
+  audioKey?: string | null;
   duration?: number | null;
   moodTags: string[];
   visibility: Visibility;
@@ -443,7 +444,7 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
         id: track.id,
         title: track.title,
         artist: track.artist ?? undefined,
-        audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined,
+        audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
         gradient: track.gradient ?? undefined,
         coverArtUrl: track.coverArtUrl ?? undefined,
       });

@@ -404,7 +404,7 @@ export default function TrackPage() {
                               id: t.id,
                               title: t.title,
                               artist: fullTrack!.creatorUsername ?? "Unknown",
-                              audioUrl: t.audioUrl, audioKey: (t as any).audioKey ?? undefined,
+                              audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined,
                               gradient: tGradient,
                               coverArtUrl: t.coverArtUrl,
                             });

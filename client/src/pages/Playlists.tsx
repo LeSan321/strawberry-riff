@@ -75,6 +75,7 @@ interface Track {
   title: string;
   artist?: string | null;
   audioUrl: string;
+  audioKey?: string | null;
   coverArtUrl?: string | null;
   gradient?: string | null;
   moodTags: string[];
@@ -445,8 +446,8 @@ function PlaylistCard({ playlist }: { playlist: Playlist }) {
                                   pause();
                                 } else {
                                   play(
-                                    { id: track.id, title: track.title, artist: track.artist, audioUrl: track.audioUrl, audioKey: (track as any).audioKey ?? undefined, gradient: track.gradient, moodTags: track.moodTags },
-                                    displayTracks.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: (t as any).audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags }))
+                                    { id: track.id, title: track.title, artist: track.artist, audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined, gradient: track.gradient, moodTags: track.moodTags },
+                                    displayTracks.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags }))
                                   );
                                 }
                               }}
