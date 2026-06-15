@@ -1098,3 +1098,24 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Replace all four Studio.tsx header image /manus-storage/ paths with permanent manuscdn.com CDN URLs
 - [x] All manus-storage references removed from client code (only comment remains in AudioPlayerContext)
 - [x] TypeScript clean (0 errors)
+
+## Bug Fix: Cover Art Cropping / "Beheading" on All Pages
+- [x] Root cause: Studios generates 1024×1024 square images; Riff's CSS containers used fixed heights (h-40, h-72, h-64, h-36) causing object-cover to crop the square image
+- [x] Discover.tsx — changed h-40 → aspect-square (card and skeleton)
+- [x] TrackPage.tsx — changed h-72 → aspect-square (hero and skeleton)
+- [x] CreatorProfile.tsx — changed h-36 → aspect-square (track card)
+- [x] PreviewPage.tsx — changed h-64 → aspect-square (hero)
+- [x] MyRiffs.tsx — w-16 h-16 thumbnail in edit dialog is already square (no change needed)
+- [x] Friends.tsx — w-16 sidebar thumbnail is already square (no change needed)
+- [x] Playlists.tsx — w-8 h-8 play button thumbnail is already square (no change needed)
+- [x] TypeScript clean (0 errors)
+
+## Bug Fix: Anthropic Model Retired (claude-3-5-sonnet-20241022 → claude-sonnet-4-5)
+- [x] Updated MODEL constant in server/_core/anthropic.ts to claude-sonnet-4-5
+- [x] esbuild "Expected finally but found end of file" error confirmed stale (from a previous session's broken intermediate state; current file is syntactically valid)
+- [x] TypeScript clean (0 errors)
+
+## Bug Fix: Edit Track Dialog Overflowing Viewport
+- [x] Constrained DialogContent in MyRiffs.tsx to max-h-[90vh] with flex-col layout
+- [x] Inner content area is overflow-y-auto so it scrolls within the viewport
+- [x] Save/Cancel buttons are now always accessible

@@ -106,7 +106,7 @@ export default function TrackPage() {
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="h-4 w-24 bg-pink-100 rounded animate-pulse" />
           <div className="bg-white rounded-3xl overflow-hidden shadow-sm animate-pulse">
-            <div className="h-72 bg-pink-100" />
+            <div className="aspect-square bg-pink-100" />
             <div className="p-8 space-y-4">
               <div className="h-7 bg-pink-100 rounded w-2/3" />
               <div className="h-4 bg-pink-50 rounded w-1/3" />
@@ -185,7 +185,7 @@ export default function TrackPage() {
         >
           {/* Cover art / gradient hero */}
           <div
-            className={`h-72 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
+            className={`aspect-square bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
           >
             {fullTrack?.coverArtUrl && (
               <img src={fullTrack.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />

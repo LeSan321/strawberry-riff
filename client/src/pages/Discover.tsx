@@ -95,7 +95,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
         className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
       >
       {/* Cover art / gradient */}
-      <div className={`h-40 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
+      <div className={`aspect-square bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}>
         {track.coverArtUrl && (
           <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
         )}
@@ -428,7 +428,7 @@ export default function Discover() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-sm animate-pulse">
-                <div className="h-40 bg-muted" />
+                <div className="aspect-square bg-muted" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-muted rounded w-3/4" />
                   <div className="h-3 bg-muted/60 rounded w-1/2" />

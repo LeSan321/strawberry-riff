@@ -106,7 +106,7 @@ function TrackCard({
     >
       {/* Cover art / gradient */}
       <div
-        className={`h-36 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
+        className={`aspect-square bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
       >
         {track.coverArtUrl && (
           <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />

@@ -150,7 +150,7 @@ export default function PreviewPage() {
         >
           {/* Cover art / gradient hero */}
           <div
-            className={`h-64 bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
+            className={`aspect-square bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
           >
             {track.coverArtUrl && (
               <img
