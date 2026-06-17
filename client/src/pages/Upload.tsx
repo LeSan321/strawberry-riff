@@ -544,6 +544,7 @@ export default function Upload() {
                             genre: form.genre || undefined,
                             steeringNote: form.description?.trim() || undefined,
                             lyrics: form.lyrics?.trim() || undefined,
+                            songTitle: form.title?.trim() || undefined,
                           });
                           if (result.coverArtUrl) {
                             setCoverPreview(result.coverArtUrl);

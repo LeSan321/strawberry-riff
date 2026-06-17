@@ -249,6 +249,7 @@ export const frequencyRouter = router({
       genre: z.string().optional(),
       arcPosition: z.enum(["gathering", "arriving", "open"]).optional(),
       steeringNote: z.string().max(300).optional(),
+      songTitle: z.string().max(200).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       // Get Clerk session token for Studios bridge authentication
@@ -304,6 +305,7 @@ export const frequencyRouter = router({
           genre: input.genre,
           arcPosition: input.arcPosition ?? "arriving",
           steeringNote: input.steeringNote,
+          songTitle: input.songTitle,
         }),
       }, 120000, clerkToken); // 120 seconds for Runway image generation, pass Clerk token
 

@@ -167,6 +167,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
         genre: form.genre || "ambient",
         steeringNote: form.description?.trim() || undefined,
         lyrics: track.lyrics || form.lyrics || undefined,
+        songTitle: form.title?.trim() || track.title || undefined,
       });
       if (result.coverArtUrl) {
         setCoverPreview(result.coverArtUrl);

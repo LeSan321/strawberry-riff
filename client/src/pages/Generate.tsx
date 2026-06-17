@@ -67,12 +67,14 @@ function PublishDialog({
   generationId,
   genPrompt,
   genLyrics,
+  genTitle,
 }: {
   open: boolean;
   onClose: () => void;
   generationId: number;
   genPrompt: string;
   genLyrics: string;
+  genTitle?: string;
 }) {
   const [visibility, setVisibility] = useState<"private" | "inner-circle" | "public">("private");
   const [showLyricsOnShare, setShowLyricsOnShare] = useState(true);
@@ -101,6 +103,7 @@ function PublishDialog({
         steeringNote: genPrompt || undefined,
         genre: undefined,
         arcPosition: "arriving",
+        songTitle: genTitle || undefined,
       });
       setCoverArtUrl(result.coverArtUrl);
       setCoverArtState("done");
@@ -670,6 +673,7 @@ function GenerationCard({
           generationId={gen.id}
           genPrompt={gen.prompt}
           genLyrics={gen.lyrics}
+          genTitle={gen.title}
         />
       )}
       {deleteConfirmOpen && (
