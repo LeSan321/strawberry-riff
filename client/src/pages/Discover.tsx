@@ -92,7 +92,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: (index % 6) * 0.07 }}
-        className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+        className="bg-zinc-900/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:shadow-black/30 transition-all duration-300 group cursor-pointer border border-white/10"
       >
       {/* Cover art / gradient */}
       <div className={`aspect-square bg-gradient-to-br ${gradient} relative overflow-hidden`}>
@@ -128,7 +128,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
             className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center transition-colors shadow-sm ${
               isCurrentlyPlaying
                 ? "bg-pink-500 text-white"
-                : "bg-muted hover:bg-pink-100 text-foreground hover:text-pink-600"
+                : "bg-white/10 hover:bg-pink-500/80 text-zinc-300 hover:text-white"
             }`}
             title={isCurrentlyPlaying ? "Pause" : "Play"}
           >
@@ -138,12 +138,12 @@ function TrackCard({ track, index, queue, onTagClick }: {
               <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
             )}
           </motion.button>
-          <p className="font-semibold text-foreground truncate">{track.title}</p>
+          <p className="font-semibold text-white truncate">{track.title}</p>
         </div>
         {track.creatorUsername ? (
           <p
             onClick={(e) => { e.stopPropagation(); setLocation(`/creator/${encodeURIComponent(track.creatorUsername!)}`); }}
-            className="text-sm text-muted-foreground truncate mb-2 hover:text-pink-600 transition-colors cursor-pointer flex items-center gap-1 pl-10"
+            className="text-sm text-zinc-400 truncate mb-2 hover:text-pink-400 transition-colors cursor-pointer flex items-center gap-1 pl-10"
           >
             <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>
             {track.creatorIsPremium && (
@@ -151,7 +151,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
             )}
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground truncate mb-2 pl-10">{track.artist ?? "Unknown Artist"}</p>
+          <p className="text-sm text-zinc-400 truncate mb-2 pl-10">{track.artist ?? "Unknown Artist"}</p>
         )}
 
         {/* Mood tags — click to filter by vibe */}
@@ -162,7 +162,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
                 key={tag}
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTagClick?.(tag); }}
                 title={`Explore this vibe: ${tag}`}
-                className="text-xs px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border-0 hover:bg-pink-100 hover:text-pink-700 transition-colors cursor-pointer"
+                className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-pink-300 border border-white/10 hover:bg-pink-500/20 hover:text-pink-200 transition-colors cursor-pointer"
               >
                 {tag}
               </button>
@@ -171,7 +171,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-zinc-500">
           {isAuthenticated ? (
             <button
               onClick={() => setLiked(l => !l)}
@@ -188,14 +188,14 @@ function TrackCard({ track, index, queue, onTagClick }: {
           )}
           <div className="flex items-center gap-1">
             {track.duration && (
-              <span className="text-xs text-muted-foreground">{fmt(track.duration)}</span>
+              <span className="text-xs text-zinc-500">{fmt(track.duration)}</span>
             )}
             <AddToPlaylistButton trackId={track.id} />
             <motion.button
               onClick={handleShare}
               animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
               transition={{ duration: 0.4 }}
-              className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
+              className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-400" : "text-zinc-500 hover:text-pink-400"}`}
               title="Copy track link"
             >
               <LinkIcon className="w-3.5 h-3.5" />

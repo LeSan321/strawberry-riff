@@ -1135,3 +1135,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Rename "Description" field to "Art Direction" in edit song dialog/upload form; added 300-char counter and helper note
 - [x] Decouple art direction field from song card display — removed from TrackPage, MyRiffs card; not shown publicly
 - [x] Verify songTitle is included in all cover art generation payloads (Generate, MyRiffs, Upload) — confirmed wired end-to-end in all three callers and server router
+
+## Design: Dark Card Treatment - Jun 17 2026
+- [x] TrackPage: replace white card with dark zinc-900/95 panel, border white/10, backdrop-blur
+- [x] TrackPage: move play button off cover art to info row (gradient pink-purple pill button)
+- [x] TrackPage: fix all text colors for dark bg (white titles, zinc-400 secondary, pink-400 links, zinc-300 genre, zinc-500 labels)
+- [x] TrackPage: lyrics panel dark (bg-white/5, purple-400 label, zinc-300 text)
+- [x] TrackPage: creator card dark (bg-white/5, white name, zinc-400 bio, pink-400 link)
+- [x] TrackPage: "More from creator" mini-cards dark (zinc-900/90, white title, zinc-400 tags)
+- [x] Discover: replace bg-card with dark zinc-900/90 panel, border white/10, backdrop-blur
+- [x] Discover: fix all text colors (white title, zinc-400 artist, pink-300 mood tags, zinc-500 footer)
+- [x] Discover: play button hover state updated for dark bg (white/10 idle, pink-500/80 hover)
+- [x] TypeScript clean (0 errors)

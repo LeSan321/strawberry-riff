@@ -171,7 +171,7 @@ export default function TrackPage() {
 
         {/* Back nav */}
         <Link href="/discover">
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-pink-600 transition-colors">
+          <button className="flex items-center gap-2 text-sm text-zinc-400 hover:text-pink-400 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Discover
           </button>
@@ -181,7 +181,7 @@ export default function TrackPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl overflow-hidden shadow-sm"
+          className="bg-zinc-900/95 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl border border-white/10"
         >
           {/* Cover art / gradient hero */}
           <div
@@ -193,19 +193,7 @@ export default function TrackPage() {
             {isCurrentlyPlaying && (
               <div className="absolute inset-0 ring-8 ring-white/40 pointer-events-none animate-pulse" />
             )}
-            {/* Play button */}
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={handlePlay}
-              className="w-20 h-20 bg-white/25 hover:bg-white/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-colors shadow-xl"
-            >
-              {isCurrentlyPlaying ? (
-                <Pause className="w-8 h-8 fill-white" />
-              ) : (
-                <Play className="w-8 h-8 fill-white ml-1" />
-              )}
-            </motion.button>
+            {/* Passive playing indicator only — play button moved to info row */}
 
             {/* Animated bars when playing */}
             {isCurrentlyPlaying && (
@@ -236,33 +224,50 @@ export default function TrackPage() {
 
           {/* Info */}
           <div className="p-8">
+            {/* Title row with play button */}
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground leading-tight truncate">
-                  {fullTrack!.title}
-                </h1>
-                {fullTrack!.creatorUsername ? (
-                  <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
-                    <p className="text-pink-600 font-medium mt-1 hover:underline cursor-pointer flex items-center gap-1">
-                      {fullTrack!.artist ?? fullTrack!.creatorUsername}
-                      <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {/* Play button — moved from cover art */}
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={handlePlay}
+                  className="w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-all"
+                  style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
+                >
+                  {isCurrentlyPlaying ? (
+                    <Pause className="w-5 h-5 fill-white" />
+                  ) : (
+                    <Play className="w-5 h-5 fill-white ml-0.5" />
+                  )}
+                </motion.button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-white leading-tight truncate">
+                    {fullTrack!.title}
+                  </h1>
+                  {fullTrack!.creatorUsername ? (
+                    <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
+                      <p className="text-pink-400 font-medium mt-0.5 hover:text-pink-300 cursor-pointer flex items-center gap-1">
+                        {fullTrack!.artist ?? fullTrack!.creatorUsername}
+                        <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                      </p>
+                    </Link>
+                  ) : (
+                    <p className="text-zinc-400 mt-0.5">
+                      {fullTrack!.artist ?? "Unknown Artist"}
                     </p>
-                  </Link>
-                ) : (
-                  <p className="text-muted-foreground mt-1">
-                    {fullTrack!.artist ?? "Unknown Artist"}
-                  </p>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <AddToPlaylistButton trackId={fullTrack!.id} className="border border-purple-200 hover:bg-purple-50 rounded-full w-9 h-9" />
+                <AddToPlaylistButton trackId={fullTrack!.id} className="border border-white/20 hover:bg-white/10 text-white rounded-full w-9 h-9" />
                 <motion.button
                   onClick={handleShare}
                   animate={shareAnimating ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
                   transition={{ duration: 0.4 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-pink-200 text-pink-600 hover:bg-pink-50 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 text-pink-400 hover:bg-white/10 transition-colors text-sm font-medium"
                 >
                   <Share2 className="w-4 h-4" />
                   Share
@@ -272,8 +277,8 @@ export default function TrackPage() {
 
             {/* Genre */}
             {fullTrack!.genre && (
-              <p className="text-sm text-muted-foreground mt-3">
-                Genre: <span className="font-medium text-foreground">{fullTrack!.genre}</span>
+              <p className="text-sm text-zinc-400 mt-3">
+                Genre: <span className="font-medium text-zinc-200">{fullTrack!.genre}</span>
               </p>
             )}
 
@@ -282,20 +287,20 @@ export default function TrackPage() {
             {/* Mood tags — click to explore vibe in Discover */}
             {fullTrack!.moodTags.length > 0 && (
               <div className="mt-4">
-                <p className="text-xs text-muted-foreground mb-2">Vibe</p>
+                <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wider">Vibe</p>
                 <div className="flex flex-wrap gap-2">
                   {fullTrack!.moodTags.map((tag) => (
                     <button
                       key={tag}
                       onClick={() => handleExploreVibe(tag)}
                       title="Explore this vibe in Discover"
-                      className="text-sm px-3 py-1 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 hover:text-pink-700 transition-colors font-medium border-0"
+                      className="text-sm px-3 py-1 rounded-full bg-white/10 text-pink-300 hover:bg-white/20 hover:text-pink-200 transition-colors font-medium border border-white/10"
                     >
                       {tag}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-zinc-500 mt-2">
                   Tap a vibe to explore this sound in Discover →
                 </p>
               </div>
@@ -303,9 +308,9 @@ export default function TrackPage() {
 
             {/* Lyrics */}
             {fullTrack!.lyrics && fullTrack!.showLyricsOnShare && (
-              <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
-                <p className="text-xs font-semibold text-purple-600 mb-3 uppercase tracking-wider">Lyrics</p>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-mono text-muted-foreground">
+              <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-xs font-semibold text-purple-400 mb-3 uppercase tracking-wider">Lyrics</p>
+                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono">
                   {fullTrack!.lyrics}
                 </p>
               </div>
@@ -325,34 +330,34 @@ export default function TrackPage() {
               <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
                 <motion.div
                   whileHover={{ y: -2 }}
-                  className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-100 cursor-pointer"
+                  className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     {fullTrack!.creatorAvatarUrl ? (
                       <img
                         src={fullTrack!.creatorAvatarUrl}
                         alt={fullTrack!.creatorUsername}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-sm"
                       />
                     ) : (
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm"
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white/20 shadow-sm"
                         style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
                       >
                         {fullTrack!.creatorUsername!.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm">
+                      <p className="font-semibold text-white text-sm">
                         {fullTrack!.creatorUsername}
                       </p>
                       {fullTrack!.creatorBio && (
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-zinc-400 truncate">
                           {fullTrack!.creatorBio}
                         </p>
                       )}
                     </div>
-                    <span className="text-xs text-pink-600 font-medium flex-shrink-0">
+                    <span className="text-xs text-pink-400 font-medium flex-shrink-0">
                       View profile →
                     </span>
                   </div>
@@ -370,11 +375,11 @@ export default function TrackPage() {
             transition={{ delay: 0.15 }}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-foreground">
+              <h2 className="text-base font-semibold text-white">
                 More from {fullTrack!.creatorUsername}
               </h2>
               <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
-                <span className="text-xs text-pink-600 hover:underline">
+                <span className="text-xs text-pink-400 hover:underline">
                   Full profile →
                 </span>
               </Link>
@@ -386,7 +391,7 @@ export default function TrackPage() {
                   <Link key={t.id} href={`/track/${t.id}`}>
                     <motion.div
                       whileHover={{ y: -2 }}
-                      className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer border border-border"
+                      className="bg-zinc-900/90 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer border border-white/10"
                     >
                       <div className={`h-20 bg-gradient-to-br ${tGradient} relative`}>
                         {t.coverArtUrl && (
@@ -410,9 +415,9 @@ export default function TrackPage() {
                         </button>
                       </div>
                       <div className="p-2.5">
-                        <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
+                        <p className="text-xs font-semibold text-white truncate">{t.title}</p>
                         {t.moodTags && t.moodTags.length > 0 && (
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          <p className="text-xs text-zinc-400 truncate mt-0.5">
                             {t.moodTags.slice(0, 2).join(" · ")}
                           </p>
                         )}
