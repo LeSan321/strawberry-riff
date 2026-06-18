@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, title, coverArtUrl, createdAt, updatedAt FROM tracks WHERE id = 3090001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, coverArtUrl, createdAt, updatedAt FROM tracks WHERE id = 3090001;",
+  "rows": [
+    {
+      "id": "3090001",
+      "title": "Love's Echo",
+      "coverArtUrl": "https://dnznrvs05pmza.cloudfront.net/a667f65e-e6ea-47e1-9b5e-b8ec4cf4804f.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMTViMGRmNjk1OWZkZDY1ZCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4MTczNzA2NX0.QNSt3yIN0YJcqSCeKPpLB-ory-VJwmI2YVSHKHLbknU",
+      "createdAt": "2026-06-06 00:43:04",
+      "updatedAt": "2026-06-16 04:33:34"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tcoverArtUrl\tcreatedAt\tupdatedAt\n3090001\tLove's Echo\thttps://dnznrvs05pmza.cloudfront.net/a667f65e-e6ea-47e1-9b5e-b8ec4cf4804f.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMTViMGRmNjk1OWZkZDY1ZCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4MTczNzA2NX0.QNSt3yIN0YJcqSCeKPpLB-ory-VJwmI2YVSHKHLbknU\t2026-06-06 00:43:04\t2026-06-16 04:33:34\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

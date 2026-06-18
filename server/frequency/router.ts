@@ -8,6 +8,7 @@ import { ENV } from '../_core/env';
 import { getDb } from '../db';
 import { tracks, musicGenerations } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { storagePut } from '../storage';
 
 const ARC_TYPES = [
   "expansive_mythic",
@@ -320,9 +321,29 @@ export const frequencyRouter = router({
       // Studios now returns { imageUrl: "..." } directly
       const data = await res.json() as { imageUrl: string };
       console.log(`[Frequency] generateCoverArt: success, imageUrl=${data.imageUrl?.slice(0, 60)}...`);
+
+      // Re-upload to Riff's permanent S3 so the URL never expires regardless of
+      // what upstream provider Studios uses (Runway, fal.ai, etc.).
+      let permanentUrl = data.imageUrl; // fallback: use original if re-upload fails
+      try {
+        const imgRes = await fetch(data.imageUrl);
+        if (!imgRes.ok) throw new Error(`Fetch failed: ${imgRes.status}`);
+        const contentType = imgRes.headers.get('content-type') ?? 'image/jpeg';
+        const ext = contentType.includes('png') ? 'png' : 'jpg';
+        const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+        const trackIdStr = input.trackId ? String(input.trackId) : `gen-${Date.now()}`;
+        const fileKey = `cover-art/${trackIdStr}-${Date.now()}.${ext}`;
+        const { url } = await storagePut(fileKey, imgBuffer, contentType);
+        permanentUrl = url;
+        console.log(`[Frequency] generateCoverArt: re-uploaded to permanent S3 → ${url.slice(0, 80)}...`);
+      } catch (uploadErr) {
+        // Non-fatal: log and fall back to the original URL
+        console.warn(`[Frequency] generateCoverArt: S3 re-upload failed (using original URL): ${uploadErr}`);
+      }
+
       return {
         success: true,
-        coverArtUrl: data.imageUrl,
+        coverArtUrl: permanentUrl,
         riffTrackId: input.trackId ?? Date.now(),
         arcPosition: input.arcPosition ?? "arriving",
         usedPersonalFrequency: false,

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, coverArtUrl, updatedAt FROM tracks WHERE coverArtUrl IS NOT NULL ORDER BY updatedAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, coverArtUrl, updatedAt FROM tracks WHERE coverArtUrl IS NOT NULL ORDER BY updatedAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1020003",
+      "title": "Secrets the Old Roads Keep",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebef4/E1-6_8XglJFAJqWydM8CG_56bea2c844054cc8a249e252dc7d7b07.jpg",
+      "updatedAt": "2026-06-18 04:35:43"
+    },
+    {
+      "id": "570005",
+      "title": "Ocean Kiss",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebecb/EgisM7SK-wSgIvDZfopf4_051c554eda09499c89e78aae44712f86.jpg",
+      "updatedAt": "2026-06-18 04:29:06"
+    },
+    {
+      "id": "270001",
+      "title": "Strawberry Dreaming",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebe3e/LtwI7DrTeDXs-FLvTx4YR_47134a53feea4afca9c2552c65f7bddc.jpg",
+      "updatedAt": "2026-06-18 04:04:27"
+    },
+    {
+      "id": "600001",
+      "title": "Open Endless Skies",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebd84/etGn9cG8ILoo0ApF6CIsL_74450eb41c9f4b2da895bc4b24d7b8eb.jpg",
+      "updatedAt": "2026-06-18 03:33:22"
+    },
+    {
+      "id": "1020006",
+      "title": "The River's Memory",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebd07/4jEtec1x5Mo4iAOKyzP2Z_1d9ed2b064c842b38a0330213ebb39ed.jpg",
+      "updatedAt": "2026-06-18 03:13:25"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tcoverArtUrl\tupdatedAt\n1020003\tSecrets the Old Roads Keep\thttps://v3b.fal.media/files/b/0a9ebef4/E1-6_8XglJFAJqWydM8CG_56bea2c844054cc8a249e252dc7d7b07.jpg\t2026-06-18 04:35:43\n570005\tOcean Kiss\thttps://v3b.fal.media/files/b/0a9ebecb/EgisM7SK-wSgIvDZfopf4_051c554eda09499c89e78aae44712f86.jpg\t2026-06-18 04:29:06\n270001\tStrawberry Dreaming\thttps://v3b.fal.media/files/b/0a9ebe3e/LtwI7DrTeDXs-FLvTx4YR_47134a53feea4afca9c2552c65f7bddc.jpg\t2026-06-18 04:04:27\n600001\tOpen Endless Skies\thttps://v3b.fal.media/files/b/0a9ebd84/etGn9cG8ILoo0ApF6CIsL_74450eb41c9f4b2da895bc4b24d7b8eb.jpg\t2026-06-18 03:33:22\n1020006\tThe River's Memory\thttps://v3b.fal.media/files/b/0a9ebd07/4jEtec1x5Mo4iAOKyzP2Z_1d9ed2b064c842b38a0330213ebb39ed.jpg\t2026-06-18 03:13:25\n",
+  "stderr": "",
+  "execution_time_ms": 990
+}

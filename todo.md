@@ -1147,3 +1147,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Discover: fix all text colors (white title, zinc-400 artist, pink-300 mood tags, zinc-500 footer)
 - [x] Discover: play button hover state updated for dark bg (white/10 idle, pink-500/80 hover)
 - [x] TypeScript clean (0 errors)
+
+## Bug Fix: Cover Art URL Expiration - Jun 18 2026
+- [x] Diagnose: Studios-returned cover art URLs (Runway JWT, fal.ai CDN) are ephemeral and expire
+- [x] Fix: In generateCoverArt procedure, fetch image bytes from Studios URL and re-upload to Riff permanent S3 before saving coverArtUrl to DB
+- [x] Non-fatal fallback: if S3 re-upload fails, log warning and use original URL (no user-facing error)
+- [x] TypeScript clean (0 errors)
