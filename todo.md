@@ -1153,3 +1153,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix: In generateCoverArt procedure, fetch image bytes from Studios URL and re-upload to Riff permanent S3 before saving coverArtUrl to DB
 - [x] Non-fatal fallback: if S3 re-upload fails, log warning and use original URL (no user-facing error)
 - [x] TypeScript clean (0 errors)
+
+## Feature: End-of-Track Fade-Out - Jun 18 2026
+- [x] Add 3-second linear volume fade-out at end of every track in AudioPlayerContext
+- [x] Restore volume to user level in onended before next track starts
+- [x] Restore volume in loadAndPlay so manual track changes also start at full volume

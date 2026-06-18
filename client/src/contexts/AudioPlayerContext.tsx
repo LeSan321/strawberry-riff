@@ -130,11 +130,27 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     audio.onerror = null;
 
     audio.ontimeupdate = () => {
+      const { currentTime, duration } = audio;
       setState((s) => ({
         ...s,
-        currentTime: audio.currentTime,
-        progress: audio.duration ? (audio.currentTime / audio.duration) * 100 : 0,
+        currentTime,
+        progress: duration ? (currentTime / duration) * 100 : 0,
       }));
+
+      // ── End-of-track fade-out ─────────────────────────────────────────────
+      // Ramp volume to 0 over the last FADE_DURATION seconds so tracks don't
+      // hard-cut. Volume is restored to the user's level before the next track.
+      const FADE_DURATION = 3; // seconds
+      if (duration && duration > FADE_DURATION) {
+        const remaining = duration - currentTime;
+        if (remaining <= FADE_DURATION && remaining >= 0) {
+          // Linear ramp: 1.0 at (duration - FADE_DURATION), 0.0 at duration
+          const targetVolume = Math.max(0, remaining / FADE_DURATION) * stateRef.current.volume;
+          if (Math.abs(audio.volume - targetVolume) > 0.005) {
+            audio.volume = targetVolume;
+          }
+        }
+      }
     };
 
     audio.ondurationchange = () => {
@@ -156,6 +172,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     };
 
     audio.onended = () => {
+      // Restore volume to user's level before advancing — the fade-out may have
+      // brought it to 0, and the next track should start at full volume.
+      audio.volume = stateRef.current.volume;
       const { queue, queueIndex, repeat, shuffle } = stateRef.current;
 
       if (repeat === "one") {
@@ -211,6 +230,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     audio.pause();
     // Use proxy URL if audioKey is available — this bypasses expired presigned URLs
     audio.src = getProxyAudioUrl(track);
+    // Always restore to user's volume level — fade-out may have left it at 0
     audio.volume = stateRef.current.volume;
     // Call load() to reset the element and start buffering from the new src
     audio.load();
