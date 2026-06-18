@@ -277,12 +277,7 @@ export default function TrackPage() {
               </p>
             )}
 
-            {/* Description */}
-            {fullTrack!.description && (
-              <p className="text-muted-foreground mt-3 leading-relaxed text-sm">
-                {fullTrack!.description}
-              </p>
-            )}
+            {/* description field is art direction only — not shown publicly */}
 
             {/* Mood tags — click to explore vibe in Discover */}
             {fullTrack!.moodTags.length > 0 && (

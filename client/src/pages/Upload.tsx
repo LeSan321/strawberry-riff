@@ -405,15 +405,23 @@ export default function Upload() {
                 />
               </div>
               <div>
-                <Label htmlFor="description">Art Direction</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description">Art Direction</Label>
+                  <span className={`text-xs ${
+                    (form.description?.length ?? 0) > 280 ? "text-red-500" : "text-muted-foreground"
+                  }`}>{form.description?.length ?? 0} / 300</span>
+                </div>
                 <Textarea
                   id="description"
                   placeholder="A few words to steer the image — mood, setting, color, moment. The system handles the rest."
                   value={form.description}
-                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value.slice(0, 300) }))}
                   className="mt-1 resize-none"
                   rows={3}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Guides cover art generation. Not shown publicly on your track card.
+                </p>
               </div>
               <div>
                 <Label htmlFor="lyrics">Lyrics (Optional)</Label>

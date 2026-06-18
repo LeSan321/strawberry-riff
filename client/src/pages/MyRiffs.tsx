@@ -289,13 +289,22 @@ function EditDialog({ track, onClose }: EditDialogProps) {
           </div>
         </div>
         <div>
-          <Label>Description</Label>
+          <div className="flex items-center justify-between">
+            <Label>Art Direction</Label>
+            <span className={`text-xs ${
+              (form.description?.length ?? 0) > 280 ? "text-red-500" : "text-muted-foreground"
+            }`}>{form.description?.length ?? 0} / 300</span>
+          </div>
           <Textarea
             value={form.description}
-            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value.slice(0, 300) }))}
             className="mt-1 resize-none"
             rows={2}
+            placeholder="Describe the visual mood, color palette, or imagery you want for the cover art. This steers the AI generator — it won't appear on your track card."
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            Guides cover art generation. Not shown publicly.
+          </p>
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -486,24 +495,20 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
                 </button>
               )}
 
-              {/* Cover art / play button */}
+              {/* Cover art thumbnail — no button overlay; play is in the actions row */}
               <div
-                className={`w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0 cursor-pointer relative group`}
-                onClick={bulkMode ? () => onToggleSelect?.(track.id) : handlePlay}
+                className={`w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center flex-shrink-0 relative ${
+                  bulkMode ? "cursor-pointer" : ""
+                }`}
+                onClick={bulkMode ? () => onToggleSelect?.(track.id) : undefined}
               >
                 {track.coverArtUrl ? (
-                  <img src={track.coverArtUrl} alt={track.title} className="w-full h-full object-cover" />
+                  <img src={track.coverArtUrl} alt={track.title} className="w-full h-full object-contain" />
                 ) : (
                   <Music className="w-5 h-5 text-white" />
                 )}
-                {!bulkMode && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    {isCurrentTrack && isPlaying ? (
-                      <Pause className="w-5 h-5 text-white" />
-                    ) : (
-                      <Play className="w-5 h-5 text-white" />
-                    )}
-                  </div>
+                {isCurrentTrack && isPlaying && (
+                  <div className="absolute inset-0 ring-2 ring-pink-400/60 rounded-xl pointer-events-none animate-pulse" />
                 )}
               </div>
 
@@ -657,13 +662,7 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
               </div>
             )}
 
-            {/* Blend description — shown for custom mix tracks */}
-            {track.description && (
-              <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5 leading-relaxed">
-                <span className="mt-0.5 shrink-0 text-pink-400">🎛️</span>
-                <span>{track.description}</span>
-              </p>
-            )}
+            {/* description is art direction only — not shown on cards */}
           </CardContent>
         </Card>
       </motion.div>

@@ -135,60 +135,50 @@ function FriendTrackRow({ track, queue }: { track: Track; queue: Track[] }) {
       <Card className="overflow-hidden hover:shadow-md transition-shadow">
         <CardContent className="p-0">
           <div className="flex items-stretch">
+            {/* Cover art thumbnail — no button overlay */}
             <div
-              className={`w-16 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} flex items-center justify-center cursor-pointer relative overflow-hidden`}
-              onClick={() => {
-                if (isCurrentTrack && isPlaying) {
-                  pause();
-                } else {
-                  play(
-                    {
-                      id: track.id,
-                      title: track.title,
-                      artist: track.artist,
-                      audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
-                      gradient: track.gradient,
-                      moodTags: track.moodTags,
-                      coverArtUrl: track.coverArtUrl,
-                    },
-                    queue.map((t) => ({
-                      id: t.id,
-                      title: t.title,
-                      artist: t.artist,
-                      audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined,
-                      gradient: t.gradient,
-                      moodTags: t.moodTags,
-                      coverArtUrl: t.coverArtUrl,
-                    }))
-                  );
-                }
-              }}
+              className={`w-16 flex-shrink-0 bg-gradient-to-b ${track.gradient || "from-pink-400 to-purple-500"} relative overflow-hidden`}
             >
               {track.coverArtUrl && (
-                <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-contain" />
               )}
               {isCurrentTrack && isPlaying && (
                 <div className="absolute inset-0 ring-2 ring-white/60 pointer-events-none animate-pulse" />
               )}
-              <motion.div
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.9 }}
-                className="w-8 h-8 rounded-full bg-white/30 backdrop-blur flex items-center justify-center"
-              >
-                {isCurrentTrack && isPlaying ? (
-                  <Pause className="w-4 h-4 text-white" />
-                ) : (
-                  <Play className="w-4 h-4 text-white ml-0.5" />
-                )}
-              </motion.div>
             </div>
             <div className="flex-1 p-3 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate text-sm">{track.title}</p>
-                  {track.artist && (
-                    <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-                  )}
+                <div className="flex items-center gap-2 min-w-0">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      if (isCurrentTrack && isPlaying) {
+                        pause();
+                      } else {
+                        play(
+                          { id: track.id, title: track.title, artist: track.artist, audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined, gradient: track.gradient, moodTags: track.moodTags, coverArtUrl: track.coverArtUrl },
+                          queue.map((t) => ({ id: t.id, title: t.title, artist: t.artist, audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined, gradient: t.gradient, moodTags: t.moodTags, coverArtUrl: t.coverArtUrl }))
+                        );
+                      }
+                    }}
+                    className={`w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center transition-colors ${
+                      isCurrentTrack && isPlaying ? "bg-pink-500 text-white" : "bg-muted hover:bg-pink-100 text-foreground hover:text-pink-600"
+                    }`}
+                    title={isCurrentTrack && isPlaying ? "Pause" : "Play"}
+                  >
+                    {isCurrentTrack && isPlaying ? (
+                      <Pause className="w-3 h-3 fill-current" />
+                    ) : (
+                      <Play className="w-3 h-3 fill-current ml-0.5" />
+                    )}
+                  </motion.button>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate text-sm">{track.title}</p>
+                    {track.artist && (
+                      <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                    )}
+                  </div>
                 </div>
                 <Badge
                   variant="secondary"

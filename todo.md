@@ -1128,3 +1128,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix: Added enabled: open to the getDefault query so it only fetches when modal is actually visible
 - [x] Fix: Studio.tsx now mounts FrequencyModal always with open prop (consistent with Upload.tsx pattern) instead of conditional rendering
 - [x] TypeScript clean (0 errors)
+
+## Design Improvements - Jun 17 2026
+
+- [x] Move play button off cover art on song cards (currently centered over artwork) — relocated to info row below the card
+- [x] Rename "Description" field to "Art Direction" in edit song dialog/upload form; added 300-char counter and helper note
+- [x] Decouple art direction field from song card display — removed from TrackPage, MyRiffs card; not shown publicly
+- [x] Verify songTitle is included in all cover art generation payloads (Generate, MyRiffs, Upload) — confirmed wired end-to-end in all three callers and server router

@@ -106,27 +106,15 @@ function TrackCard({
     >
       {/* Cover art / gradient */}
       <div
-        className={`aspect-square bg-gradient-to-br ${gradient} relative flex items-center justify-center overflow-hidden`}
+        className={`aspect-square bg-gradient-to-br ${gradient} relative overflow-hidden`}
       >
         {track.coverArtUrl && (
-          <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={track.coverArtUrl} alt="cover" className="absolute inset-0 w-full h-full object-contain" />
         )}
         {isCurrentlyPlaying && (
           <div className="absolute inset-0 ring-4 ring-white/60 rounded-none pointer-events-none animate-pulse" />
         )}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handlePlay}
-          className="w-12 h-12 bg-white/25 hover:bg-white/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-colors shadow-lg"
-        >
-          {isCurrentlyPlaying ? (
-            <Pause className="w-5 h-5 fill-white" />
-          ) : (
-            <Play className="w-5 h-5 fill-white ml-0.5" />
-          )}
-        </motion.button>
-
+        {/* Animated bars when playing — passive indicator only */}
         {isCurrentlyPlaying && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-end gap-0.5">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -148,7 +136,26 @@ function TrackCard({
 
       {/* Info */}
       <div className="p-4">
-        <p className="font-semibold text-foreground truncate">{track.title}</p>
+        <div className="flex items-center gap-2 mb-0.5">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => { e.stopPropagation(); handlePlay(); }}
+            className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center transition-colors shadow-sm ${
+              isCurrentlyPlaying
+                ? "bg-pink-500 text-white"
+                : "bg-muted hover:bg-pink-100 text-foreground hover:text-pink-600"
+            }`}
+            title={isCurrentlyPlaying ? "Pause" : "Play"}
+          >
+            {isCurrentlyPlaying ? (
+              <Pause className="w-3.5 h-3.5 fill-current" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+            )}
+          </motion.button>
+          <p className="font-semibold text-foreground truncate">{track.title}</p>
+        </div>
         {track.moodTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2 mb-3">
             {track.moodTags.slice(0, 3).map((tag) => (
