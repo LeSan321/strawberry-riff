@@ -1,0 +1,85 @@
+{
+  "query": "SELECT id, title, coverArtUrl FROM tracks WHERE coverArtUrl IS NOT NULL ORDER BY createdAt DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, coverArtUrl FROM tracks WHERE coverArtUrl IS NOT NULL ORDER BY createdAt DESC LIMIT 15;",
+  "rows": [
+    {
+      "id": "3960001",
+      "title": "Summer Wind Heroes",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6570001-1781836972934.jpg"
+    },
+    {
+      "id": "3930001",
+      "title": "Play Ball",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6450001-1781834589315.jpg"
+    },
+    {
+      "id": "3810001",
+      "title": "Couch Dreams",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6240001-1781821100348.jpg"
+    },
+    {
+      "id": "3780001",
+      "title": "Frosty Naps",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6210001-1781820364371.jpg"
+    },
+    {
+      "id": "3750001",
+      "title": "Cumulous Couch",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3750001-1781819845396.jpg"
+    },
+    {
+      "id": "3720001",
+      "title": "a day with you",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebaac/3hcQqeT0gY8DKEAyEk9Ky_876e3687448f46808aae02f648707073.jpg"
+    },
+    {
+      "id": "3690001",
+      "title": "digital rodeo",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9eb3b7/hJEArh9GpuXqOcuioCGCl_e1afe65188c64bbfa1f8f16cbff00c0e.jpg"
+    },
+    {
+      "id": "3660001",
+      "title": "digital rodeo",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9eb3c7/8cjIB-Kf15lCMJqQzVnrV_b463c7227d744a7d8d9bf617d88f2890.jpg"
+    },
+    {
+      "id": "3630001",
+      "title": "Rocket Cowboy country version",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3630001-1781823200999.jpg"
+    },
+    {
+      "id": "3600001",
+      "title": "Rocket Cowboy country version",
+      "coverArtUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3600001-1781823029264.jpg"
+    },
+    {
+      "id": "3570001",
+      "title": "Rocket Cowboy",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebc93/ZwSHE9HCNvpCrdvwnv8-u_8dcb4569c5e24b4a8b199933edcffde2.jpg"
+    },
+    {
+      "id": "3540001",
+      "title": "Renegade for Hire",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9eb48a/IISGqxTePo8Z5fJnEYNtS_11090424149d426794a35e90f557644c.jpg"
+    },
+    {
+      "id": "3510001",
+      "title": "Renegade for Hire 2",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9eb3ef/8NkY8jsq40NexRGnss-8f_6f81636cba834e62b29c38fa1ebf93f5.jpg"
+    },
+    {
+      "id": "3480001",
+      "title": "Electric Fire Rising",
+      "coverArtUrl": "https://dnznrvs05pmza.cloudfront.net/b807836e-c92e-4540-bf89-e74da60d50c9.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjkwMGI5MmM0YTBjNTUyZiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4MTgyNTk2NH0.afUo9aEwIwJfG1sh_eS-bs84Y0i-SOoc1-BWMEkNhZY"
+    },
+    {
+      "id": "3450001",
+      "title": "Electric Fire",
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9eb6fe/h80rWLohH6LXHhWMv2ona_b7f2eed81d4c4491a8ebdf8cbdb3eec2.jpg"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tcoverArtUrl\n3960001\tSummer Wind Heroes\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6570001-1781836972934.jpg\n3930001\tPlay Ball\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6450001-1781834589315.jpg\n3810001\tCouch Dreams\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6240001-1781821100348.jpg\n3780001\tFrosty Naps\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/6210001-1781820364371.jpg\n3750001\tCumulous Couch\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3750001-1781819845396.jpg\n3720001\ta day with you\thttps://v3b.fal.media/files/b/0a9ebaac/3hcQqeT0gY8DKEAyEk9Ky_876e3687448f46808aae02f648707073.jpg\n3690001\tdigital rodeo\thttps://v3b.fal.media/files/b/0a9eb3b7/hJEArh9GpuXqOcuioCGCl_e1afe65188c64bbfa1f8f16cbff00c0e.jpg\n3660001\tdigital rodeo\thttps://v3b.fal.media/files/b/0a9eb3c7/8cjIB-Kf15lCMJqQzVnrV_b463c7227d744a7d8d9bf617d88f2890.jpg\n3630001\tRocket Cowboy country version\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3630001-1781823200999.jpg\n3600001\tRocket Cowboy country version\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663331665311/frNnwU2pwLKJifDR8KqR7c/cover-art/3600001-1781823029264.jpg\n3570001\tRocket Cowboy\thttps://v3b.fal.media/files/b/0a9ebc93/ZwSHE9HCNvpCrdvwnv8-u_8dcb4569c5e24b4a8b199933edcffde2.jpg\n3540001\tRenegade for Hire\thttps://v3b.fal.media/files/b/0a9eb48a/IISGqxTePo8Z5fJnEYNtS_11090424149d426794a35e90f557644c.jpg\n3510001\tRenegade for Hire 2\thttps://v3b.fal.media/files/b/0a9eb3ef/8NkY8jsq40NexRGnss-8f_6f81636cba834e62b29c38fa1ebf93f5.jpg\n3480001\tElectric Fire Rising\thttps://dnznrvs05pmza.cloudfront.net/b807836e-c92e-4540-bf89-e74da60d50c9.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjkwMGI5MmM0YTBjNTUyZiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4MTgyNTk2NH0.afUo9aEwIwJfG1sh_eS-bs84Y0i-SOoc1-BWMEkNhZY\n3450001\tElectric Fire\thttps://v3b.fal.media/files/b/0a9eb6fe/h80rWLohH6LXHhWMv2ona_b7f2eed81d4c4491a8ebdf8cbdb3eec2.jpg\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

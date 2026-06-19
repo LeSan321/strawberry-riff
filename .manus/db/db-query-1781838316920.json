@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as runway_count FROM tracks WHERE coverArtUrl LIKE '%dnznrvs05pmza.cloudfront.net%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT COUNT(*) as runway_count FROM tracks WHERE coverArtUrl LIKE '%dnznrvs05pmza.cloudfront.net%';",
+  "rows": [
+    {
+      "runway_count": "48"
+    }
+  ],
+  "messages": [],
+  "stdout": "runway_count\n48\n",
+  "stderr": "",
+  "execution_time_ms": 256
+}

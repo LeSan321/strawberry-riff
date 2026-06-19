@@ -129,6 +129,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
   const updateMutation = trpc.tracks.update.useMutation({
     onSuccess: () => {
       utils.tracks.myTracks.invalidate();
+      utils.tracks.publicFeed.invalidate();
       toast.success("Track updated!");
       onClose();
     },
@@ -412,7 +413,10 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
   const VisIcon = visConfig.icon;
 
   const updateMutation = trpc.tracks.update.useMutation({
-    onSuccess: () => utils.tracks.myTracks.invalidate(),
+    onSuccess: () => {
+      utils.tracks.myTracks.invalidate();
+      utils.tracks.publicFeed.invalidate();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -776,6 +780,7 @@ export default function MyRiffs() {
   const bulkUpdateMutation = trpc.tracks.bulkUpdateVisibility.useMutation({
     onSuccess: (data) => {
       utils.tracks.myTracks.invalidate();
+      utils.tracks.publicFeed.invalidate();
       toast.success(`Updated ${data.updated} track${data.updated !== 1 ? "s" : ""}`);
       setSelectedIds(new Set());
       setBulkMode(false);

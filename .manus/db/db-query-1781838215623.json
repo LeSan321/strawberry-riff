@@ -1,0 +1,220 @@
+{
+  "query": "SELECT id, title, visibility, userId, createdAt FROM tracks ORDER BY createdAt DESC LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, title, visibility, userId, createdAt FROM tracks ORDER BY createdAt DESC LIMIT 30;",
+  "rows": [
+    {
+      "id": "3960001",
+      "title": "Summer Wind Heroes",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-19 02:43:47"
+    },
+    {
+      "id": "3930001",
+      "title": "Play Ball",
+      "visibility": "private",
+      "userId": "1",
+      "createdAt": "2026-06-19 02:03:18"
+    },
+    {
+      "id": "3900001",
+      "title": "play ball",
+      "visibility": "private",
+      "userId": "35730001",
+      "createdAt": "2026-06-19 01:47:40"
+    },
+    {
+      "id": "3870001",
+      "title": "play ball",
+      "visibility": "public",
+      "userId": "35730001",
+      "createdAt": "2026-06-19 01:44:47"
+    },
+    {
+      "id": "3840001",
+      "title": "play ball",
+      "visibility": "inner-circle",
+      "userId": "35730001",
+      "createdAt": "2026-06-19 01:42:40"
+    },
+    {
+      "id": "3810001",
+      "title": "Couch Dreams",
+      "visibility": "public",
+      "userId": "35730001",
+      "createdAt": "2026-06-18 22:19:15"
+    },
+    {
+      "id": "3780001",
+      "title": "Frosty Naps",
+      "visibility": "public",
+      "userId": "35730001",
+      "createdAt": "2026-06-18 22:06:21"
+    },
+    {
+      "id": "3750001",
+      "title": "Cumulous Couch",
+      "visibility": "public",
+      "userId": "35730001",
+      "createdAt": "2026-06-18 21:56:22"
+    },
+    {
+      "id": "3720001",
+      "title": "a day with you",
+      "visibility": "private",
+      "userId": "35730001",
+      "createdAt": "2026-06-18 01:33:16"
+    },
+    {
+      "id": "3690001",
+      "title": "digital rodeo",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-17 00:33:48"
+    },
+    {
+      "id": "3660001",
+      "title": "digital rodeo",
+      "visibility": "private",
+      "userId": "1",
+      "createdAt": "2026-06-17 00:32:37"
+    },
+    {
+      "id": "3630001",
+      "title": "Rocket Cowboy country version",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-16 21:32:34"
+    },
+    {
+      "id": "3600001",
+      "title": "Rocket Cowboy country version",
+      "visibility": "inner-circle",
+      "userId": "1",
+      "createdAt": "2026-06-16 21:31:23"
+    },
+    {
+      "id": "3570001",
+      "title": "Rocket Cowboy",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-16 21:28:56"
+    },
+    {
+      "id": "3540001",
+      "title": "Renegade for Hire",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-16 18:33:24"
+    },
+    {
+      "id": "3510001",
+      "title": "Renegade for Hire 2",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-16 18:32:19"
+    },
+    {
+      "id": "3480001",
+      "title": "Electric Fire Rising",
+      "visibility": "private",
+      "userId": "1",
+      "createdAt": "2026-06-16 17:27:11"
+    },
+    {
+      "id": "3450001",
+      "title": "Electric Fire",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-16 16:58:44"
+    },
+    {
+      "id": "3420001",
+      "title": "Six Shooter Protocol",
+      "visibility": "private",
+      "userId": "1",
+      "createdAt": "2026-06-16 04:11:53"
+    },
+    {
+      "id": "3390001",
+      "title": "Blooming Frontier",
+      "visibility": "inner-circle",
+      "userId": "1",
+      "createdAt": "2026-06-15 21:03:55"
+    },
+    {
+      "id": "3360001",
+      "title": "Six Shooter Protocol",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-15 20:52:14"
+    },
+    {
+      "id": "3330001",
+      "title": "Blooming Frontier",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-14 23:14:41"
+    },
+    {
+      "id": "3300001",
+      "title": "Blooming Frontier remix",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-14 23:11:25"
+    },
+    {
+      "id": "3180001",
+      "title": "Phantom Wire",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-13 18:57:39"
+    },
+    {
+      "id": "3150001",
+      "title": "King of the Mountain2",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-12 19:32:57"
+    },
+    {
+      "id": "3120001",
+      "title": "digital bronco",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-11 17:18:41"
+    },
+    {
+      "id": "3090001",
+      "title": "Love's Echo",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-06 00:43:04"
+    },
+    {
+      "id": "3060001",
+      "title": "a day with you",
+      "visibility": "public",
+      "userId": "35730001",
+      "createdAt": "2026-06-06 00:14:33"
+    },
+    {
+      "id": "3030001",
+      "title": "Mountain's Edge",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-05 19:29:58"
+    },
+    {
+      "id": "3000001",
+      "title": "Silver Bullet ",
+      "visibility": "public",
+      "userId": "1",
+      "createdAt": "2026-06-05 03:45:58"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tvisibility\tuserId\tcreatedAt\n3960001\tSummer Wind Heroes\tpublic\t1\t2026-06-19 02:43:47\n3930001\tPlay Ball\tprivate\t1\t2026-06-19 02:03:18\n3900001\tplay ball\tprivate\t35730001\t2026-06-19 01:47:40\n3870001\tplay ball\tpublic\t35730001\t2026-06-19 01:44:47\n3840001\tplay ball\tinner-circle\t35730001\t2026-06-19 01:42:40\n3810001\tCouch Dreams\tpublic\t35730001\t2026-06-18 22:19:15\n3780001\tFrosty Naps\tpublic\t35730001\t2026-06-18 22:06:21\n3750001\tCumulous Couch\tpublic\t35730001\t2026-06-18 21:56:22\n3720001\ta day with you\tprivate\t35730001\t2026-06-18 01:33:16\n3690001\tdigital rodeo\tpublic\t1\t2026-06-17 00:33:48\n3660001\tdigital rodeo\tprivate\t1\t2026-06-17 00:32:37\n3630001\tRocket Cowboy country version\tpublic\t1\t2026-06-16 21:32:34\n3600001\tRocket Cowboy country version\tinner-circle\t1\t2026-06-16 21:31:23\n3570001\tRocket Cowboy\tpublic\t1\t2026-06-16 21:28:56\n3540001\tRenegade for Hire\tpublic\t1\t2026-06-16 18:33:24\n3510001\tRenegade for Hire 2\tpublic\t1\t2026-06-16 18:32:19\n3480001\tElectric Fire Rising\tprivate\t1\t2026-06-16 17:27:11\n3450001\tElectric Fire\tpublic\t1\t2026-06-16 16:58:44\n3420001\tSix Shooter Protocol\tprivate\t1\t2026-06-16 04:11:53\n3390001\tBlooming Frontier\tinner-circle\t1\t2026-06-15 21:03:55\n3360001\tSix Shooter Protocol\tpublic\t1\t2026-06-15 20:52:14\n3330001\tBlooming Frontier\tpublic\t1\t2026-06-14 23:14:41\n3300001\tBlooming Frontier remix\tpublic\t1\t2026-06-14 23:11:25\n3180001\tPhantom Wire\tpublic\t1\t2026-06-13 18:57:39\n3150001\tKing of the Mountain2\tpublic\t1\t2026-06-12 19:32:57\n3120001\tdigital bronco\tpublic\t1\t2026-06-11 17:18:41\n3090001\tLove's Echo\tpublic\t1\t2026-06-06 00:43:04\n3060001\ta day with you\tpublic\t35730001\t2026-06-06 00:14:33\n3030001\tMountain's Edge\tpublic\t1\t2026-06-05 19:29:58\n3000001\tSilver Bullet \tpublic\t1\t2026-06-05 03:45:58\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}
