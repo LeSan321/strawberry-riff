@@ -79,7 +79,7 @@ function UserRow({ user }: { user: UserCard }) {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Link href={`/creator/${encodeURIComponent(displayName)}`}>
+            <Link href={`/creator/${user.id}`}>
               <Avatar className="h-10 w-10 border-2 border-border hover:border-pink-400 transition-colors cursor-pointer">
                 <AvatarImage src={user.avatarUrl ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
@@ -88,7 +88,7 @@ function UserRow({ user }: { user: UserCard }) {
               </Avatar>
             </Link>
             <div className="flex-1 min-w-0">
-              <Link href={`/creator/${encodeURIComponent(displayName)}`} className="hover:text-pink-400 transition-colors">
+              <Link href={`/creator/${user.id}`} className="hover:text-pink-400 transition-colors">
                 <p className="font-semibold text-foreground truncate cursor-pointer">{displayName}</p>
               </Link>
               {user.bio && (

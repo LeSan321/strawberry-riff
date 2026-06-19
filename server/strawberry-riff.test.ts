@@ -50,6 +50,7 @@ vi.mock("./db", () => ({
   removeTrackFromPlaylist: vi.fn().mockResolvedValue(undefined),
   getUserByDisplayName: vi.fn().mockResolvedValue(undefined),
   getPublicTracksByUserId: vi.fn().mockResolvedValue([]),
+  getPublicAndInnerCircleTracksByUserId: vi.fn().mockResolvedValue([]),
   getFollowerCount: vi.fn().mockResolvedValue(0),
   getFollowingCount: vi.fn().mockResolvedValue(0),
   setUserPremium: vi.fn().mockResolvedValue(undefined),
@@ -334,47 +335,45 @@ describe("creators", () => {
     vi.mocked(db.isFollowing).mockResolvedValue(false);
   });
   it("publicProfile throws NOT_FOUND when creator does not exist", async () => {
-    const { getUserByDisplayName } = await import("./db");
-    vi.mocked(getUserByDisplayName).mockResolvedValueOnce(undefined);
+    const { getUserById } = await import("./db");
+    vi.mocked(getUserById).mockResolvedValueOnce(undefined);
     const caller = appRouter.createCaller(makeAnonCtx());
-    await expect(caller.creators.publicProfile({ username: "nobody" })).rejects.toMatchObject({
+    await expect(caller.creators.publicProfile({ userId: 9999 })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });
 
   it("publicProfile is accessible without authentication", async () => {
-    const { getUserByDisplayName, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
+    const { getUserById, getProfileByUserId, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
       await import("./db");
-    vi.mocked(getUserByDisplayName).mockResolvedValueOnce({
-      user: {
-        id: 42,
-        openId: "creator-42",
-        name: "Jam",
-        email: "jam@example.com",
-        loginMethod: "manus",
-        role: "user",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSignedIn: new Date(),
-      },
-      profile: {
-        id: 10,
-        userId: 42,
-        displayName: "Jam",
-        bio: "I make beats",
-        avatarUrl: null,
-        profileComplete: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 42,
+      openId: "creator-42",
+      name: "Jam",
+      email: "jam@example.com",
+      loginMethod: "manus",
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    } as any);
+    vi.mocked(getProfileByUserId).mockResolvedValueOnce({
+      id: 10,
+      userId: 42,
+      displayName: "Jam",
+      bio: "I make beats",
+      avatarUrl: null,
+      profileComplete: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
     vi.mocked(getPublicTracksByUserId).mockResolvedValueOnce([]);
     vi.mocked(getFollowerCount).mockResolvedValueOnce(5);
     vi.mocked(getFollowingCount).mockResolvedValueOnce(3);
     vi.mocked(isFollowing).mockResolvedValueOnce(false);
 
     const caller = appRouter.createCaller(makeAnonCtx());
-    const result = await caller.creators.publicProfile({ username: "Jam" });
+    const result = await caller.creators.publicProfile({ userId: 42 });
 
     expect(result.displayName).toBe("Jam");
     expect(result.bio).toBe("I make beats");
@@ -387,75 +386,53 @@ describe("creators", () => {
   });
 
   it("publicProfile marks isOwnProfile true for the profile owner", async () => {
-    const { getUserByDisplayName, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
+    const { getUserById, getProfileByUserId, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
       await import("./db");
-    vi.mocked(getUserByDisplayName).mockResolvedValueOnce({
-      user: {
-        id: 1, // same as makeAuthCtx user id
-        openId: "user-1",
-        name: "Test User",
-        email: "test@example.com",
-        loginMethod: "manus",
-        role: "user",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSignedIn: new Date(),
-      },
-      profile: {
-        id: 1,
-        userId: 1,
-        displayName: "Test User",
-        bio: null,
-        avatarUrl: null,
-        profileComplete: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 1, // same as makeAuthCtx user id
+      openId: "user-1",
+      name: "Test User",
+      email: "test@example.com",
+      loginMethod: "manus",
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    } as any);
+    vi.mocked(getProfileByUserId).mockResolvedValueOnce(null);
     vi.mocked(getPublicTracksByUserId).mockResolvedValueOnce([]);
     vi.mocked(getFollowerCount).mockResolvedValueOnce(0);
     vi.mocked(getFollowingCount).mockResolvedValueOnce(0);
     vi.mocked(isFollowing).mockResolvedValueOnce(false);
 
     const caller = appRouter.createCaller(makeAuthCtx());
-    const result = await caller.creators.publicProfile({ username: "Test User" });
+    const result = await caller.creators.publicProfile({ userId: 1 });
 
     expect(result.isOwnProfile).toBe(true);
   });
 
   it("publicProfile shows viewerIsFollowing true when authenticated viewer follows creator", async () => {
-    const { getUserByDisplayName, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
+    const { getUserById, getProfileByUserId, getPublicTracksByUserId, getFollowerCount, getFollowingCount, isFollowing } =
       await import("./db");
-    vi.mocked(getUserByDisplayName).mockResolvedValueOnce({
-      user: {
-        id: 99,
-        openId: "creator-99",
-        name: "Melody",
-        email: "melody@example.com",
-        loginMethod: "manus",
-        role: "user",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSignedIn: new Date(),
-      },
-      profile: {
-        id: 20,
-        userId: 99,
-        displayName: "Melody",
-        bio: null,
-        avatarUrl: null,
-        profileComplete: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: 99,
+      openId: "creator-99",
+      name: "Melody",
+      email: "melody@example.com",
+      loginMethod: "manus",
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    } as any);
+    vi.mocked(getProfileByUserId).mockResolvedValueOnce(null);
     vi.mocked(getPublicTracksByUserId).mockResolvedValueOnce([]);
     vi.mocked(getFollowerCount).mockResolvedValueOnce(12);
     vi.mocked(getFollowingCount).mockResolvedValueOnce(7);
     vi.mocked(isFollowing).mockResolvedValueOnce(true); // viewer is following
 
     const caller = appRouter.createCaller(makeAuthCtx());
-    const result = await caller.creators.publicProfile({ username: "Melody" });
+    const result = await caller.creators.publicProfile({ userId: 99 });
 
     expect(result.viewerIsFollowing).toBe(true);
     expect(result.followerCount).toBe(12);

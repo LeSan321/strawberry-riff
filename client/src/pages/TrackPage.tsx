@@ -53,10 +53,10 @@ export default function TrackPage() {
     [fullTrack?.gradient, trackId]
   );
 
-  // Fetch more tracks from this creator (only when we have a username)
+  // Fetch more tracks from this creator (only when we have a creatorUserId)
   const { data: creatorProfile } = trpc.creators.publicProfile.useQuery(
-    { username: fullTrack?.creatorUsername ?? "" },
-    { enabled: !!fullTrack?.creatorUsername }
+    { userId: fullTrack?.creatorUserId ?? 0 },
+    { enabled: !!fullTrack?.creatorUserId }
   );
   const moreTracks = useMemo(() => {
     if (!creatorProfile?.tracks) return [];
@@ -245,8 +245,8 @@ export default function TrackPage() {
                   <h1 className="text-2xl font-bold text-white leading-tight truncate">
                     {fullTrack!.title}
                   </h1>
-                  {fullTrack!.creatorUsername ? (
-                    <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
+                  {fullTrack!.creatorUserId ? (
+                    <Link href={`/creator/${fullTrack!.creatorUserId}`}>
                       <p className="text-pink-400 font-medium mt-0.5 hover:text-pink-300 cursor-pointer flex items-center gap-1">
                         {fullTrack!.artist ?? fullTrack!.creatorUsername}
                         <ExternalLink className="w-3.5 h-3.5 opacity-60" />
@@ -326,8 +326,8 @@ export default function TrackPage() {
             )}
 
             {/* Creator card */}
-            {fullTrack!.creatorUsername && (
-              <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
+            {fullTrack!.creatorUserId && (
+              <Link href={`/creator/${fullTrack!.creatorUserId}`}>
                 <motion.div
                   whileHover={{ y: -2 }}
                   className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
@@ -336,7 +336,7 @@ export default function TrackPage() {
                     {fullTrack!.creatorAvatarUrl ? (
                       <img
                         src={fullTrack!.creatorAvatarUrl}
-                        alt={fullTrack!.creatorUsername}
+                        alt={fullTrack!.creatorUsername ?? "Creator"}
                         className="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-sm"
                       />
                     ) : (
@@ -368,7 +368,7 @@ export default function TrackPage() {
         </motion.div>
 
         {/* More from this creator */}
-        {moreTracks.length > 0 && fullTrack!.creatorUsername && (
+        {moreTracks.length > 0 && fullTrack!.creatorUserId && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -378,7 +378,7 @@ export default function TrackPage() {
               <h2 className="text-base font-semibold text-white">
                 More from {fullTrack!.creatorUsername}
               </h2>
-              <Link href={`/creator/${encodeURIComponent(fullTrack!.creatorUsername)}`}>
+              <Link href={`/creator/${fullTrack!.creatorUserId}`}>
                 <span className="text-xs text-pink-400 hover:underline">
                   Full profile →
                 </span>

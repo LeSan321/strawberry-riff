@@ -253,6 +253,7 @@ const tracksRouter = router({
         accessDenied: false as const,
         ...track,
         moodTags: track.moodTags ? (JSON.parse(track.moodTags) as string[]) : [],
+        creatorUserId: result.creatorUserId,
         creatorUsername: result.creatorUsername,
         creatorAvatarUrl: result.creatorAvatarUrl,
         creatorBio: result.creatorBio,
@@ -674,11 +675,11 @@ const playlistsRouter = router({
 // ─── Creators (public profiles) ─────────────────────────────────────────────
 const creatorsRouter = router({
   publicProfile: publicProcedure
-    .input(z.object({ username: z.string().min(1).max(100) }))
+    .input(z.object({ userId: z.number().int() }))
     .query(async ({ ctx, input }) => {
-      const found = await getUserByDisplayName(input.username);
-      if (!found) throw new TRPCError({ code: "NOT_FOUND", message: "Creator not found" });
-      const { user, profile } = found;
+      const user = await getUserById(input.userId);
+      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Creator not found" });
+      const profile = await getProfileByUserId(user.id) ?? { displayName: null, bio: null, avatarUrl: null };
 
       const followerCount = await getFollowerCount(user.id);
       const followingCount = await getFollowingCount(user.id);
@@ -1467,6 +1468,7 @@ const previewLinksRouter = router({
           userId: track.userId,
         },
         creator: {
+          userId: result.creatorUserId,
           username: result.creatorUsername,
           avatarUrl: result.creatorAvatarUrl,
           bio: result.creatorBio,

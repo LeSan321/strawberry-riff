@@ -52,8 +52,8 @@ export default function ProfileSetup() {
     onError: (e) => toast.error(e.message),
   });
 
-  const profileUrl = form.displayName
-    ? `${window.location.origin}/creator/${encodeURIComponent(form.displayName)}`
+  const profileUrl = user?.id
+    ? `${window.location.origin}/creator/${user.id}`
     : null;
 
   const copyProfileLink = () => {

@@ -27,6 +27,7 @@ const CARD_GRADIENTS = [
 
 interface DiscoverTrack {
   id: number;
+  userId: number;
   title: string;
   artist?: string | null;
   audioUrl: string;
@@ -142,7 +143,7 @@ function TrackCard({ track, index, queue, onTagClick }: {
         </div>
         {track.creatorUsername ? (
           <p
-            onClick={(e) => { e.stopPropagation(); setLocation(`/creator/${encodeURIComponent(track.creatorUsername!)}`); }}
+            onClick={(e) => { e.stopPropagation(); setLocation(`/creator/${track.userId}`); }}
             className="text-sm text-zinc-400 truncate mb-2 hover:text-pink-400 transition-colors cursor-pointer flex items-center gap-1 pl-10"
           >
             <span className="truncate">{track.artist ?? track.creatorUsername ?? "Unknown Artist"}</span>

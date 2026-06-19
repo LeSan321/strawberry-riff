@@ -254,8 +254,8 @@ function StatPill({ value, label }: { value: number; label: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function CreatorProfile() {
-  const params = useParams<{ username: string }>();
-  const username = params.username ?? "";
+  const params = useParams<{ userId: string }>();
+  const creatorUserId = parseInt(params.userId ?? "0", 10);
   const { user, isAuthenticated } = useAuth();
 
   // Show welcome toast when arriving from a preview link follow
@@ -268,7 +268,7 @@ export default function CreatorProfile() {
           <div className="flex items-start gap-2">
             <span className="text-lg">🍓</span>
             <div>
-              <p className="font-semibold text-sm">You're now following {username}!</p>
+              <p className="font-semibold text-sm">You're now in their Inner Circle!</p>
               <p className="text-xs text-muted-foreground mt-0.5">Their Inner Circle tracks will appear in your Friends feed.</p>
             </div>
           </div>,
@@ -281,23 +281,23 @@ export default function CreatorProfile() {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [username]);
+  }, []);
 
   const {
     data: creator,
     isLoading,
     error,
   } = trpc.creators.publicProfile.useQuery(
-    { username },
-    { enabled: username.length > 0, retry: false }
+    { userId: creatorUserId },
+    { enabled: !isNaN(creatorUserId) && creatorUserId > 0, retry: false }
   );
 
   const utils = trpc.useUtils();
   const followMutation = trpc.friends.follow.useMutation({
-    onSuccess: () => utils.creators.publicProfile.invalidate({ username }),
+    onSuccess: () => utils.creators.publicProfile.invalidate({ userId: creatorUserId }),
   });
   const unfollowMutation = trpc.friends.unfollow.useMutation({
-    onSuccess: () => utils.creators.publicProfile.invalidate({ username }),
+    onSuccess: () => utils.creators.publicProfile.invalidate({ userId: creatorUserId }),
   });
 
   const handleFollowToggle = () => {
@@ -354,7 +354,7 @@ export default function CreatorProfile() {
         <Music className="w-16 h-16 text-pink-200 mb-4" />
         <h2 className="text-2xl font-bold mb-2">Creator not found</h2>
         <p className="text-muted-foreground mb-6">
-          No creator with the username <strong>@{username}</strong> exists yet.
+          This creator profile doesn't exist or has been removed.
         </p>
         <Link href="/discover">
           <Button

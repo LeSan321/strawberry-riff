@@ -52,7 +52,7 @@ function Router() {
         <Route path="/pricing" component={Pricing} />
         <Route path="/profile-setup" component={ProfileSetup} />
         <Route path="/about" component={About} />
-        <Route path="/creator/:username" component={CreatorProfile} />
+        <Route path="/creator/:userId" component={CreatorProfile} />
         <Route path="/premium/success" component={PremiumSuccess} />
         <Route path="/track/:id" component={TrackPage} />
         <Route path="/lyrics" component={LyricsGeneratorPage} />

@@ -288,12 +288,12 @@ export default function PreviewPage() {
                       onSuccess: () => {
                         setIsFollowing(true);
                         // Redirect to creator profile with welcome flag
-                        navigate(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
+                        navigate(`/creator/${data.track.userId}?welcome=1`);
                       },
                       onError: (err) => {
                         // If already following, just navigate
                         if (err.message?.includes("already")) {
-                          navigate(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`);
+                          navigate(`/creator/${data.track.userId}?welcome=1`);
                         } else {
                           toast.error("Could not follow — please try again.");
                         }
@@ -312,7 +312,7 @@ export default function PreviewPage() {
               </Button>
             ) : (
               <a
-                href={getLoginUrl(`/creator/${encodeURIComponent(creatorUsername)}?welcome=1`)}
+                href={getLoginUrl(`/creator/${data.track.userId}?welcome=1`)}
                 className="flex-1"
               >
                 <Button

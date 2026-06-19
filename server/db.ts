@@ -480,6 +480,7 @@ export async function getUserByStripeCustomerId(customerId: string): Promise<Use
 
 export async function getTrackWithCreator(trackId: number): Promise<{
   track: Track;
+  creatorUserId: number | null;
   creatorUsername: string | null;
   creatorAvatarUrl: string | null;
   creatorBio: string | null;
@@ -500,6 +501,7 @@ export async function getTrackWithCreator(trackId: number): Promise<{
   if (!result[0]) return undefined;
   return {
     track: result[0].track,
+    creatorUserId: result[0].track.userId,
     creatorUsername: result[0].creatorUsername ?? null,
     creatorAvatarUrl: result[0].creatorAvatarUrl ?? null,
     creatorBio: result[0].creatorBio ?? null,
