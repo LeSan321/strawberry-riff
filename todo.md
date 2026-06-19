@@ -1158,3 +1158,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add 3-second linear volume fade-out at end of every track in AudioPlayerContext
 - [x] Restore volume to user level in onended before next track starts
 - [x] Restore volume in loadAndPlay so manual track changes also start at full volume
+
+## Bug Fix: Visibility Privacy - Jun 19 2026
+- [x] Root cause: updateTrack mutation only invalidated myTracks cache, not publicFeed cache
+- [x] Fix: Added utils.tracks.publicFeed.invalidate() to edit dialog save mutation, quick-cycle card visibility mutation, and bulk update mutation in MyRiffs.tsx
+- [x] Private and inner-circle tracks now disappear from Discover immediately after saving
+
+## Feature: Friends Page - Search & Clickable Profiles - Jun 19 2026
+- [ ] Add search/filter input to Friends page to find friends by name
+- [ ] Make friend cards clickable — navigate to their CreatorProfile page
+- [ ] Update CreatorProfile to show public + inner-circle tracks when viewer is a confirmed mutual friend
+- [ ] Add server-side procedure: getCreatorTracks(userId, viewerUserId) — returns public tracks for all, adds inner-circle if viewer follows the creator

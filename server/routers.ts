@@ -22,6 +22,7 @@ import {
   getProfileByUserId,
   getPublicTracks,
   getPublicTracksByUserId,
+  getPublicAndInnerCircleTracksByUserId,
   getTrackById,
   getTrackWithCreator,
   getTracksByUserId,
@@ -679,7 +680,6 @@ const creatorsRouter = router({
       if (!found) throw new TRPCError({ code: "NOT_FOUND", message: "Creator not found" });
       const { user, profile } = found;
 
-      const publicTracks = await getPublicTracksByUserId(user.id);
       const followerCount = await getFollowerCount(user.id);
       const followingCount = await getFollowingCount(user.id);
 
@@ -687,6 +687,13 @@ const creatorsRouter = router({
       const viewerIsFollowing = ctx.user
         ? await isFollowing(ctx.user.id, user.id)
         : false;
+
+      // Followers (and the creator themselves) can see inner-circle tracks
+      const isOwnProfile = ctx.user?.id === user.id;
+      const canSeeInnerCircle = isOwnProfile || viewerIsFollowing;
+      const visibleTracks = canSeeInnerCircle
+        ? await getPublicAndInnerCircleTracksByUserId(user.id)
+        : await getPublicTracksByUserId(user.id);
 
       return {
         userId: user.id,
@@ -696,10 +703,10 @@ const creatorsRouter = router({
         isPremium: user.isPremium ?? false,
         followerCount,
         followingCount,
-        trackCount: publicTracks.length,
-        isOwnProfile: ctx.user?.id === user.id,
+        trackCount: visibleTracks.length,
+        isOwnProfile,
         viewerIsFollowing,
-        tracks: publicTracks.map((t) => ({
+        tracks: visibleTracks.map((t) => ({
           ...t,
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
         })),

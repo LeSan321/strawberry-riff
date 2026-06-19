@@ -16,6 +16,7 @@ import {
   Search,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -78,14 +79,18 @@ function UserRow({ user }: { user: UserCard }) {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-border">
-              <AvatarImage src={user.avatarUrl ?? undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
-                {displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Link href={`/creator/${encodeURIComponent(displayName)}`}>
+              <Avatar className="h-10 w-10 border-2 border-border hover:border-pink-400 transition-colors cursor-pointer">
+                <AvatarImage src={user.avatarUrl ?? undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white text-sm font-semibold">
+                  {displayName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">{displayName}</p>
+              <Link href={`/creator/${encodeURIComponent(displayName)}`} className="hover:text-pink-400 transition-colors">
+                <p className="font-semibold text-foreground truncate cursor-pointer">{displayName}</p>
+              </Link>
               {user.bio && (
                 <p className="text-xs text-muted-foreground truncate">{user.bio}</p>
               )}

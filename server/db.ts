@@ -320,6 +320,21 @@ export async function getPublicTracksByUserId(userId: number): Promise<Track[]> 
     .orderBy(desc(tracks.createdAt));
 }
 
+export async function getPublicAndInnerCircleTracksByUserId(userId: number): Promise<Track[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(tracks)
+    .where(
+      and(
+        eq(tracks.userId, userId),
+        or(eq(tracks.visibility, "public"), eq(tracks.visibility, "inner-circle"))
+      )
+    )
+    .orderBy(desc(tracks.createdAt));
+}
+
 export async function getFollowerCount(userId: number): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
