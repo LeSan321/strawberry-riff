@@ -98,7 +98,7 @@ export function StyleLibrary() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="w-full bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-4">
