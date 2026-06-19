@@ -434,7 +434,7 @@ export default function Home() {
   const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 3 });
 
   const displayTracks = publicTracks && publicTracks.length > 0
-    ? publicTracks.slice(0, 3).map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration }))
+    ? publicTracks.slice(0, 3).map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration, coverArtUrl: t.coverArtUrl }))
     : PLACEHOLDER_TRACKS;
 
   return (
@@ -450,8 +450,11 @@ export default function Home() {
       >
         {/* Subtle overlay — keeps text readable without killing the photo */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-black/5" />
-        {/* Bottom fade into page */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+        {/* Bottom fade into page — tall multi-stop gradient for a seamless bleed */}
+        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#0f0614] via-[#0f0614]/80 to-transparent" />
+        {/* Side fades to soften the left and right edges into the page */}
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0f0614]/60 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0f0614]/40 to-transparent" />
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-24 pb-16">
           <motion.div
