@@ -106,7 +106,7 @@ const CARD_GRADIENTS = [
   "from-teal-400 via-cyan-400 to-green-400",
 ];
 
-function TrackCard({ track, index }: { track: { id: number; title: string; artist?: string | null; fileUrl: string; duration?: number | null }; index: number }) {
+function TrackCard({ track, index }: { track: { id: number; title: string; artist?: string | null; fileUrl: string; duration?: number | null; coverArtUrl?: string | null }; index: number }) {
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const [liked, setLiked] = useState(false);
@@ -126,8 +126,15 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
       transition={{ delay: index * 0.1 }}
       className="bg-card rounded-2xl overflow-hidden border border-border hover:border-border/80 hover:shadow-lg hover:shadow-black/30 transition-all"
     >
-      {/* Gradient album art */}
-      <div className={`h-44 bg-gradient-to-br ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} relative`}>
+      {/* Album art — real image if available, gradient fallback otherwise */}
+      <div className={`h-44 bg-gradient-to-br ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} relative overflow-hidden`}>
+        {track.coverArtUrl && (
+          <img
+            src={track.coverArtUrl}
+            alt={track.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         <button
           onClick={() => isCurrentlyPlaying ? pause() : play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.fileUrl })}
             className="absolute top-3 right-3 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors"
