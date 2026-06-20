@@ -157,15 +157,51 @@ export async function getTracksByUserId(userId: number): Promise<Track[]> {
   return db.select().from(tracks).where(eq(tracks.userId, userId)).orderBy(desc(tracks.createdAt));
 }
 
+// Thresholds for activating the per-creator cap
+const CAP_MIN_CREATORS = 20;
+const CAP_MIN_TRACKS = 200;
+const CAP_PER_CREATOR = 3;
+
 export async function getPublicTracks(limit = 50): Promise<Track[]> {
   const db = await getDb();
   if (!db) return [];
-  return db
+
+  // Fetch a larger pool so we have room to apply the cap and still fill the page
+  const pool = await db
     .select()
     .from(tracks)
     .where(eq(tracks.visibility, "public"))
     .orderBy(desc(tracks.createdAt))
-    .limit(limit);
+    .limit(500);
+
+  // Determine whether the per-creator cap should be active
+  const distinctCreators = new Set(pool.map((t) => t.userId)).size;
+  const totalPublic = pool.length;
+  const capActive = distinctCreators >= CAP_MIN_CREATORS && totalPublic >= CAP_MIN_TRACKS;
+
+  let filtered: Track[];
+  if (capActive) {
+    // Apply per-creator cap: keep at most CAP_PER_CREATOR tracks per creator
+    const countByCreator = new Map<number, number>();
+    filtered = [];
+    for (const track of pool) {
+      const count = countByCreator.get(track.userId) ?? 0;
+      if (count < CAP_PER_CREATOR) {
+        filtered.push(track);
+        countByCreator.set(track.userId, count + 1);
+      }
+    }
+  } else {
+    filtered = pool;
+  }
+
+  // Fisher-Yates shuffle for a fresh order on every call
+  for (let i = filtered.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+  }
+
+  return filtered.slice(0, limit);
 }
 
 export async function getInnerCircleTracks(followerUserId: number): Promise<Track[]> {

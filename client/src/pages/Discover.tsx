@@ -222,7 +222,7 @@ export default function Discover() {
   const { play } = useAudioPlayer();
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [shuffled, setShuffled] = useState(false);
+  const [shuffled, setShuffled] = useState(true);  // default: always shuffled on load
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
@@ -259,13 +259,13 @@ export default function Discover() {
   const clearFilters = useCallback(() => {
     setSearch("");
     setSelectedTags([]);
-    setShuffled(false);
+    setShuffled(true);  // reset to shuffled (the default state)
   }, []);
 
   const loadPreset = useCallback((tags: string[]) => {
     setSelectedTags(tags);
     setSearch("");
-    setShuffled(false);
+    setShuffled(true);  // keep shuffled when loading a preset
   }, []);
 
   const filtered = useMemo(() => {
@@ -360,7 +360,7 @@ export default function Discover() {
               title="Shuffle results"
             >
               <Shuffle className="w-4 h-4" />
-              <span className="hidden sm:inline">Shuffle</span>
+              <span className="hidden sm:inline">{shuffled ? "Re-shuffle" : "Shuffle"}</span>
             </Button>
           </div>
 
@@ -490,7 +490,7 @@ export default function Discover() {
                 {selectedTags.length > 0 && (
                   <span> · {selectedTags.length} {selectedTags.length === 1 ? "vibe" : "vibes"} selected</span>
                 )}
-                {shuffled && <span className="ml-1 text-purple-500">· shuffled</span>}
+                <span className="ml-1 text-purple-500">· shuffled</span>
               </p>
               <Button
                 onClick={handlePlayAll}

@@ -7,7 +7,7 @@ import {
   Upload, Users, Music, Zap, BarChart2, ListMusic,
   Sparkles, Play, Heart, Globe, Lock, UserCheck, Quote, Ticket, ChevronLeft, ChevronRight, Share2, Check
 } from "lucide-react";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -436,11 +436,24 @@ export default function Home() {
     setActiveMember(m => (m + 1) % BAND_MEMBERS.length);
   };
 
-  const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 6 });
+  // Fetch a slightly larger pool so shuffle has variety to draw from
+  const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 12 });
 
-  const displayTracks = publicTracks && publicTracks.length > 0
-    ? publicTracks.slice(0, 6).map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration, coverArtUrl: t.coverArtUrl }))
-    : PLACEHOLDER_TRACKS;
+  // Shuffle once per mount (stable seed via useState so it doesn't re-shuffle on every render)
+  const [homeSeed] = useState(() => Math.random());
+  const displayTracks = useMemo(() => {
+    if (!publicTracks || publicTracks.length === 0) return PLACEHOLDER_TRACKS;
+    // Fisher-Yates shuffle using the stable per-mount seed
+    const arr = publicTracks.map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration, coverArtUrl: t.coverArtUrl }));
+    // Use the seed to produce a deterministic-per-mount shuffle
+    let seed = homeSeed;
+    for (let i = arr.length - 1; i > 0; i--) {
+      seed = (seed * 9301 + 49297) % 233280;
+      const j = Math.floor((seed / 233280) * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 6);
+  }, [publicTracks, homeSeed]);
 
   return (
     <div className="min-h-screen">
