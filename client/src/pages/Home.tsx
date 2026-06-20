@@ -926,23 +926,34 @@ export default function Home() {
         </div>
       </section>
 
-
-
-      {/* ── Join the Revolution (CTA) ─────────────────────────────────────── */}
-      <section className="py-24 px-4 mx-4 mb-8 rounded-3xl text-white text-center"
-        style={{ background: "linear-gradient(135deg, #ec4899 0%, #a855f7 100%)" }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+      {/* ── Join the Revolution (CTA) ─────────────────────────────────────────────── */}
+      <section
+        className="relative py-24 px-4 mx-4 mb-8 rounded-3xl text-white text-center overflow-hidden"
+      >
+        {/* Background image */}
+        <div
+          className="absolute inset-0 rounded-3xl bg-cover bg-center"
+          style={{ backgroundImage: "url('/manus-storage/join-revolution-bg_5b79af42.png')" }}
+        />
+        {/* Dark overlay to ensure text legibility while letting warmth bleed through */}
+        <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg, rgba(0,0,0,0.62) 0%, rgba(20,5,30,0.55) 100%)" }} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative z-10"
+        >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Join the Revolution</h2>
           <p className="text-white/90 mb-2">Join the (not-so) quiet revolution.</p>
           <p className="text-white/80 mb-10">Where authentic voices find their audience, and music finds its meaning.</p>
           {isAuthenticated ? (
             <Link href="/upload">
-              <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold">
+              <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold shadow-lg shadow-black/30">
                 Claim Your Sonic Space
               </Button>
             </Link>
           ) : (
-            <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold"
+            <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold shadow-lg shadow-black/30"
               onClick={() => openSignIn()}>
               Claim Your Sonic Space
             </Button>
@@ -950,7 +961,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ── Meet the Band ──────────────────────────────────────────────────── */}
+      {/* ── Meet the Band ────────────────────────────────────────────────── */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12">
