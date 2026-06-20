@@ -612,7 +612,7 @@ export default function Home() {
                 </p>
               </div>
             </motion.div>
-            {/* Image placeholder */}
+            {/* The Collaboration image — The Handoff */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -620,19 +620,12 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.15 }}
               className="relative"
             >
-              <div
-                className="rounded-3xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border border-border/40"
-                style={{ background: "linear-gradient(135deg, #1a0a2e 0%, #2d1060 50%, #0f0614 100%)" }}
-              >
-                <div className="text-center px-8">
-                  <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
-                    <Sparkles className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-white/40 text-sm font-medium">Image incoming</p>
-                  <p className="text-white/25 text-xs mt-1">Running through Studios now 🍓</p>
-                </div>
-                {/* Decorative glow */}
-                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 60% 40%, rgba(168,85,247,0.15) 0%, transparent 70%)" }} />
+              <div className="rounded-3xl overflow-hidden aspect-[4/3] border border-border/20 shadow-2xl">
+                <img
+                  src="/manus-storage/collab_B_The_Handoff_adf9ea5c.jpg"
+                  alt="Human hand and AI hand meeting over piano keys — the collaboration"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </motion.div>
           </div>
@@ -643,7 +636,7 @@ export default function Home() {
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Image placeholder — left side this time for visual rhythm */}
+            {/* Your Own Sound image — Signal and Response */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -651,18 +644,12 @@ export default function Home() {
               transition={{ duration: 0.7 }}
               className="relative order-2 lg:order-1"
             >
-              <div
-                className="rounded-3xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border border-border/40"
-                style={{ background: "linear-gradient(135deg, #0f0614 0%, #1e0a3a 50%, #2d0a1e 100%)" }}
-              >
-                <div className="text-center px-8">
-                  <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #f43f8a, #c026d3)" }}>
-                    <Music className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-white/40 text-sm font-medium">Image incoming</p>
-                  <p className="text-white/25 text-xs mt-1">Running through Studios now 🍓</p>
-                </div>
-                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 40% 60%, rgba(236,72,153,0.12) 0%, transparent 70%)" }} />
+              <div className="rounded-3xl overflow-hidden aspect-[4/3] border border-border/20 shadow-2xl">
+                <img
+                  src="/manus-storage/collab_D_Signal_and_Response_cff79182.jpg"
+                  alt="Creator in studio commanding AI neural network — your sound, your rules"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </motion.div>
             {/* Text side */}
