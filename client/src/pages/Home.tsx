@@ -941,9 +941,9 @@ export default function Home() {
           viewport={{ once: true }}
           className="relative z-10"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Join the Revolution</h2>
-          <p className="text-white/90 mb-2">Join the (not-so) quiet revolution.</p>
-          <p className="text-white/80 mb-10">Where authentic voices find their audience, and music finds its meaning.</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}>Join the Revolution</h2>
+          <p className="text-white mb-2" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.8), 0 2px 20px rgba(0,0,0,0.6)" }}>Join the (not-so) quiet revolution.</p>
+          <p className="text-white/90 mb-10" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.8), 0 2px 20px rgba(0,0,0,0.6)" }}>Where authentic voices find their audience, and music finds its meaning.</p>
           {isAuthenticated ? (
             <Link href="/upload">
               <Button size="lg" className="rounded-full px-10 bg-white text-pink-600 hover:bg-white/90 font-semibold shadow-lg shadow-black/30">
