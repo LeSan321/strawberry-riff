@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { StrawberryBadge } from "@/components/StrawberryBadge";
 import { toast } from "sonner";
 
@@ -61,6 +61,7 @@ function TrackCard({
 }) {
   const { play, currentTrack, isPlaying, pause } = useAudioPlayer();
   const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const [liked, setLiked] = useState(false);
   const [shareAnimating, setShareAnimating] = useState(false);
@@ -102,7 +103,8 @@ function TrackCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: (index % 6) * 0.07 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group"
+      onClick={() => setLocation(`/track/${track.id}`)}
+      className="bg-zinc-900/95 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 group cursor-pointer"
     >
       {/* Cover art / gradient */}
       <div
@@ -144,7 +146,7 @@ function TrackCard({
             className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center transition-colors shadow-sm ${
               isCurrentlyPlaying
                 ? "bg-pink-500 text-white"
-                : "bg-muted hover:bg-pink-100 text-foreground hover:text-pink-600"
+                : "bg-white/10 hover:bg-pink-500/30 text-white hover:text-pink-300"
             }`}
             title={isCurrentlyPlaying ? "Pause" : "Play"}
           >
@@ -154,7 +156,7 @@ function TrackCard({
               <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
             )}
           </motion.button>
-          <p className="font-semibold text-foreground truncate">{track.title}</p>
+          <p className="font-semibold text-white truncate">{track.title}</p>
         </div>
         {track.moodTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2 mb-3">
@@ -162,17 +164,17 @@ function TrackCard({
               <Badge
                 key={tag}
                 variant="secondary"
-                className="text-xs px-2 py-0.5 bg-pink-50 text-pink-600 border-0"
+                className="text-xs px-2 py-0.5 bg-white/10 text-pink-300 border-0"
               >
                 {tag}
               </Badge>
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-zinc-400">
           {isAuthenticated ? (
             <button
-              onClick={() => setLiked((l) => !l)}
+              onClick={(e) => { e.stopPropagation(); setLiked((l) => !l); }}
               className="flex items-center gap-1 hover:text-pink-500 transition-colors"
             >
               <Heart
@@ -183,22 +185,23 @@ function TrackCard({
           ) : (
             <a
               href={getLoginUrl()}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1 hover:text-pink-500 transition-colors"
             >
               <Heart className="w-4 h-4" />
               <span>{track.likes}</span>
             </a>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             {track.duration && (
-              <span className="text-xs text-muted-foreground">{fmt(track.duration)}</span>
+              <span className="text-xs text-zinc-500">{fmt(track.duration)}</span>
             )}
             <AddToPlaylistButton trackId={track.id} />
             <motion.button
               onClick={handleShare}
               animate={shareAnimating ? { scale: [1, 1.4, 0.85, 1.1, 1] } : {}}
               transition={{ duration: 0.4 }}
-              className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}
+              className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${shareAnimating ? "text-pink-400" : "text-zinc-500 hover:text-pink-400"}`}
               title="Copy track link"
             >
               <LinkIcon className="w-3.5 h-3.5" />
@@ -226,13 +229,13 @@ function Avatar({
       <img
         src={url}
         alt={name}
-        className={`${dim} rounded-full object-cover border-4 border-white shadow-lg`}
+              className={`${dim} rounded-full object-cover border-4 border-white/20 shadow-lg`}
       />
     );
   }
   return (
     <div
-      className={`${dim} rounded-full flex items-center justify-center border-4 border-white shadow-lg font-bold text-white`}
+      className={`${dim} rounded-full flex items-center justify-center border-4 border-white/20 shadow-lg font-bold text-white`}
       style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
     >
       {name.charAt(0).toUpperCase()}
@@ -328,17 +331,17 @@ export default function CreatorProfile() {
     return (
       <div className="min-h-screen py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl p-8 shadow-sm animate-pulse">
+          <div className="bg-zinc-900/95 rounded-3xl p-8 border border-white/10 animate-pulse">
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-28 h-28 rounded-full bg-pink-100" />
+              <div className="w-28 h-28 rounded-full bg-white/10" />
               <div className="flex-1 space-y-3">
-                <div className="h-7 bg-pink-100 rounded w-48" />
-                <div className="h-4 bg-pink-50 rounded w-72" />
+                <div className="h-7 bg-white/10 rounded w-48" />
+                <div className="h-4 bg-white/5 rounded w-72" />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-2xl bg-pink-50 h-48 animate-pulse" />
+                <div key={i} className="rounded-2xl bg-white/5 h-48 animate-pulse" />
               ))}
             </div>
           </div>
@@ -377,7 +380,7 @@ export default function CreatorProfile() {
 
         {/* Back nav */}
         <Link href="/discover">
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-pink-600 transition-colors">
+          <button className="flex items-center gap-2 text-sm text-zinc-400 hover:text-pink-400 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Discover
           </button>
@@ -387,13 +390,13 @@ export default function CreatorProfile() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl shadow-sm overflow-hidden"
+          className="bg-zinc-900/95 backdrop-blur-sm rounded-3xl border border-white/10 overflow-hidden"
         >
           {/* Banner */}
           <div
             className="h-32 w-full"
             style={{
-              background: "linear-gradient(135deg, #fce7f3 0%, #ede9fe 50%, #dbeafe 100%)",
+              background: "linear-gradient(135deg, rgba(236,72,153,0.35) 0%, rgba(168,85,247,0.35) 50%, rgba(79,70,229,0.25) 100%)",
             }}
           />
 
@@ -408,7 +411,7 @@ export default function CreatorProfile() {
                   variant="outline"
                   size="sm"
                   onClick={handleShare}
-                  className="rounded-full border-pink-200 text-pink-600 hover:bg-pink-50 gap-1.5"
+                  className="rounded-full border-white/20 text-pink-400 hover:bg-white/10 gap-1.5"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   Share
@@ -463,7 +466,7 @@ export default function CreatorProfile() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-full border-pink-200 text-pink-600 hover:bg-pink-50"
+                      className="rounded-full border-white/20 text-pink-400 hover:bg-white/10"
                     >
                       Edit Profile
                     </Button>
@@ -488,7 +491,7 @@ export default function CreatorProfile() {
             </div>
 
             {/* Stats row */}
-            <div className="flex items-center gap-0 mt-5 border-t border-border pt-5 divide-x divide-border">
+            <div className="flex items-center gap-0 mt-5 border-t border-white/10 pt-5 divide-x divide-white/10">
               <StatPill value={creator.trackCount} label="Riffs" />
               <StatPill value={creator.followerCount} label="Followers" />
               <StatPill value={creator.followingCount} label="Following" />
@@ -514,7 +517,7 @@ export default function CreatorProfile() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 bg-white rounded-3xl"
+              className="text-center py-20 bg-zinc-900/95 rounded-3xl border border-white/10"
             >
               <Music className="w-14 h-14 text-pink-100 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-1">No public riffs yet</h3>

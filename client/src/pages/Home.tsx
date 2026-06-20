@@ -119,12 +119,13 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
   };
 
   return (
+    <Link href={track.id > 0 ? `/track/${track.id}` : "/discover"}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
-      className="bg-card rounded-2xl overflow-hidden border border-border hover:border-border/80 hover:shadow-lg hover:shadow-black/30 transition-all"
+      className="bg-card rounded-2xl overflow-hidden border border-border hover:border-border/80 hover:shadow-lg hover:shadow-black/30 transition-all cursor-pointer"
     >
       {/* Album art — real image if available, gradient fallback otherwise */}
       <div className={`h-44 bg-gradient-to-br ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} relative overflow-hidden`}>
@@ -136,7 +137,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
           />
         )}
         <button
-          onClick={() => isCurrentlyPlaying ? pause() : play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.fileUrl })}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); isCurrentlyPlaying ? pause() : play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.fileUrl }); }}
             className="absolute top-3 right-3 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors"
         >
           <Heart className={`w-4 h-4 ${liked ? "fill-white" : ""}`} />
@@ -151,7 +152,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
         {/* Mini player */}
         <div className="mt-3 flex items-center gap-2">
           <button
-            onClick={() => isCurrentlyPlaying ? pause() : play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.fileUrl })}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); isCurrentlyPlaying ? pause() : play({ id: track.id, title: track.title, artist: track.artist ?? "Unknown", audioUrl: track.fileUrl }); }}
             className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white flex-shrink-0"
           >
             {isCurrentlyPlaying ? (
@@ -180,7 +181,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
         {/* Footer */}
         <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <button
-            onClick={() => { setLiked(l => !l); setLikeCount(c => liked ? c - 1 : c + 1); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(l => !l); setLikeCount(c => liked ? c - 1 : c + 1); }}
             className="flex items-center gap-1 hover:text-pink-500 transition-colors"
           >
             <Heart className={`w-4 h-4 ${liked ? "fill-pink-500 text-pink-500" : ""}`} />
@@ -190,6 +191,7 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }
 
