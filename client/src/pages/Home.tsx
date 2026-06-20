@@ -697,83 +697,125 @@ export default function Home() {
       </section>
 
       {/* ── Features ──────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4">
+      <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Tools That Serve{" "}
-              <span style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                the Creator
-              </span>
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              From the first rough memo to a fully split mix, every tool here exists for one reason: to help you hear what you already know is in there.
-            </p>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { icon: <Upload className="w-6 h-6" />, gradient: "bg-gradient-to-br from-pink-400 to-rose-500", title: "Upload & Share", desc: "Drop any audio, any time, and watch it echo across kindred ears." },
-              { icon: <Users className="w-6 h-6" />, gradient: "bg-gradient-to-br from-violet-400 to-purple-600", title: "Connect with Creators", desc: "Trade inspiration, not follower counts. Collaboration begins with conversation." },
-              { icon: <Heart className="w-6 h-6" />, gradient: "bg-gradient-to-br from-pink-400 to-orange-400", title: "Discover New Music", desc: "Let people, not code, guide you to tracks that move your soul." },
-              { icon: <Zap className="w-6 h-6" />, gradient: "bg-gradient-to-br from-blue-400 to-cyan-500", title: "High-Quality Streaming", desc: "24-bit fidelity so every nuance arrives untouched." },
-              { icon: <BarChart2 className="w-6 h-6" />, gradient: "bg-gradient-to-br from-teal-400 to-emerald-500", title: "Track Analytics", desc: "See how real humans respond, far beyond vanity metrics." },
-              { icon: <ListMusic className="w-6 h-6" />, gradient: "bg-gradient-to-br from-amber-400 to-orange-500", title: "Curated Playlists", desc: "Build mood journeys and share them like audio love letters." },
-            ].map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="flex flex-col items-center text-center gap-3"
-              >
-                <IconBox gradient={f.gradient}>{f.icon}</IconBox>
-                <h3 className="font-semibold text-foreground">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Text + icons side */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="order-1"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Tools That Serve{" "}
+                <span style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  the Creator
+                </span>
+              </h2>
+              <p className="text-muted-foreground mb-10">
+                From the first rough memo to a fully split mix, every tool here exists for one reason: to help you hear what you already know is in there.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {[
+                  { icon: <Upload className="w-5 h-5" />, gradient: "bg-gradient-to-br from-pink-400 to-rose-500", title: "Upload & Share", desc: "Drop any audio, any time, and watch it echo across kindred ears." },
+                  { icon: <Users className="w-5 h-5" />, gradient: "bg-gradient-to-br from-violet-400 to-purple-600", title: "Connect with Creators", desc: "Trade inspiration, not follower counts." },
+                  { icon: <Zap className="w-5 h-5" />, gradient: "bg-gradient-to-br from-blue-400 to-cyan-500", title: "Generate Music", desc: "Human soul, AI craft — describe it and hear it come alive." },
+                  { icon: <ListMusic className="w-5 h-5" />, gradient: "bg-gradient-to-br from-amber-400 to-orange-500", title: "Curated Playlists", desc: "Build mood journeys and share them like audio love letters." },
+                ].map((f, i) => (
+                  <motion.div
+                    key={f.title}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 ${f.gradient}`}>
+                      {f.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm">{f.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+            {/* Tools That Serve image */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="relative order-2"
+            >
+              <div className="rounded-3xl overflow-hidden aspect-[4/3] border border-border/20 shadow-2xl">
+                <img
+                  src="/manus-storage/collab_E_Tools_That_Serve_d3b5a07f.jpg"
+                  alt="Producer at mixing console in warm amber studio light"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* ── Who It's For ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-4"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Who It's For</h2>
-            <p className="text-pink-500 italic font-medium">"From idea-stuck to soul-struck."</p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-            {[
-              { icon: <Sparkles className="w-7 h-7 text-white" />, gradient: "bg-gradient-to-br from-pink-400 to-rose-500", title: "First-Timers", desc: "Never shared a beat before? Perfect. Bring a feeling, drop your track, and find listeners who get it—no technical gymnastics required." },
-              { icon: <Sparkles className="w-7 h-7 text-white" />, gradient: "bg-gradient-to-br from-violet-400 to-purple-600", title: "AI Explorers", desc: "Push the frontier. Showcase pieces you've crafted with outside AI tools and trade insights with creators who speak the same future-forward language." },
-              { icon: <Sparkles className="w-7 h-7 text-white" />, gradient: "bg-gradient-to-br from-teal-400 to-cyan-500", title: "Seasoned Pros", desc: "Stay ahead of the curve. Test-drive new ideas, upload work shaped by emerging tech, and harvest real-time feedback from peers who care about craft, not clout." },
-            ].map((card, i) => (
-              <motion.div
-                key={card.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-card rounded-2xl p-6 border border-border flex flex-col items-center text-center gap-4"
-              >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${card.gradient}`}>
-                  {card.icon}
-                </div>
-                <h3 className="font-bold text-lg">{card.title}</h3>
-                <p className="text-sm text-muted-foreground">{card.desc}</p>
-              </motion.div>
-            ))}
+      <section className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Who It's For image — left side */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="relative order-2 lg:order-1"
+            >
+              <div className="rounded-3xl overflow-hidden aspect-[4/3] border border-border/20 shadow-2xl">
+                <img
+                  src="/manus-storage/collab_F_Who_Its_For_b95cd661.jpg"
+                  alt="Young guitarist playing with eyes closed in warm fairy-lit room"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
+            {/* Text + cards side */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="order-1 lg:order-2"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">Who It's For</h2>
+              <p className="text-pink-500 italic font-medium mb-8">"From idea-stuck to soul-struck."</p>
+              <div className="flex flex-col gap-5">
+                {[
+                  { gradient: "bg-gradient-to-br from-pink-400 to-rose-500", title: "First-Timers", desc: "Never shared a beat before? Perfect. Bring a feeling, drop your track, and find listeners who get it—no technical gymnastics required." },
+                  { gradient: "bg-gradient-to-br from-violet-400 to-purple-600", title: "AI Explorers", desc: "Push the frontier. Showcase pieces you've crafted with AI tools and trade insights with creators who speak the same future-forward language." },
+                  { gradient: "bg-gradient-to-br from-teal-400 to-cyan-500", title: "Seasoned Pros", desc: "Stay ahead of the curve. Test-drive new ideas and harvest real-time feedback from peers who care about craft, not clout." },
+                ].map((card, i) => (
+                  <motion.div
+                    key={card.title}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-start gap-4"
+                  >
+                    <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${card.gradient}`} />
+                    <div>
+                      <h3 className="font-bold text-base mb-1">{card.title}</h3>
+                      <p className="text-sm text-muted-foreground">{card.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
