@@ -1169,3 +1169,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Make friend cards clickable — navigate to their CreatorProfile page
 - [ ] Update CreatorProfile to show public + inner-circle tracks when viewer is a confirmed mutual friend
 - [ ] Add server-side procedure: getCreatorTracks(userId, viewerUserId) — returns public tracks for all, adds inner-circle if viewer follows the creator
+
+## Phase 51: Home Page Realignment (Founding Document)
+- [x] Move Latest Riffs section up (immediately after hero, before Features)
+- [x] Expand Latest Riffs from 3 to 6 tracks
+- [x] Update hero tagline: "Human soul. AI craft. Music that sounds like you — because it is."
+- [x] Update Latest Riffs header copy: "Real tracks from real people — made with the tools, not despite them."
+- [x] Add "The Collaboration" split-layout section with founding-document-aligned copy (no "trained tool" framing)
+- [x] Add "Your Own Sound, Without the Fight" split-layout section (condition-based, no tier/job-title list)
+- [x] Add branded image placeholders for both new sections (Studios pipeline pending)
+- [x] Fix duplicate useEffect import in Studio.tsx
+- [ ] Replace image placeholders with final Studio-generated images when ready
+- [ ] Update index.html OG/Twitter meta tags to reflect new hero tagline

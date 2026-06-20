@@ -195,9 +195,12 @@ function TrackCard({ track, index }: { track: { id: number; title: string; artis
 
 // ─── Static placeholder track cards for unauthenticated view ─────────────────
 const PLACEHOLDER_TRACKS = [
-  { id: -1, title: "Midnight Dreams", artist: "AI Composer", fileUrl: "", duration: 348 },
-  { id: -2, title: "Electric Sunset", artist: "Digital Harmony", fileUrl: "", duration: 255 },
-  { id: -3, title: "Ocean Waves", artist: "Synthetic Soul", fileUrl: "", duration: 208 },
+  { id: -1, title: "Midnight Dreams", artist: "AI Composer", fileUrl: "", duration: 348, coverArtUrl: null },
+  { id: -2, title: "Electric Sunset", artist: "Digital Harmony", fileUrl: "", duration: 255, coverArtUrl: null },
+  { id: -3, title: "Ocean Waves", artist: "Synthetic Soul", fileUrl: "", duration: 208, coverArtUrl: null },
+  { id: -4, title: "Neon Frequencies", artist: "Pulse Engine", fileUrl: "", duration: 192, coverArtUrl: null },
+  { id: -5, title: "Velvet Static", artist: "Waveform Ghost", fileUrl: "", duration: 274, coverArtUrl: null },
+  { id: -6, title: "Deep Signal", artist: "Resonance Field", fileUrl: "", duration: 310, coverArtUrl: null },
 ];
 
 // ─── Philosophy Share Button ───────────────────────────────────────────────────
@@ -431,10 +434,10 @@ export default function Home() {
     setActiveMember(m => (m + 1) % BAND_MEMBERS.length);
   };
 
-  const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 3 });
+  const { data: publicTracks } = trpc.tracks.publicFeed.useQuery({ limit: 6 });
 
   const displayTracks = publicTracks && publicTracks.length > 0
-    ? publicTracks.slice(0, 3).map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration }))
+    ? publicTracks.slice(0, 6).map(t => ({ id: t.id, title: t.title, artist: t.artist, fileUrl: t.audioUrl, duration: t.duration, coverArtUrl: t.coverArtUrl }))
     : PLACEHOLDER_TRACKS;
 
   return (
@@ -483,9 +486,9 @@ export default function Home() {
 
             {/* Taglines */}
             <div className="space-y-1 mb-6">
-              <p className="text-lg md:text-xl text-white/90 font-medium">Music made by us. Not markets.</p>
-              <p className="text-lg md:text-xl text-white/90 font-medium">No judgement. No algorithms.</p>
-              <p className="text-lg md:text-xl text-white/90 font-medium">Just heartbeat-driven sound.</p>
+              <p className="text-lg md:text-xl text-white/90 font-medium">Human soul. AI craft.</p>
+              <p className="text-lg md:text-xl text-white/90 font-medium">Music that sounds like you —</p>
+              <p className="text-lg md:text-xl text-white/90 font-medium">because it is.</p>
             </div>
 
             <p className="text-sm italic text-white/60 mb-10">
@@ -550,6 +553,159 @@ export default function Home() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── Latest Riffs ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <p className="text-pink-400 text-sm font-semibold tracking-widest uppercase mb-3">Fresh from the Community</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-2">Latest Riffs</h2>
+            <p className="text-muted-foreground">Real tracks from real people — made with the tools, not despite them.</p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {displayTracks.map((track, i) => (
+              <TrackCard key={track.id} track={track} index={i} />
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link href="/discover">
+              <Button variant="outline" className="rounded-full px-8 border-primary/40 text-primary hover:bg-primary/10">
+                Explore All Riffs
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── The Collaboration ─────────────────────────────────────────────── */}
+      <section className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Text side */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+            >
+              <p className="text-pink-400 text-sm font-semibold tracking-widest uppercase mb-4">The Collaboration</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
+                We moved on from{" "}
+                <span style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  the debate.
+                </span>
+              </h2>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  The argument over human vs. AI music asks where the value comes from instead of asking what the music actually carries. That's the wrong question. We moved on.
+                </p>
+                <p>
+                  Strawberry Riff is built on the belief that the best music of this era comes from collaboration — human soul, AI craft, no apology.
+                </p>
+                <p>
+                  But a collaborator is only as good as what it knows. So we built ours a library few platforms have bothered with: deep, craft-level frameworks on cinematic composition, vocal nuance, emotional texture, sonic identity — physics and neuroscience included, because that's what understanding sound actually takes.
+                </p>
+                <p className="text-foreground font-medium italic">
+                  You bring the feeling. It already knows what to do with it.
+                </p>
+              </div>
+            </motion.div>
+            {/* Image placeholder */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="relative"
+            >
+              <div
+                className="rounded-3xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border border-border/40"
+                style={{ background: "linear-gradient(135deg, #1a0a2e 0%, #2d1060 50%, #0f0614 100%)" }}
+              >
+                <div className="text-center px-8">
+                  <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}>
+                    <Sparkles className="w-8 h-8 text-white" />
+                  </div>
+                  <p className="text-white/40 text-sm font-medium">Image incoming</p>
+                  <p className="text-white/25 text-xs mt-1">Running through Studios now 🍓</p>
+                </div>
+                {/* Decorative glow */}
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 60% 40%, rgba(168,85,247,0.15) 0%, transparent 70%)" }} />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Your Own Sound, Without the Fight ────────────────────────────── */}
+      <section className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Image placeholder — left side this time for visual rhythm */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="relative order-2 lg:order-1"
+            >
+              <div
+                className="rounded-3xl overflow-hidden aspect-[4/3] flex flex-col items-center justify-center border border-border/40"
+                style={{ background: "linear-gradient(135deg, #0f0614 0%, #1e0a3a 50%, #2d0a1e 100%)" }}
+              >
+                <div className="text-center px-8">
+                  <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #f43f8a, #c026d3)" }}>
+                    <Music className="w-8 h-8 text-white" />
+                  </div>
+                  <p className="text-white/40 text-sm font-medium">Image incoming</p>
+                  <p className="text-white/25 text-xs mt-1">Running through Studios now 🍓</p>
+                </div>
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 40% 60%, rgba(236,72,153,0.12) 0%, transparent 70%)" }} />
+              </div>
+            </motion.div>
+            {/* Text side */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="order-1 lg:order-2"
+            >
+              <p className="text-pink-400 text-sm font-semibold tracking-widest uppercase mb-4">Your Sound</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
+                Your own sound,{" "}
+                <span style={{ background: "linear-gradient(135deg, #f43f8a, #c026d3)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  without the fight.
+                </span>
+              </h2>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  If you've already built something — a voice, a brand, a body of work, even one you're just starting to find — you shouldn't have to fight a platform to keep building it.
+                </p>
+                <p>
+                  Some AI tools see your own established work as a liability. The bigger and more visible you are, the more they flag you, block you, treat your own catalog like a threat instead of an asset.
+                </p>
+                <p>
+                  We built Strawberry Riff the other way. Your creative identity — whatever stage it's at — is something we build with, not something we guard against.
+                </p>
+                <p className="text-foreground font-medium italic">
+                  Describe your sound. Develop it. Return to it. Make it more yours every time, not less.
+                </p>
+              </div>
+              <div className="mt-8">
+                <Link href="/studio">
+                  <Button
+                    className="rounded-full px-8 text-base font-semibold shadow-lg border-0 text-white"
+                    style={{ background: "linear-gradient(135deg, #f43f8a, #c026d3)" }}
+                  >
+                    Start Building Your Sound
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -730,27 +886,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Latest Riffs ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">Latest Riffs</h2>
-            <p className="text-muted-foreground">Fresh drops from the community—updated by humans, not math.</p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {displayTracks.map((track, i) => (
-              <TrackCard key={track.id} track={track} index={i} />
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <Link href="/discover">
-              <Button variant="outline" className="rounded-full px-8 border-primary/40 text-primary hover:bg-primary/10">
-                Explore All Riffs
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+
 
       {/* ── Join the Revolution (CTA) ─────────────────────────────────────── */}
       <section className="py-24 px-4 mx-4 mb-8 rounded-3xl text-white text-center"
