@@ -827,13 +827,13 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
-            <p className="text-muted-foreground mb-14">Three simple steps to share your sonic soul</p>
+            <p className="text-muted-foreground mb-14">Three steps. One arc. Infinite resonance.</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
-              { num: "01", icon: <Upload className="w-6 h-6" />, gradient: "from-pink-400 to-rose-500", title: "Upload any type of track", desc: "Demos, half-sung hooks, voice memos, or AI experiments—if it makes a wave-form, it belongs here." },
-              { num: "02", icon: <Music className="w-6 h-6" />, gradient: "from-violet-400 to-purple-600", title: "Tag the mood", desc: "Melancholy? Euphoric? Defiant? Paint your emotional palette so the tribe can find you." },
-              { num: "03", icon: <Globe className="w-6 h-6" />, gradient: "from-teal-400 to-cyan-500", title: "Choose visibility", desc: "Keep it private, circle it with friends, or let the whole world feel your frequency." },
+              { num: "01", gradient: "from-pink-400 to-rose-500", title: "Make something real", desc: "In Studios or on your own. A voice memo, a full track, an AI-born experiment. If it carries something, it belongs here." },
+              { num: "02", gradient: "from-violet-400 to-purple-600", title: "Find your frequency", desc: "Tag the mood. Name the feeling. Your sound will find the people who need exactly that." },
+              { num: "03", gradient: "from-teal-400 to-cyan-500", title: "Let it travel", desc: "Private, inner circle, or wide open. You choose the visibility." },
             ].map((step, i) => (
               <motion.div
                 key={step.num}
@@ -852,6 +852,15 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="mt-14 text-sm text-muted-foreground/70 italic max-w-md mx-auto"
+          >
+            The rest is just music doing what music does — finding someone at 2 a.m. who needed it.
+          </motion.p>
         </div>
       </section>
 
