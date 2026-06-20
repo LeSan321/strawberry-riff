@@ -344,7 +344,7 @@ export default function TrackPage() {
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white/20 shadow-sm"
                         style={{ background: "linear-gradient(135deg, #ec4899, #a855f7)" }}
                       >
-                        {fullTrack!.creatorUsername!.charAt(0).toUpperCase()}
+                        {(fullTrack!.creatorUsername ?? "?").charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
