@@ -935,8 +935,6 @@ export default function Home() {
           className="absolute inset-0 rounded-3xl bg-cover bg-center"
           style={{ backgroundImage: "url('/manus-storage/join-revolution-bg_5b79af42.png')" }}
         />
-        {/* Dark overlay to ensure text legibility while letting warmth bleed through */}
-        <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg, rgba(0,0,0,0.62) 0%, rgba(20,5,30,0.55) 100%)" }} />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
