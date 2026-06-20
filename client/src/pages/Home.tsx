@@ -538,7 +538,11 @@ export default function Home() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                    className="rounded-full px-8 text-base font-semibold text-white border-0 relative overflow-hidden"
+                    style={{
+                      background: "radial-gradient(ellipse at center, transparent 30%, rgba(236,72,153,0.25) 70%, rgba(168,85,247,0.45) 100%)",
+                      boxShadow: "inset 0 0 0 1.5px rgba(236,72,153,0.5), 0 0 12px rgba(236,72,153,0.15)",
+                    }}
                   >
                     Join the Tribe
                   </Button>
@@ -547,7 +551,11 @@ export default function Home() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="rounded-full px-8 text-base font-semibold border-white/40 text-white hover:bg-white/10 bg-white/5 backdrop-blur-sm"
+                    className="rounded-full px-8 text-base font-semibold text-white border-0 relative overflow-hidden"
+                    style={{
+                      background: "radial-gradient(ellipse at center, transparent 30%, rgba(99,102,241,0.25) 70%, rgba(139,92,246,0.45) 100%)",
+                      boxShadow: "inset 0 0 0 1.5px rgba(99,102,241,0.5), 0 0 12px rgba(99,102,241,0.15)",
+                    }}
                   >
                     Discover
                   </Button>
