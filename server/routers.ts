@@ -901,6 +901,7 @@ const musicGenerationRouter = router({
       startMusicGeneration({
         prompt: promptWithIntensity,
         lyrics: input.instrumental ? "" : (input.lyrics ?? ""),
+        isInstrumental: input.instrumental,
         referenceAudioUrl: input.referenceAudioUrl,
         voiceReferenceUrl: input.voiceReferenceUrl,
       })

@@ -31,6 +31,8 @@ export interface MusicGenerationOptions {
   voiceReferenceUrl?: string;
   /** Optional: URL to an instrumental reference (.wav or .mp3, >15s). Generates without vocals. */
   instrumentalReferenceUrl?: string;
+  /** When true, sends is_instrumental=true to MiniMax and omits the lyrics field entirely. */
+  isInstrumental?: boolean;
 }
 
 interface MiniMaxMusicResponse {
@@ -68,6 +70,7 @@ export async function startMusicGeneration(
   let referenceAudioUrl: string | undefined;
   let voiceReferenceUrl: string | undefined;
   let instrumentalReferenceUrl: string | undefined;
+  let isInstrumental = false;
 
   if (typeof promptOrOptions === "string") {
     prompt = promptOrOptions;
@@ -78,6 +81,7 @@ export async function startMusicGeneration(
     referenceAudioUrl = promptOrOptions.referenceAudioUrl;
     voiceReferenceUrl = promptOrOptions.voiceReferenceUrl;
     instrumentalReferenceUrl = promptOrOptions.instrumentalReferenceUrl;
+    isInstrumental = promptOrOptions.isInstrumental ?? false;
   }
 
   console.log(`[MiniMax 2.6] Starting generation: ${prompt.substring(0, 60)}...`);
@@ -85,10 +89,11 @@ export async function startMusicGeneration(
   if (voiceReferenceUrl) console.log(`[MiniMax 2.6] ✓ Using voice reference: ${voiceReferenceUrl.substring(0, 80)}...`);
   if (!referenceAudioUrl && !voiceReferenceUrl) console.log(`[MiniMax 2.6] ⚠ No reference audio provided (text-only generation)`);
 
+  // Build request body — omit lyrics entirely for instrumental mode
   const body: Record<string, unknown> = {
     model: "music-2.6",
     prompt,
-    lyrics,
+    ...(isInstrumental ? { is_instrumental: true } : { lyrics }),
     audio_setting: {
       sample_rate: 44100,
       bitrate: 256000,
@@ -113,6 +118,9 @@ export async function startMusicGeneration(
   if (instrumentalReferenceUrl) {
     body.instrumental_file = instrumentalReferenceUrl;
     console.log(`[MiniMax 2.6] Added instrumental_file to request body`);
+  }
+  if (isInstrumental) {
+    console.log(`[MiniMax 2.6] ✓ Instrumental mode: is_instrumental=true, lyrics omitted`);
   }
   
   console.log(`[MiniMax 2.6] Request body keys: ${Object.keys(body).join(', ')}`);
