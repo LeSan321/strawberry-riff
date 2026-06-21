@@ -238,6 +238,7 @@ export function LyricsGeneratorPage() {
   const [generatedLyrics, setGeneratedLyrics] = useState("");
   const [stickinessAnalysis, setStickinessAnalysis] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Scroll target for output panel
   const outputRef = useRef<HTMLDivElement>(null);
@@ -313,6 +314,7 @@ export function LyricsGeneratorPage() {
     setIsGenerating(true);
     setGeneratedLyrics("");
     setStickinessAnalysis("");
+    setGenerationError(null);
 
     try {
       const result = await generateMutation.mutateAsync({
@@ -337,7 +339,13 @@ export function LyricsGeneratorPage() {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Generation failed");
+      const msg = err instanceof Error ? err.message : "Generation failed";
+      setGenerationError(msg);
+      toast.error(msg);
+      // Scroll to output so user sees the error
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } finally {
       setIsGenerating(false);
     }
@@ -713,12 +721,20 @@ export function LyricsGeneratorPage() {
           </Card>
 
           {/* ── Output Panel ── */}
-          {(generatedLyrics || isGenerating) && (
+          {(generatedLyrics || isGenerating || generationError) && (
             <Card ref={outputRef} className="p-6 bg-[#160b1e]/80 border-[#2e1a4a]">
+              {generationError && (
+                <div className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  <strong>Generation failed:</strong> {generationError}
+                  {rewriteMode && (
+                    <p className="mt-1 text-xs text-red-400/70">Your original lyrics are unchanged above. Please try again — if the issue persists on the live site, contact support.</p>
+                  )}
+                </div>
+              )}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-pink-500" />
-                  <h2 className="font-semibold">Generated Lyrics</h2>
+                  <h2 className="font-semibold">{rewriteMode ? "Re-Visioned Lyrics" : "Generated Lyrics"}</h2>
                 </div>
                 {generatedLyrics && (
                   <div className="flex items-center gap-2 flex-wrap">

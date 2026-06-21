@@ -278,18 +278,19 @@ export async function fetchAudioBytes(url: string): Promise<Buffer> {
  */
 export function validateMusicGenerationParams(
   prompt: string,
-  lyrics: string
+  lyrics: string,
+  instrumental = false
 ): { valid: boolean; error?: string } {
   if (!prompt || prompt.trim().length === 0) {
     return { valid: false, error: "Music style prompt is required" };
   }
-  if (!lyrics || lyrics.trim().length === 0) {
-    return { valid: false, error: "Lyrics are required" };
+  if (!instrumental && (!lyrics || lyrics.trim().length === 0)) {
+    return { valid: false, error: "Lyrics are required (or enable Instrumental mode)" };
   }
   if (prompt.length > 2000) {
     return { valid: false, error: "Prompt is too long (max 2000 characters)" };
   }
-  if (lyrics.length > 3500) {
+  if (!instrumental && lyrics.length > 3500) {
     return { valid: false, error: "Lyrics are too long (max 3500 characters — MiniMax limit)" };
   }
   return { valid: true };

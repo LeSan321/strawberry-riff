@@ -775,7 +775,8 @@ const musicGenerationRouter = router({
       z.object({
         title: z.string().min(1).max(200),
         prompt: z.string().min(1).max(1000).optional(),
-        lyrics: z.string().min(1),
+        lyrics: z.string().optional(),  // optional: omit for instrumental-only generation
+        instrumental: z.boolean().default(false),  // true = no vocals, no lyrics required
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
         referenceAudioUrl: z.string().url().optional(),
         voiceReferenceUrl: z.string().url().optional(),
@@ -865,7 +866,7 @@ const musicGenerationRouter = router({
       }
 
       // Validate parameters
-      const validation = validateMusicGenerationParams(promptWithIntensity, input.lyrics);
+      const validation = validateMusicGenerationParams(promptWithIntensity, input.lyrics ?? "", input.instrumental);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
@@ -875,7 +876,7 @@ const musicGenerationRouter = router({
         userId: ctx.user.id,
         title: input.title,
         prompt: input.prompt ?? "",
-        lyrics: input.lyrics,
+        lyrics: input.lyrics ?? "",
         duration: 0,
         audioUrl: "",
         audioKey: "",
@@ -899,7 +900,7 @@ const musicGenerationRouter = router({
       console.log('[Generate] Starting MiniMax generation with prompt:', promptWithIntensity.substring(0, 100));
       startMusicGeneration({
         prompt: promptWithIntensity,
-        lyrics: input.lyrics,
+        lyrics: input.instrumental ? "" : (input.lyrics ?? ""),
         referenceAudioUrl: input.referenceAudioUrl,
         voiceReferenceUrl: input.voiceReferenceUrl,
       })
@@ -915,7 +916,7 @@ const musicGenerationRouter = router({
           try {
             const brief = await generateVisualBrief({
               prompt: input.prompt ?? "",
-              lyrics: input.lyrics,
+              lyrics: input.lyrics ?? "",
               title: input.title,
             });
             visualBriefJson = JSON.stringify(brief);

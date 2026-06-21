@@ -835,6 +835,7 @@ export function GeneratePage() {
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [lyrics, setLyrics] = useState("");
+  const [instrumental, setInstrumental] = useState(false);
   const [intensity, setIntensity] = useState<"subtle" | "balanced" | "aggressive">("balanced");
   const [vocalArchetype, setVocalArchetype] = useState<"intimate-bedroom" | "raw-emotional" | "soulful-belter" | "gritty-rock" | "confident-pop" | "lo-fi-whisper" | "powerful-anthem" | "storyteller-folk" | "none">("none");
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
@@ -1104,7 +1105,7 @@ export function GeneratePage() {
 
     if (!title.trim()) { setError("Title is required"); return; }
     if (!referenceAudioUrl && !prompt.trim()) { setError("Prompt or reference audio is required"); return; }
-    if (!lyrics.trim()) { setError("Lyrics are required"); return; }
+    if (!instrumental && !lyrics.trim()) { setError("Lyrics are required (or enable Instrumental mode)"); return; }
 
     setIsGenerating(true);
     try {
@@ -1112,7 +1113,8 @@ export function GeneratePage() {
       const result = await generateMutation.mutateAsync({
         title: title.trim(),
         prompt: prompt.trim(),
-        lyrics: lyrics.trim(),
+        lyrics: instrumental ? undefined : lyrics.trim(),
+        instrumental,
         intensity,
         vocalArchetype: vocalArchetype === "none" ? undefined : vocalArchetype || undefined,
         vocalGender,
@@ -1466,38 +1468,68 @@ export function GeneratePage() {
                 onUsePrompt={(p) => { setPrompt(p); setFusionsOpen(false); }}
               />
 
-              {/* Lyrics */}
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium">Lyrics</label>
-                  <span className={`text-xs ${
-                    lyrics.length > 3500 ? 'text-destructive font-semibold' :
-                    lyrics.length > 3000 ? 'text-yellow-400' :
-                    'text-muted-foreground'
-                  }`}>
-                    {lyrics.length} / 3500 characters
-                  </span>
-                </div>
-                <Textarea
-                  placeholder={`[Verse]\nSing your heart out\nUnder the midnight sky\n\n[Chorus]\nThis is the chorus\nWhere the music flies\n\n[Verse]\nSecond verse here\nAnother line to rhyme\n\n[Chorus]\nThis is the chorus\nWhere the music flies`}
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  disabled={isGenerating}
-                  rows={10}
-                  className={lyrics.length > 3500 ? 'border-destructive focus-visible:ring-destructive' : ''}
-                />
-                <div className="mt-1 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    Use [Verse], [Chorus], [Bridge], [Outro] tags to structure your lyrics
+              {/* Instrumental toggle */}
+              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setInstrumental((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                    instrumental ? "bg-gradient-to-r from-pink-500 to-purple-500" : "bg-white/20"
+                  }`}
+                  role="switch"
+                  aria-checked={instrumental}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      instrumental ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+                <div>
+                  <p className="text-sm font-medium">
+                    Instrumental Only
+                    {instrumental && <span className="ml-2 text-xs text-pink-400 font-normal">— no vocals, no lyrics needed</span>}
                   </p>
-                  {lyrics.length > 3000 && lyrics.length <= 3500 && (
-                    <p className="text-xs text-yellow-400">Approaching limit — keep under 3500 characters</p>
-                  )}
-                  {lyrics.length > 3500 && (
-                    <p className="text-xs text-destructive font-medium">Too long — trim {lyrics.length - 3500} characters</p>
+                  {!instrumental && (
+                    <p className="text-xs text-muted-foreground">Toggle on to generate music without vocals</p>
                   )}
                 </div>
               </div>
+
+              {/* Lyrics — hidden in instrumental mode */}
+              {!instrumental && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm font-medium">Lyrics</label>
+                    <span className={`text-xs ${
+                      lyrics.length > 3500 ? 'text-destructive font-semibold' :
+                      lyrics.length > 3000 ? 'text-yellow-400' :
+                      'text-muted-foreground'
+                    }`}>
+                      {lyrics.length} / 3500 characters
+                    </span>
+                  </div>
+                  <Textarea
+                    placeholder={`[Verse]\nSing your heart out\nUnder the midnight sky\n\n[Chorus]\nThis is the chorus\nWhere the music flies\n\n[Verse]\nSecond verse here\nAnother line to rhyme\n\n[Chorus]\nThis is the chorus\nWhere the music flies`}
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    disabled={isGenerating}
+                    rows={10}
+                    className={lyrics.length > 3500 ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  />
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Use [Verse], [Chorus], [Bridge], [Outro] tags to structure your lyrics
+                    </p>
+                    {lyrics.length > 3000 && lyrics.length <= 3500 && (
+                      <p className="text-xs text-yellow-400">Approaching limit — keep under 3500 characters</p>
+                    )}
+                    {lyrics.length > 3500 && (
+                      <p className="text-xs text-destructive font-medium">Too long — trim {lyrics.length - 3500} characters</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Error */}
               {error && (
@@ -1514,7 +1546,7 @@ export function GeneratePage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={isGenerating || !!pollingId || !title.trim() || (!prompt.trim() && !referenceAudioUrl) || !lyrics.trim() || !!isAtLimit}
+                disabled={isGenerating || !!pollingId || !title.trim() || (!prompt.trim() && !referenceAudioUrl) || (!instrumental && !lyrics.trim()) || !!isAtLimit}
                 className="w-full"
               >
                 {isGenerating ? (
