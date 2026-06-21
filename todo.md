@@ -1181,3 +1181,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix duplicate useEffect import in Studio.tsx
 - [ ] Replace image placeholders with final Studio-generated images when ready
 - [ ] Update index.html OG/Twitter meta tags to reflect new hero tagline
+
+## Riff Assistant (soul.md v0.2)
+
+- [x] Save soul.md to references/soul.md
+- [x] Build server-side assistant tRPC procedure with soul.md system prompt, page context hint, streaming, Anthropic API
+- [x] Build floating assistant UI panel (slide-in drawer, conversation history, page context awareness)
+- [x] Wire assistant into all platform pages with correct page context metadata
+- [x] Build Eight-Question Diagnostic test suite (20-30 prompts, all postures + edge cases)
+- [x] TypeScript check, full test suite, checkpoint

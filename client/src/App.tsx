@@ -27,6 +27,37 @@ import SharedPlaylistPage from "./pages/SharedPlaylistPage";
 import { StemsStudio } from "./pages/StemsStudio";
 import TrackDetail from "./pages/TrackDetail";
 import MyStemsBrowser from "./pages/MyStemsBrowser";
+import { RiffAssistant } from "./components/RiffAssistant";
+import { useLocation } from "wouter";
+
+// Map URL path to page context key for the Riff Assistant
+function getPageContext(path: string): string {
+  if (path === "/" || path === "") return "home";
+  if (path.startsWith("/discover")) return "discover";
+  if (path.startsWith("/generate")) return "generate";
+  if (path.startsWith("/upload")) return "upload";
+  if (path.startsWith("/my-riffs")) return "myriffs";
+  if (path.startsWith("/friends")) return "friends";
+  if (path.startsWith("/playlists")) return "playlists";
+  if (path.startsWith("/pricing")) return "pricing";
+  if (path.startsWith("/profile")) return "profile";
+  if (path.startsWith("/about")) return "about";
+  if (path.startsWith("/creator")) return "friends";
+  if (path.startsWith("/track")) return "track";
+  if (path.startsWith("/lyrics")) return "lyrics";
+  if (path.startsWith("/studio")) return "studio";
+  if (path.startsWith("/style-library")) return "studio";
+  if (path.startsWith("/stems") || path.startsWith("/my-stems") || path.startsWith("/track-detail")) return "myriffs";
+  return "general";
+}
+
+// Assistant wrapper that reads current route
+function AssistantPortal() {
+  const [location] = useLocation();
+  // Don't show on preview/shared pages (public-facing, no auth context)
+  if (location.startsWith("/preview/") || location.startsWith("/shared/")) return null;
+  return <RiffAssistant pageContext={getPageContext(location)} />;
+}
 
 function Router() {
   return (
@@ -73,6 +104,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <AssistantPortal />
           </TooltipProvider>
         </AudioPlayerProvider>
       </ThemeProvider>

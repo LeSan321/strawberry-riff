@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { assistantChat } from "./assistant";
 import { z } from "zod";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
 import { mapSpectrumToGuidance } from "./vocalSpectrumMapper";
@@ -1490,6 +1491,44 @@ const previewLinksRouter = router({
     }),
 });
 
+// ─── Assistant Router ───────────────────────────────────────────────────────
+const assistantRouter = router({
+  chat: publicProcedure
+    .input(
+      z.object({
+        messages: z.array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string().min(1).max(8000),
+          })
+        ).min(1).max(50),
+        pageContext: z.string().default("general"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { messages, pageContext } = input;
+      const userId = ctx.user?.id;
+      try {
+        const result = await assistantChat({ messages, pageContext, userId });
+        return { reply: result.reply, ok: true };
+      } catch (err: unknown) {
+        const status = (err as { status?: number })?.status;
+        const message = (err as { message?: string })?.message ?? String(err);
+        console.error(`[Assistant] chat error: status=${status} message=${message}`);
+        if (status === 403) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "The assistant is not available in this environment. It works on the deployed site.",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "The assistant encountered an error. Please try again.",
+        });
+      }
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1511,6 +1550,7 @@ export const appRouter = router({
   ogImage: ogImageRouter,
   coverArt: coverArtRouter,
   frequency: frequencyRouter,
+  assistant: assistantRouter,
 });
 
 export type AppRouter = typeof appRouter;
