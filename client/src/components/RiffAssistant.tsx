@@ -6,13 +6,14 @@
  * - Page context passed to server on every message
  * - Conversation history maintained in local state (up to 50 turns)
  * - Markdown rendering via streamdown
+ * - Three-size snap: compact → expanded → full (cycles via resize button)
+ * - Scrollbar fix: native overflow-y-auto on messages div, auto-scroll via ref
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Streamdown } from "streamdown";
 
 interface Message {
@@ -23,6 +24,8 @@ interface Message {
 interface RiffAssistantProps {
   pageContext?: string;
 }
+
+type PanelSize = "compact" | "expanded" | "full";
 
 // Strawberry icon as SVG
 function StrawberryIcon({ className }: { className?: string }) {
@@ -57,6 +60,58 @@ function StrawberryIcon({ className }: { className?: string }) {
   );
 }
 
+// Resize icon — cycles through sizes
+function ResizeIcon({ size, className }: { size: PanelSize; className?: string }) {
+  if (size === "compact") {
+    // Show "expand" arrow (up)
+    return (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+      </svg>
+    );
+  }
+  if (size === "expanded") {
+    // Show "full" arrow (maximize)
+    return (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8V3m0 0h5M3 3l6 6m12-6h-5m5 0v5m0-5l-6 6M3 16v5m0 0h5m-5 0l6-6m6 6l-6-6m6 6v-5m0 5h-5" />
+      </svg>
+    );
+  }
+  // full → show "collapse" (minimize)
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0v4m0-4h4m7-1h4m0 0v4m0-4l-5 5M9 15l-5 5m0 0v-4m0 4h4m7 1h4m0 0v-4m0 4l-5-5" />
+    </svg>
+  );
+}
+
+const SIZE_CYCLE: Record<PanelSize, PanelSize> = {
+  compact: "expanded",
+  expanded: "full",
+  full: "compact",
+};
+
+const SIZE_TOOLTIP: Record<PanelSize, string> = {
+  compact: "Expand",
+  expanded: "Full height",
+  full: "Compact",
+};
+
+// Message area height per size
+const MESSAGE_HEIGHT: Record<PanelSize, string> = {
+  compact: "h-72",      // ~288px — good for 3-4 messages
+  expanded: "h-[480px]", // ~480px — sweet spot for real conversations
+  full: "h-[calc(100vh-220px)]", // nearly full viewport minus header + input
+};
+
+// Panel width per size
+const PANEL_WIDTH: Record<PanelSize, string> = {
+  compact: "w-96",
+  expanded: "w-[440px]",
+  full: "w-[520px]",
+};
+
 const WELCOME_MESSAGE: Message = {
   role: "assistant",
   content:
@@ -65,19 +120,18 @@ const WELCOME_MESSAGE: Message = {
 
 export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [panelSize, setPanelSize] = useState<PanelSize>("compact");
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const chatMutation = trpc.assistant.chat.useMutation();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
 
   // Focus input when panel opens
@@ -86,6 +140,10 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  const cycleSize = () => {
+    setPanelSize((s) => SIZE_CYCLE[s]);
+  };
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -169,7 +227,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
 
       {/* Slide-in drawer */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] transition-all duration-300 ${
+        className={`fixed bottom-24 right-6 z-50 max-w-[calc(100vw-3rem)] transition-all duration-300 ${PANEL_WIDTH[panelSize]} ${
           isOpen
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-4 pointer-events-none"
@@ -177,7 +235,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
       >
         <div className="bg-zinc-950/98 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden backdrop-blur-xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2.5">
               <StrawberryIcon className="w-5 h-5 text-pink-400" />
               <span className="text-sm font-semibold text-white">
@@ -187,17 +245,30 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
                 · your creative collaborator
               </span>
             </div>
-            <button
-              onClick={clearConversation}
-              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-              title="Clear conversation"
-            >
-              clear
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={clearConversation}
+                className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                title="Clear conversation"
+              >
+                clear
+              </button>
+              <button
+                onClick={cycleSize}
+                className="text-zinc-600 hover:text-zinc-300 transition-colors"
+                title={SIZE_TOOLTIP[panelSize]}
+                aria-label={SIZE_TOOLTIP[panelSize]}
+              >
+                <ResizeIcon size={panelSize} className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 max-h-96" ref={scrollRef as React.RefObject<HTMLDivElement>}>
+          {/* Messages — native scroll, no ScrollArea wrapper */}
+          <div
+            className={`overflow-y-auto transition-all duration-300 ${MESSAGE_HEIGHT[panelSize]}`}
+            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(244,114,182,0.3) transparent" }}
+          >
             <div className="px-4 py-3 space-y-4">
               {messages.map((msg, i) => (
                 <div
@@ -244,11 +315,14 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
                   </div>
                 </div>
               )}
+
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
             </div>
-          </ScrollArea>
+          </div>
 
           {/* Input area */}
-          <div className="px-3 py-3 border-t border-white/8">
+          <div className="px-3 py-3 border-t border-white/8 flex-shrink-0">
             <div className="flex gap-2 items-end">
               <Textarea
                 ref={inputRef}

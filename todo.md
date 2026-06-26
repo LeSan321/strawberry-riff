@@ -1190,3 +1190,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Wire assistant into all platform pages with correct page context metadata
 - [x] Build Eight-Question Diagnostic test suite (20-30 prompts, all postures + edge cases)
 - [x] TypeScript check, full test suite, checkpoint
+
+## Riff Assistant UI Polish
+
+- [x] Fix missing scrollbar in messages area (replaced ScrollArea with native overflow-y-auto + scroll anchor ref)
+- [x] Add three-size snap: compact / expanded / full (cycles via resize icon in header)
