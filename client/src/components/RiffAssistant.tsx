@@ -267,7 +267,6 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
           {/* Messages — native scroll, no ScrollArea wrapper */}
           <div
             className={`overflow-y-auto transition-all duration-300 ${MESSAGE_HEIGHT[panelSize]}`}
-            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(244,114,182,0.3) transparent" }}
           >
             <div className="px-4 py-3 space-y-4">
               {messages.map((msg, i) => (
