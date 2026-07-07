@@ -329,7 +329,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask anything about your music…"
-                className="flex-1 min-h-[40px] max-h-32 resize-none bg-white/5 border-white/10 text-white placeholder:text-zinc-600 text-sm rounded-xl focus:border-pink-500/50 focus:ring-0 py-2.5 px-3"
+                className="flex-1 min-h-[40px] max-h-48 resize-none bg-white/5 border-white/10 text-white placeholder:text-zinc-600 text-sm rounded-xl focus:border-pink-500/50 focus:ring-0 py-2.5 px-3"
                 rows={1}
                 disabled={isThinking}
               />

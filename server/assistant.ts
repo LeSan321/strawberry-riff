@@ -191,7 +191,7 @@ export async function assistantChat(params: AssistantChatParams): Promise<Assist
   const result = await callClaude({
     system: systemPrompt,
     messages: claudeMessages,
-    maxTokens: 1024,
+    maxTokens: 4096,
   });
 
   return { reply: result.content };

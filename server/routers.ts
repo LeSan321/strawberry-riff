@@ -1499,7 +1499,7 @@ const assistantRouter = router({
         messages: z.array(
           z.object({
             role: z.enum(["user", "assistant"]),
-            content: z.string().min(1).max(8000),
+            content: z.string().min(1).max(32000),
           })
         ).min(1).max(50),
         pageContext: z.string().default("general"),
