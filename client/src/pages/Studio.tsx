@@ -671,14 +671,14 @@ export default function Studio() {
       </div>
 
       {/* Central Canvas */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden min-h-0">
         {/* Cinematic Header */}
         <StudioHeader
           theme={theme}
         />
 
         {/* Tool Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTool}
@@ -686,7 +686,7 @@ export default function Studio() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
-              className="min-h-full w-full max-w-full"
+              className="w-full max-w-full"
             >
               {activeTool === "generate" ? (
                 <GeneratePage />
