@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause, Download } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
@@ -612,6 +612,25 @@ function GenerationCard({
               🔄 Vibe
             </Button>
             <StemSplitButton generationId={gen.id} isSplit={gen.isSplit ?? false} className="text-xs" wrapperClassName="w-full" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs col-span-2"
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = gen.audioUrl!;
+                a.download = `${gen.title || "riff"}.mp3`;
+                a.target = "_blank";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                toast.success("Downloading track…");
+              }}
+              title="Download this track as MP3"
+            >
+              <Download className="mr-1.5 h-3 w-3" />
+              Download
+            </Button>
           </div>
           {gen.visualBrief ? (
             isPremium ? (

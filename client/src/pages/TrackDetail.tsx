@@ -265,6 +265,26 @@ export default function TrackDetail() {
                         className="w-full"
                       />
                     )}
+                    {generation.audioUrl && (
+                      <Button
+                        className="w-full"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = generation.audioUrl!;
+                          a.download = `${generation.title || "riff"}.mp3`;
+                          a.target = "_blank";
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          toast.success("Downloading track\u2026");
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download MP3
+                      </Button>
+                    )}
                   </>
                 )}
               </div>

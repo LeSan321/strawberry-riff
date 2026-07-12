@@ -28,6 +28,7 @@ import {
   CheckSquare,
   Square,
   Sparkles,
+  Download,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -596,6 +597,22 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
                     <LinkIcon className="w-4 h-4" />
                   </motion.button>
                   <AddToPlaylistButton trackId={track.id} />
+                  <motion.button
+                    onClick={() => {
+                      const a = document.createElement("a");
+                      a.href = track.audioUrl;
+                      a.download = `${track.title || "riff"}.mp3`;
+                      a.target = "_blank";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      toast.success("Downloading track\u2026");
+                    }}
+                    className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-gray-400 hover:text-green-500 transition-colors"
+                    title="Download MP3"
+                  >
+                    <Download className="w-4 h-4" />
+                  </motion.button>
                   <Button
                     variant="ghost"
                     size="sm"
