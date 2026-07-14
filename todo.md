@@ -1195,3 +1195,9 @@ Manus-managed services so the site can run entirely independently long-term.
 
 - [x] Fix missing scrollbar in messages area (replaced ScrollArea with native overflow-y-auto + scroll anchor ref)
 - [x] Add three-size snap: compact / expanded / full (cycles via resize icon in header)
+
+## Studios Bridge — Music Video Integration
+
+- [x] GET /api/bridge/tracks endpoint — returns user's full track library (id, title, artist, genre, audioUrl, duration, coverArtUrl, visibility, createdAt) authenticated via Clerk Bearer token (primary) or x-bridge-key + openId fallback
+- [ ] Platinum tier — add to subscription schema, pricing page, and gate logic
+- [ ] "Create Music Video" button on track cards — platinum-only, deep-links to studios.strawberryriff.com/music-videos/new?trackId=<id>&source=riff

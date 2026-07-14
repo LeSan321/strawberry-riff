@@ -356,7 +356,72 @@ async function startServer() {
       res.status(500).json({ message: "Failed to proxy stem audio" });
     }
   });
-    // tRPC API — log method+path for debugging GET-mutation issue
+    // ─── Studios Bridge: GET /api/bridge/tracks ──────────────────────────────────
+  // Studios calls this endpoint (with Clerk Bearer token) to fetch the user's
+  // published track library for the music video track selector.
+  app.get("/api/bridge/tracks", async (req, res) => {
+    try {
+      const { verifyToken } = await import("@clerk/express");
+      const { ENV: bridgeEnv } = await import("./env");
+      const { getUserByOpenId, getTracksByUserId } = await import("../db");
+
+      // Accept either Clerk Bearer token or x-bridge-key (shared secret fallback)
+      const authHeader = req.headers.authorization;
+      const bridgeKeyHeader = req.headers["x-bridge-key"] as string | undefined;
+
+      let user: Awaited<ReturnType<typeof getUserByOpenId>> | null = null;
+
+      if (authHeader?.startsWith("Bearer ")) {
+        // Primary auth: Clerk session token forwarded by Studios
+        const sessionToken = authHeader.slice(7);
+        try {
+          const verifiedToken = await verifyToken(sessionToken, { secretKey: bridgeEnv.clerkSecretKey });
+          if (verifiedToken.sub) {
+            user = await getUserByOpenId(verifiedToken.sub) ?? null;
+          }
+        } catch (err) {
+          console.warn("[Bridge /tracks] Clerk token verification failed:", err);
+        }
+      } else if (bridgeKeyHeader) {
+        // Fallback: shared bridge key — but we still need a userId query param
+        if (bridgeKeyHeader !== bridgeEnv.studiosBridgeKeyInbound) {
+          return res.status(401).json({ error: "Invalid bridge key" });
+        }
+        const openId = req.query.openId as string | undefined;
+        if (openId) {
+          user = await getUserByOpenId(openId) ?? null;
+        }
+      }
+
+      if (!user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const allTracks = await getTracksByUserId(user.id);
+
+      // Return all tracks (private + inner-circle + public) — user is authenticated,
+      // Studios only shows them in the user's own music video form.
+      const payload = allTracks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        artist: t.artist ?? null,
+        genre: t.genre ?? null,
+        audioUrl: t.audioUrl,
+        duration: t.duration ?? null,
+        coverArtUrl: t.coverArtUrl ?? null,
+        visibility: t.visibility,
+        createdAt: t.createdAt,
+      }));
+
+      console.log(`[Bridge /tracks] Returning ${payload.length} tracks for user ${user.id}`);
+      return res.json({ tracks: payload });
+    } catch (error) {
+      console.error("[Bridge /tracks] Error:", error);
+      return res.status(500).json({ error: "Failed to fetch tracks" });
+    }
+  });
+
+  // tRPC API — log method+path for debugging GET-mutation issue
   app.use("/api/trpc", (req, _res, next) => {
     if (req.path.includes("lyrics.generate")) {
       console.log(`[tRPC Debug] ${req.method} ${req.path} body=${JSON.stringify(req.body)?.slice(0, 100)}`);
