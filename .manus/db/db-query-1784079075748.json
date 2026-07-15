@@ -1,0 +1,61 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "friends"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "lyrics_drafts"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "music_generation_history"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "music_generations"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "playlist_shares"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "playlist_tracks"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "playlists"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "preview_links"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "profiles"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "stem_split_usage"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "stem_splits"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "style_library"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "track_likes"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "tracks"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "users"
+    },
+    {
+      "Tables_in_frNnwU2pwLKJifDR8KqR7c": "vibe_presets"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_frNnwU2pwLKJifDR8KqR7c\n__drizzle_migrations\nfriends\nlyrics_drafts\nmusic_generation_history\nmusic_generations\nplaylist_shares\nplaylist_tracks\nplaylists\npreview_links\nprofiles\nstem_split_usage\nstem_splits\nstyle_library\ntrack_likes\ntracks\nusers\nvibe_presets\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

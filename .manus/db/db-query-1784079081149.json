@@ -1,0 +1,9 @@
+{
+  "query": "SELECT 'tracks' as tbl, userId, COUNT(*) as cnt FROM tracks WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'music_generations', userId, COUNT(*) FROM music_generations WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'playlists', userId, COUNT(*) FROM playlists WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'style_library', userId, COUNT(*) FROM style_library WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'profiles', userId, COUNT(*) FROM profiles WHERE userId IN (5730001, 34620001) GROUP BY userId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT 'tracks' as tbl, userId, COUNT(*) as cnt FROM tracks WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'music_generations', userId, COUNT(*) FROM music_generations WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'playlists', userId, COUNT(*) FROM playlists WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'style_library', userId, COUNT(*) FROM style_library WHERE userId IN (5730001, 34620001) GROUP BY userId\nUNION ALL\nSELECT 'profiles', userId, COUNT(*) FROM profiles WHERE userId IN (5730001, 34620001) GROUP BY userId;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 286
+}

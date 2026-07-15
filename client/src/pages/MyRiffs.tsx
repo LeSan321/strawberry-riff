@@ -617,7 +617,7 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
                   </motion.button>
                   {isPlatinum ? (
                     <motion.a
-                      href={`https://strawberr-wkx2kfvz.manus.space/music-videos?trackId=${track.id}&source=riff`}
+                      href={`https://www.strawberryriff.studio/music-videos?trackId=${track.id}&source=riff`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-gray-400 hover:text-fuchsia-400 transition-colors"

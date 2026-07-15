@@ -1,0 +1,24 @@
+{
+  "query": "SELECT u.id, u.email, u.openId, u.createdAt, COUNT(t.id) as trackCount FROM users u LEFT JOIN tracks t ON t.userId = u.id WHERE u.email = 'lesanr@protonmail.com' GROUP BY u.id, u.email, u.openId, u.createdAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT u.id, u.email, u.openId, u.createdAt, COUNT(t.id) as trackCount FROM users u LEFT JOIN tracks t ON t.userId = u.id WHERE u.email = 'lesanr@protonmail.com' GROUP BY u.id, u.email, u.openId, u.createdAt;",
+  "rows": [
+    {
+      "id": "5730001",
+      "email": "lesanr@protonmail.com",
+      "openId": "2jeqdC23QXeh6R6sWi7dMh",
+      "createdAt": "2026-04-23 15:34:33",
+      "trackCount": "0"
+    },
+    {
+      "id": "34620001",
+      "email": "lesanr@protonmail.com",
+      "openId": "user_3EbWDWA0u21OvwEK18ZES1gFLBe",
+      "createdAt": "2026-06-03 00:47:11",
+      "trackCount": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\topenId\tcreatedAt\ttrackCount\n5730001\tlesanr@protonmail.com\t2jeqdC23QXeh6R6sWi7dMh\t2026-04-23 15:34:33\t0\n34620001\tlesanr@protonmail.com\tuser_3EbWDWA0u21OvwEK18ZES1gFLBe\t2026-06-03 00:47:11\t0\n",
+  "stderr": "",
+  "execution_time_ms": 986
+}

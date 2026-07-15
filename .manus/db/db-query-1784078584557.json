@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, email, isPremium, isPlatinum, stripeSubscriptionTier FROM users WHERE email = 'lesanr@protonmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT id, email, isPremium, isPlatinum, stripeSubscriptionTier FROM users WHERE email = 'lesanr@protonmail.com';",
+  "rows": [
+    {
+      "id": "5730001",
+      "email": "lesanr@protonmail.com",
+      "isPremium": "0",
+      "isPlatinum": "0",
+      "stripeSubscriptionTier": "free"
+    },
+    {
+      "id": "34620001",
+      "email": "lesanr@protonmail.com",
+      "isPremium": "0",
+      "isPlatinum": "0",
+      "stripeSubscriptionTier": "free"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tisPremium\tisPlatinum\tstripeSubscriptionTier\n5730001\tlesanr@protonmail.com\t0\t0\tfree\n34620001\tlesanr@protonmail.com\t0\t0\tfree\n",
+  "stderr": "",
+  "execution_time_ms": 918
+}
