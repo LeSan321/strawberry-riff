@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Music, Zap, Users, ListMusic, User, BarChart2, Download, Star, Heart, Shield,
-  ChevronDown, ChevronUp, CheckCircle2, Loader2, Lock,
+  ChevronDown, ChevronUp, CheckCircle2, Loader2, Lock, Film, Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { getLoginUrl } from "@/const";
@@ -42,6 +42,24 @@ const PRO_FEATURES = [
   { icon: Star, label: "Visual Brief", value: "Yes — AI visual direction" },
   { icon: Heart, label: "Style Reference Audio", value: "Yes — match any song's vibe" },
   { icon: Users, label: "Voice Reference", value: "Yes — clone any vocal style" },
+];
+
+const PLATINUM_FEATURES = [
+  { icon: Music, label: "AI Generations", value: "Unlimited" },
+  { icon: Zap, label: "Music Generation", value: "Full access" },
+  { icon: Users, label: "Visibility", value: "Public, Inner Circle & Private" },
+  { icon: ListMusic, label: "Playlists", value: "Yes" },
+  { icon: User, label: "Creator Profile", value: "Yes" },
+  { icon: Heart, label: "Discover & Follow", value: "Yes" },
+  { icon: Shield, label: "Preview Share Links", value: "Yes (3-play limit)" },
+  { icon: Star, label: "Studio Mode", value: "Generate + Lyrics + My Styles" },
+  { icon: Download, label: "Riff Mode", value: "Yes \u2014 one-click variations" },
+  { icon: BarChart2, label: "Style Library", value: "Yes \u2014 save & reuse styles" },
+  { icon: Star, label: "Visual Brief", value: "Yes \u2014 AI visual direction" },
+  { icon: Heart, label: "Style Reference Audio", value: "Yes \u2014 match any song's vibe" },
+  { icon: Users, label: "Voice Reference", value: "Yes \u2014 clone any vocal style" },
+  { icon: Film, label: "Music Video Generator", value: "Yes \u2014 AI-powered music videos" },
+  { icon: Sparkles, label: "Blooming Frontier Radio", value: "Priority licensing queue" },
 ];
 
 const FAQS = [
@@ -196,7 +214,7 @@ export default function Pricing() {
       </motion.div>
 
       {/* Pricing Cards */}
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         {/* Free */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -293,6 +311,61 @@ export default function Pricing() {
                 </div>
               </div>
             ))}
+          </div>
+        </motion.div>
+
+        {/* Platinum */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-card rounded-2xl border-2 p-6 shadow-lg relative"
+          style={{ borderColor: "#c084fc" }}
+        >
+          <Badge
+            className="absolute -top-3 right-6 text-white border-0"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6366f1)" }}
+          >
+            Coming Soon
+          </Badge>
+          <h2 className="text-xl font-bold text-center mb-1">Platinum Tier</h2>
+          <div className="text-center mb-1">
+            <span className="text-4xl font-bold" style={{ color: "#a855f7" }}>$12.00</span>
+            <span className="text-muted-foreground text-sm">/month</span>
+          </div>
+          <p className="text-center text-sm text-muted-foreground mb-5">
+            For creators building a world
+          </p>
+          <button
+            className="w-full rounded-full py-2 text-white font-semibold mb-6 text-sm opacity-60 cursor-not-allowed flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg, #a855f7, #6366f1)" }}
+            disabled
+          >
+            <Film className="w-4 h-4" /> Launching Soon
+          </button>
+          <div className="space-y-3">
+            {PLATINUM_FEATURES.map(({ icon: Icon, label, value }) => {
+              const isNew = label === "Music Video Generator" || label === "Blooming Frontier Radio";
+              return (
+                <div key={label} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground flex-shrink-0">
+                    <Icon className="w-4 h-4" style={{ color: isNew ? "#a855f7" : undefined }} />
+                    <span>{label}</span>
+                  </div>
+                  <div className="flex items-center gap-1 justify-end">
+                    <span className="font-medium text-foreground text-right text-xs">{value}</span>
+                    {isNew && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs text-purple-300 bg-purple-500/15 border border-purple-400/30 flex-shrink-0"
+                      >
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
       </div>

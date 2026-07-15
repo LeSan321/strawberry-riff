@@ -29,6 +29,7 @@ import {
   Square,
   Sparkles,
   Download,
+  Film,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
@@ -397,9 +398,10 @@ interface TrackCardProps {
   bulkMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
+  isPlatinum?: boolean;
 }
 
-function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelect }: TrackCardProps) {
+function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelect, isPlatinum }: TrackCardProps) {
   const utils = trpc.useUtils();
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
@@ -613,6 +615,27 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
                   >
                     <Download className="w-4 h-4" />
                   </motion.button>
+                  {isPlatinum ? (
+                    <motion.a
+                      href={`https://strawberry-studios.manus.space/music-videos?trackId=${track.id}&source=riff`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-gray-400 hover:text-fuchsia-400 transition-colors"
+                      title="Create Music Video"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Film className="w-4 h-4" />
+                    </motion.a>
+                  ) : (
+                    <motion.button
+                      className="h-8 w-8 p-0 flex items-center justify-center rounded-md text-gray-600 cursor-not-allowed"
+                      title="Upgrade to Platinum to create music videos"
+                      disabled
+                    >
+                      <Film className="w-4 h-4" />
+                    </motion.button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -785,7 +808,8 @@ const VISIBILITY_FILTERS: { value: "all" | Visibility; label: string; icon: Reac
 ];
 
 export default function MyRiffs() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isPlatinum = (user as { isPlatinum?: boolean } | null)?.isPlatinum ?? false;
   const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | Visibility>("all");
@@ -1070,6 +1094,7 @@ export default function MyRiffs() {
                   bulkMode={bulkMode}
                   selected={selectedIds.has(track.id)}
                   onToggleSelect={toggleSelect}
+                  isPlatinum={isPlatinum}
                 />
               ))}
             </div>
