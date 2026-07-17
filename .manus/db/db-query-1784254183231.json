@@ -1,0 +1,14 @@
+{
+  "query": "\nSELECT \n  CASE \n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'sandbox_cdn_dead'\n    WHEN audioUrl LIKE '%manus-storage%' THEN 'manus_storage_proxy_dead'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'other_cloudfront'\n    ELSE 'live_s3_or_other'\n  END AS url_type,\n  COUNT(*) AS track_count\nFROM tracks\nGROUP BY url_type\nORDER BY track_count DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  CASE \n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'sandbox_cdn_dead'\n    WHEN audioUrl LIKE '%manus-storage%' THEN 'manus_storage_proxy_dead'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'other_cloudfront'\n    ELSE 'live_s3_or_other'\n  END AS url_type,\n  COUNT(*) AS track_count\nFROM tracks\nGROUP BY url_type\nORDER BY track_count DESC;\n",
+  "rows": [
+    {
+      "url_type": "sandbox_cdn_dead",
+      "track_count": "215"
+    }
+  ],
+  "messages": [],
+  "stdout": "url_type\ttrack_count\nsandbox_cdn_dead\t215\n",
+  "stderr": "",
+  "execution_time_ms": 1027
+}

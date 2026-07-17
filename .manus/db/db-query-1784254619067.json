@@ -1,0 +1,45 @@
+{
+  "query": "\n-- Audio URL patterns in tracks\nSELECT 'tracks.audioUrl' AS source,\n  CASE\n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN audioUrl LIKE '%manus-storage%' THEN 'DEAD: manus proxy'\n    WHEN audioUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%pbxt.replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%dnznrvs05pmza.cloudfront.net%' THEN 'EXPIRING: Runway signed URL'\n    WHEN audioUrl LIKE '%fal.media%' THEN 'CHECK: fal.ai CDN'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    WHEN audioUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    ELSE CONCAT('OTHER: ', LEFT(audioUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM tracks\nGROUP BY url_type\n\nUNION ALL\n\n-- Cover art URL patterns in tracks\nSELECT 'tracks.coverArtUrl' AS source,\n  CASE\n    WHEN coverArtUrl IS NULL OR coverArtUrl = '' THEN 'null/empty'\n    WHEN coverArtUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN coverArtUrl LIKE '%dnznrvs05pmza.cloudfront.net%' THEN 'EXPIRING: Runway signed URL'\n    WHEN coverArtUrl LIKE '%fal.media%' THEN 'CHECK: fal.ai CDN'\n    WHEN coverArtUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN coverArtUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    WHEN coverArtUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    ELSE CONCAT('OTHER: ', LEFT(coverArtUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM tracks\nGROUP BY url_type\n\nUNION ALL\n\n-- Audio URL patterns in music_generations\nSELECT 'music_generations.audioUrl' AS source,\n  CASE\n    WHEN audioUrl IS NULL OR audioUrl = '' THEN 'null/empty'\n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN audioUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%pbxt.replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    ELSE CONCAT('OTHER: ', LEFT(audioUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM music_generations\nGROUP BY url_type\n\nORDER BY source, cnt DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \n-- Audio URL patterns in tracks\nSELECT 'tracks.audioUrl' AS source,\n  CASE\n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN audioUrl LIKE '%manus-storage%' THEN 'DEAD: manus proxy'\n    WHEN audioUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%pbxt.replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%dnznrvs05pmza.cloudfront.net%' THEN 'EXPIRING: Runway signed URL'\n    WHEN audioUrl LIKE '%fal.media%' THEN 'CHECK: fal.ai CDN'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    WHEN audioUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    ELSE CONCAT('OTHER: ', LEFT(audioUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM tracks\nGROUP BY url_type\n\nUNION ALL\n\n-- Cover art URL patterns in tracks\nSELECT 'tracks.coverArtUrl' AS source,\n  CASE\n    WHEN coverArtUrl IS NULL OR coverArtUrl = '' THEN 'null/empty'\n    WHEN coverArtUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN coverArtUrl LIKE '%dnznrvs05pmza.cloudfront.net%' THEN 'EXPIRING: Runway signed URL'\n    WHEN coverArtUrl LIKE '%fal.media%' THEN 'CHECK: fal.ai CDN'\n    WHEN coverArtUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN coverArtUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    WHEN coverArtUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    ELSE CONCAT('OTHER: ', LEFT(coverArtUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM tracks\nGROUP BY url_type\n\nUNION ALL\n\n-- Audio URL patterns in music_generations\nSELECT 'music_generations.audioUrl' AS source,\n  CASE\n    WHEN audioUrl IS NULL OR audioUrl = '' THEN 'null/empty'\n    WHEN audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 'DEAD: sandbox CDN'\n    WHEN audioUrl LIKE '%replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%pbxt.replicate.delivery%' THEN 'EXPIRING: Replicate (24h)'\n    WHEN audioUrl LIKE '%amazonaws.com%' THEN 'LIVE: S3/Railway'\n    WHEN audioUrl LIKE '%cloudfront.net%' THEN 'cloudfront (check which)'\n    ELSE CONCAT('OTHER: ', LEFT(audioUrl, 60))\n  END AS url_type,\n  COUNT(*) AS cnt\nFROM music_generations\nGROUP BY url_type\n\nORDER BY source, cnt DESC;\n",
+  "rows": [
+    {
+      "source": "music_generations.audioUrl",
+      "url_type": "DEAD: sandbox CDN",
+      "cnt": "430"
+    },
+    {
+      "source": "music_generations.audioUrl",
+      "url_type": "null/empty",
+      "cnt": "10"
+    },
+    {
+      "source": "tracks.audioUrl",
+      "url_type": "DEAD: sandbox CDN",
+      "cnt": "215"
+    },
+    {
+      "source": "tracks.coverArtUrl",
+      "url_type": "DEAD: sandbox CDN",
+      "cnt": "80"
+    },
+    {
+      "source": "tracks.coverArtUrl",
+      "url_type": "null/empty",
+      "cnt": "66"
+    },
+    {
+      "source": "tracks.coverArtUrl",
+      "url_type": "CHECK: fal.ai CDN",
+      "cnt": "36"
+    },
+    {
+      "source": "tracks.coverArtUrl",
+      "url_type": "EXPIRING: Runway signed URL",
+      "cnt": "33"
+    }
+  ],
+  "messages": [],
+  "stdout": "source\turl_type\tcnt\nmusic_generations.audioUrl\tDEAD: sandbox CDN\t430\nmusic_generations.audioUrl\tnull/empty\t10\ntracks.audioUrl\tDEAD: sandbox CDN\t215\ntracks.coverArtUrl\tDEAD: sandbox CDN\t80\ntracks.coverArtUrl\tnull/empty\t66\ntracks.coverArtUrl\tCHECK: fal.ai CDN\t36\ntracks.coverArtUrl\tEXPIRING: Runway signed URL\t33\n",
+  "stderr": "",
+  "execution_time_ms": 918
+}

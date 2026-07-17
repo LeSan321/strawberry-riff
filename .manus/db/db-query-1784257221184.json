@@ -1,0 +1,9 @@
+{
+  "query": "SELECT SUBSTRING(audioUrl, 1, 60) as url_prefix, COUNT(*) as count FROM tracks WHERE audioUrl NOT LIKE '%d2xsxph8kpxj0f.cloudfront.net%' GROUP BY url_prefix ORDER BY count DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT SUBSTRING(audioUrl, 1, 60) as url_prefix, COUNT(*) as count FROM tracks WHERE audioUrl NOT LIKE '%d2xsxph8kpxj0f.cloudfront.net%' GROUP BY url_prefix ORDER BY count DESC LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 268
+}

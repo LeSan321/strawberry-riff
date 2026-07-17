@@ -412,6 +412,110 @@ async function startServer() {
     }
   });
 
+  // Batch track download — ZIP of selected tracks (MP3 + lyrics TXT)
+  // Platinum-only, max 25 tracks per request
+  app.post("/api/tracks/download-zip", async (req, res) => {
+    try {
+      const { trackIds } = req.body as { trackIds?: number[] };
+      if (!Array.isArray(trackIds) || trackIds.length === 0) {
+        return res.status(400).json({ message: "No track IDs provided" });
+      }
+      if (trackIds.length > 25) {
+        return res.status(400).json({ message: "Maximum 25 tracks per download" });
+      }
+
+      // Auth
+      const { verifyToken } = await import("@clerk/express");
+      const { ENV } = await import("./env");
+      const { getUserByOpenId, getTracksByUserId } = await import("../db");
+      let user: Awaited<ReturnType<typeof getUserByOpenId>> | null = null;
+      try {
+        const authHeader = req.headers.authorization;
+        const sessionToken = authHeader?.startsWith("Bearer ")
+          ? authHeader.slice(7)
+          : req.cookies?.["__session"] ?? null;
+        if (sessionToken) {
+          const verifiedToken = await verifyToken(sessionToken, { secretKey: ENV.clerkSecretKey });
+          if (verifiedToken.sub) {
+            user = await getUserByOpenId(verifiedToken.sub);
+          }
+        }
+      } catch {
+        // user stays null
+      }
+
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
+      if (!user.isPlatinum) return res.status(403).json({ message: "Batch download is a Platinum feature" });
+
+      // Fetch all tracks owned by this user and filter to requested IDs
+      const allTracks = await getTracksByUserId(user.id);
+      const ownedIds = new Set(allTracks.map((t: any) => t.id));
+      const requestedIds = trackIds.filter((id) => ownedIds.has(id));
+      if (requestedIds.length === 0) {
+        return res.status(403).json({ message: "No authorized tracks found" });
+      }
+      const selectedTracks = allTracks.filter((t: any) => requestedIds.includes(t.id));
+
+      // Build ZIP
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+
+      let index = 1;
+      for (const track of selectedTracks) {
+        const sanitized = (track.title || `track_${track.id}`)
+          .replace(/[^a-z0-9\s]/gi, "_")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .slice(0, 60)
+          .toLowerCase();
+        const prefix = String(index).padStart(2, "0");
+        const baseName = `${prefix}_${sanitized}`;
+
+        // Fetch audio
+        try {
+          const audioRes = await fetch(track.audioUrl, {
+            headers: { "User-Agent": "Strawberry Riff Downloader/1.0" },
+          });
+          if (audioRes.ok) {
+            const buf = Buffer.from(await audioRes.arrayBuffer());
+            const ext = track.audioUrl.endsWith(".wav") ? "wav" : "mp3";
+            zip.file(`${baseName}.${ext}`, buf);
+          } else {
+            console.warn(`[Batch ZIP] Audio fetch failed for track ${track.id}: ${audioRes.status}`);
+          }
+        } catch (e) {
+          console.warn(`[Batch ZIP] Audio fetch error for track ${track.id}:`, e);
+        }
+
+        // Add lyrics TXT if available
+        if (track.lyrics) {
+          const meta = [
+            `Title: ${track.title}`,
+            track.artist ? `Artist: ${track.artist}` : null,
+            track.genre ? `Genre: ${track.genre}` : null,
+            track.moodTags ? `Mood: ${JSON.parse(track.moodTags).join(", ")}` : null,
+            "",
+            track.lyrics,
+          ]
+            .filter((l) => l !== null)
+            .join("\n");
+          zip.file(`${baseName}.txt`, meta);
+        }
+
+        index++;
+      }
+
+      const zipBuffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", 'attachment; filename="my_riffs.zip"');
+      res.setHeader("Content-Length", zipBuffer.length);
+      return res.send(zipBuffer);
+    } catch (error) {
+      console.error("[Batch ZIP] Error:", error);
+      return res.status(500).json({ message: "Failed to create ZIP file" });
+    }
+  });
+
   // tRPC API — log method+path for debugging GET-mutation issue
   app.use("/api/trpc", (req, _res, next) => {
     if (req.path.includes("lyrics.generate")) {

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT coverArtUrl FROM tracks WHERE coverArtUrl LIKE '%fal.media%' LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT coverArtUrl FROM tracks WHERE coverArtUrl LIKE '%fal.media%' LIMIT 3;",
+  "rows": [
+    {
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebe3e/LtwI7DrTeDXs-FLvTx4YR_47134a53feea4afca9c2552c65f7bddc.jpg"
+    },
+    {
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebecb/EgisM7SK-wSgIvDZfopf4_051c554eda09499c89e78aae44712f86.jpg"
+    },
+    {
+      "coverArtUrl": "https://v3b.fal.media/files/b/0a9ebd84/etGn9cG8ILoo0ApF6CIsL_74450eb41c9f4b2da895bc4b24d7b8eb.jpg"
+    }
+  ],
+  "messages": [],
+  "stdout": "coverArtUrl\nhttps://v3b.fal.media/files/b/0a9ebe3e/LtwI7DrTeDXs-FLvTx4YR_47134a53feea4afca9c2552c65f7bddc.jpg\nhttps://v3b.fal.media/files/b/0a9ebecb/EgisM7SK-wSgIvDZfopf4_051c554eda09499c89e78aae44712f86.jpg\nhttps://v3b.fal.media/files/b/0a9ebd84/etGn9cG8ILoo0ApF6CIsL_74450eb41c9f4b2da895bc4b24d7b8eb.jpg\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

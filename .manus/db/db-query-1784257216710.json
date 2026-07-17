@@ -1,0 +1,15 @@
+{
+  "query": "SELECT MIN(createdAt) as earliest_live, MAX(createdAt) as latest_live, COUNT(*) as total FROM tracks WHERE audioUrl LIKE '%amazonaws.com%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT MIN(createdAt) as earliest_live, MAX(createdAt) as latest_live, COUNT(*) as total FROM tracks WHERE audioUrl LIKE '%amazonaws.com%';",
+  "rows": [
+    {
+      "earliest_live": "NULL",
+      "latest_live": "NULL",
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "earliest_live\tlatest_live\ttotal\nNULL\tNULL\t0\n",
+  "stderr": "",
+  "execution_time_ms": 509
+}

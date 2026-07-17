@@ -1,0 +1,15 @@
+{
+  "query": "\nSELECT \n  COUNT(*) AS total_linked_generations,\n  SUM(CASE WHEN mg.audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 1 ELSE 0 END) AS gen_also_dead,\n  SUM(CASE WHEN mg.audioUrl NOT LIKE '%d2xsxph8kpxj0f.cloudfront.net%' AND mg.audioUrl IS NOT NULL THEN 1 ELSE 0 END) AS gen_potentially_live\nFROM tracks t\nJOIN music_generations mg ON t.musicGenerationId = mg.id\nWHERE t.audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  COUNT(*) AS total_linked_generations,\n  SUM(CASE WHEN mg.audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%' THEN 1 ELSE 0 END) AS gen_also_dead,\n  SUM(CASE WHEN mg.audioUrl NOT LIKE '%d2xsxph8kpxj0f.cloudfront.net%' AND mg.audioUrl IS NOT NULL THEN 1 ELSE 0 END) AS gen_potentially_live\nFROM tracks t\nJOIN music_generations mg ON t.musicGenerationId = mg.id\nWHERE t.audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';\n",
+  "rows": [
+    {
+      "total_linked_generations": "102",
+      "gen_also_dead": "102",
+      "gen_potentially_live": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_linked_generations\tgen_also_dead\tgen_potentially_live\n102\t102\t0\n",
+  "stderr": "",
+  "execution_time_ms": 275
+}

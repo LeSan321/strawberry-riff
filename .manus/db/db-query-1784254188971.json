@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  COUNT(*) AS total_dead,\n  SUM(CASE WHEN musicGenerationId IS NOT NULL THEN 1 ELSE 0 END) AS has_generation_link,\n  SUM(CASE WHEN coverArtUrl IS NOT NULL AND coverArtUrl != '' THEN 1 ELSE 0 END) AS has_cover_art,\n  SUM(CASE WHEN title IS NOT NULL AND title != '' THEN 1 ELSE 0 END) AS has_title,\n  SUM(CASE WHEN lyrics IS NOT NULL AND lyrics != '' THEN 1 ELSE 0 END) AS has_lyrics\nFROM tracks\nWHERE audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute \nSELECT \n  COUNT(*) AS total_dead,\n  SUM(CASE WHEN musicGenerationId IS NOT NULL THEN 1 ELSE 0 END) AS has_generation_link,\n  SUM(CASE WHEN coverArtUrl IS NOT NULL AND coverArtUrl != '' THEN 1 ELSE 0 END) AS has_cover_art,\n  SUM(CASE WHEN title IS NOT NULL AND title != '' THEN 1 ELSE 0 END) AS has_title,\n  SUM(CASE WHEN lyrics IS NOT NULL AND lyrics != '' THEN 1 ELSE 0 END) AS has_lyrics\nFROM tracks\nWHERE audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';\n",
+  "rows": [
+    {
+      "total_dead": "215",
+      "has_generation_link": "106",
+      "has_cover_art": "149",
+      "has_title": "215",
+      "has_lyrics": "91"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_dead\thas_generation_link\thas_cover_art\thas_title\thas_lyrics\n215\t106\t149\t215\t91\n",
+  "stderr": "",
+  "execution_time_ms": 275
+}

@@ -827,6 +827,48 @@ export default function MyRiffs() {
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | Visibility>("all");
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const MAX_BATCH = 25;
+
+  const handleBatchDownload = async () => {
+    if (selectedIds.size === 0) return;
+    if (!isPlatinum) {
+      toast.error("Batch download is a Platinum feature. Upgrade to download your tracks.");
+      return;
+    }
+    if (selectedIds.size > MAX_BATCH) {
+      toast.error(`Please select no more than ${MAX_BATCH} tracks at a time.`);
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const res = await fetch("/api/tracks/download-zip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ trackIds: Array.from(selectedIds) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Download failed" }));
+        throw new Error(err.message);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "my_riffs.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${selectedIds.size} track${selectedIds.size !== 1 ? "s" : ""}`);
+      setSelectedIds(new Set());
+      setBulkMode(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Download failed");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   const tracksQuery = trpc.tracks.myTracks.useQuery(undefined, { enabled: isAuthenticated });
   const tracks = (tracksQuery.data ?? []) as Track[];
 
@@ -857,11 +899,17 @@ export default function MyRiffs() {
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < MAX_BATCH) {
+        next.add(id);
+      } else {
+        toast.error(`Maximum ${MAX_BATCH} tracks per download`);
+      }
       return next;
     });
   };
-  const selectAll = () => setSelectedIds(new Set(filteredTracks.map((t) => t.id)));
+  const selectAll = () => setSelectedIds(new Set(filteredTracks.slice(0, MAX_BATCH).map((t) => t.id)));
   const clearSelection = () => setSelectedIds(new Set());
 
   const previewLinksQuery = trpc.previewLinks.myActiveLinks.useQuery(undefined, { enabled: isAuthenticated });
@@ -1001,7 +1049,7 @@ export default function MyRiffs() {
             className="flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-200"
           >
             <span className="text-sm font-medium text-purple-700">
-              {selectedIds.size} selected
+              {selectedIds.size} / {MAX_BATCH} selected
             </span>
             <button
               onClick={selectedIds.size === filteredTracks.length ? clearSelection : selectAll}
@@ -1010,7 +1058,35 @@ export default function MyRiffs() {
               {selectedIds.size === filteredTracks.length ? "Deselect all" : "Select all"}
             </button>
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Change visibility to:</span>
+              {/* Batch download — Platinum only */}
+              {isPlatinum ? (
+                <Button
+                  size="sm"
+                  disabled={selectedIds.size === 0 || isDownloading}
+                  onClick={handleBatchDownload}
+                  className="h-7 text-xs gap-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0"
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  {isDownloading ? "Building ZIP…" : "Download ZIP"}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  title="Batch download is a Platinum feature"
+                  className="h-7 text-xs gap-1 border-purple-200 text-purple-400 opacity-60"
+                >
+                  <Download className="w-3 h-3" />
+                  Download ZIP
+                  <span className="ml-1 text-[10px] bg-purple-100 text-purple-600 px-1 rounded">Platinum</span>
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground">Visibility:</span>
               <Button
                 size="sm"
                 variant="outline"

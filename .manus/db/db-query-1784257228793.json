@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total FROM tracks; SELECT SUBSTRING(audioUrl, 1, 50) as prefix, COUNT(*) as cnt FROM tracks GROUP BY prefix ORDER BY cnt DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT COUNT(*) as total FROM tracks; SELECT SUBSTRING(audioUrl, 1, 50) as prefix, COUNT(*) as cnt FROM tracks GROUP BY prefix ORDER BY cnt DESC LIMIT 15;",
+  "rows": [
+    {
+      "total": "215"
+    },
+    {
+      "total": "prefix\tcnt"
+    },
+    {
+      "total": "https://d2xsxph8kpxj0f.cloudfront.net/310519663331\t215"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n215\nprefix\tcnt\nhttps://d2xsxph8kpxj0f.cloudfront.net/310519663331\t215\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

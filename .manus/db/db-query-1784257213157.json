@@ -1,0 +1,15 @@
+{
+  "query": "SELECT MIN(createdAt) as earliest_dead, MAX(createdAt) as latest_dead, COUNT(*) as total FROM tracks WHERE audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NoQxNASu25QqFj.root --database frNnwU2pwLKJifDR8KqR7c --execute SELECT MIN(createdAt) as earliest_dead, MAX(createdAt) as latest_dead, COUNT(*) as total FROM tracks WHERE audioUrl LIKE '%d2xsxph8kpxj0f.cloudfront.net%';",
+  "rows": [
+    {
+      "earliest_dead": "2026-03-28 17:14:21",
+      "latest_dead": "2026-07-16 03:18:50",
+      "total": "215"
+    }
+  ],
+  "messages": [],
+  "stdout": "earliest_dead\tlatest_dead\ttotal\n2026-03-28 17:14:21\t2026-07-16 03:18:50\t215\n",
+  "stderr": "",
+  "execution_time_ms": 1061
+}
