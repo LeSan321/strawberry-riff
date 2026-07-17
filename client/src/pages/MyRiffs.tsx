@@ -394,6 +394,7 @@ function EditDialog({ track, onClose }: EditDialogProps) {
 
 interface TrackCardProps {
   track: Track;
+  queue?: Track[];  // full ordered list for auto-advance
   previewLinkStatus?: { playsRemaining: number; playsTotal: number; token: string };
   bulkMode?: boolean;
   selected?: boolean;
@@ -401,7 +402,7 @@ interface TrackCardProps {
   isPlatinum?: boolean;
 }
 
-function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelect, isPlatinum }: TrackCardProps) {
+function TrackCard({ track, queue, previewLinkStatus, bulkMode, selected, onToggleSelect, isPlatinum }: TrackCardProps) {
   const utils = trpc.useUtils();
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
@@ -457,14 +458,25 @@ function TrackCard({ track, previewLinkStatus, bulkMode, selected, onToggleSelec
     if (isCurrentTrack && isPlaying) {
       pause();
     } else {
-      play({
+      const playerTrack = {
         id: track.id,
         title: track.title,
         artist: track.artist ?? undefined,
-        audioUrl: track.audioUrl, audioKey: track.audioKey ?? undefined,
+        audioUrl: track.audioUrl,
+        audioKey: track.audioKey ?? undefined,
         gradient: track.gradient ?? undefined,
         coverArtUrl: track.coverArtUrl ?? undefined,
-      });
+      };
+      const playerQueue = queue?.map((t) => ({
+        id: t.id,
+        title: t.title,
+        artist: t.artist ?? undefined,
+        audioUrl: t.audioUrl,
+        audioKey: t.audioKey ?? undefined,
+        gradient: t.gradient ?? undefined,
+        coverArtUrl: t.coverArtUrl ?? undefined,
+      }));
+      play(playerTrack, playerQueue);
     }
   };
 
@@ -1090,6 +1102,7 @@ export default function MyRiffs() {
                 <TrackCard
                   key={track.id}
                   track={track}
+                  queue={filteredTracks}
                   previewLinkStatus={previewLinkByTrack[track.id]}
                   bulkMode={bulkMode}
                   selected={selectedIds.has(track.id)}

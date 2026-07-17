@@ -400,14 +400,26 @@ export default function TrackPage() {
                         <button
                           onClick={(e) => {
                             e.preventDefault();
-                            play({
-                              id: t.id,
-                              title: t.title,
-                              artist: fullTrack!.creatorUsername ?? "Unknown",
-                              audioUrl: t.audioUrl, audioKey: t.audioKey ?? undefined,
-                              gradient: tGradient,
-                              coverArtUrl: t.coverArtUrl,
-                            });
+                            play(
+                              {
+                                id: t.id,
+                                title: t.title,
+                                artist: fullTrack!.creatorUsername ?? "Unknown",
+                                audioUrl: t.audioUrl,
+                                audioKey: t.audioKey ?? undefined,
+                                gradient: tGradient,
+                                coverArtUrl: t.coverArtUrl,
+                              },
+                              moreTracks.map((mt) => ({
+                                id: mt.id,
+                                title: mt.title,
+                                artist: fullTrack!.creatorUsername ?? "Unknown",
+                                audioUrl: mt.audioUrl,
+                                audioKey: mt.audioKey ?? undefined,
+                                gradient: mt.gradient ?? undefined,
+                                coverArtUrl: mt.coverArtUrl,
+                              }))
+                            );
                           }}
                           className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20"
                         >

@@ -187,7 +187,7 @@ export default function SharedPlaylistPage() {
                     if (currentTrack?.id === track.id && isPlaying) {
                       pause();
                     } else {
-                      play(track);
+                      play(track, tracks);
                     }
                   }}
                 >
