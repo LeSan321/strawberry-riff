@@ -252,20 +252,52 @@ export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ k
  * Given a stored audioUrl (which may be a raw S3 path-style URL or a Forge CDN URL),
  * return a playable URL. For S3 URLs, generate a presigned URL. For Forge/other URLs,
  * return as-is since they are already publicly accessible.
+ *
+ * Detection strategy (in order):
+ * 1. URL contains configured endpoint → extract key from path-style URL
+ * 2. URL contains bucket name (handles cases where endpoint env var is missing)
+ * 3. URL contains known Tigris/Railway S3 domain (t3.storageapi.dev)
+ * 4. Anything else (Forge CDN, fal.ai, etc.) → return as-is
  */
 export function resolveAudioUrl(storedUrl: string, expiresIn = 86400): string {
-  if (!storedUrl) return storedUrl;
+  if (!storedUrl || !hasS3Config()) return storedUrl;
 
-  // If it's an S3 URL from our bucket, extract the key and generate a presigned URL
-  if (hasS3Config() && ENV.s3Endpoint && storedUrl.includes(ENV.s3Endpoint)) {
-    // Extract key from path-style URL: https://endpoint/bucket/key
-    const prefix = `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/`;
-    if (storedUrl.startsWith(prefix)) {
-      const key = storedUrl.slice(prefix.length).split('?')[0]; // strip any existing query params
-      return s3PresignedGetUrl(key, expiresIn);
+  // Helper: extract key from a path-style URL given a known prefix
+  function extractKey(url: string, prefix: string): string | null {
+    if (url.startsWith(prefix)) {
+      return url.slice(prefix.length).split('?')[0];
     }
+    return null;
   }
 
-  // Forge CDN URLs and other URLs are publicly accessible — return as-is
+  // Strategy 1: endpoint env var is set and URL contains it
+  if (ENV.s3Endpoint && storedUrl.includes(ENV.s3Endpoint.replace(/\/+$/, ''))) {
+    const prefix = `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/`;
+    const key = extractKey(storedUrl, prefix);
+    if (key) return s3PresignedGetUrl(key, expiresIn);
+  }
+
+  // Strategy 2: URL contains our bucket name (works even if endpoint env var is missing)
+  if (ENV.s3Bucket && storedUrl.includes(`/${ENV.s3Bucket}/`)) {
+    const bucketIdx = storedUrl.indexOf(`/${ENV.s3Bucket}/`);
+    const key = storedUrl.slice(bucketIdx + ENV.s3Bucket.length + 2).split('?')[0];
+    if (key) return s3PresignedGetUrl(key, expiresIn);
+  }
+
+  // Strategy 3: known Tigris/Railway S3 domain
+  if (storedUrl.includes('storageapi.dev') || storedUrl.includes('tigrisdata.com')) {
+    // Path-style: https://host/bucket/key
+    try {
+      const parsed = new URL(storedUrl);
+      const parts = parsed.pathname.replace(/^\//, '').split('/');
+      // parts[0] = bucket, parts[1..] = key
+      if (parts.length >= 2) {
+        const key = parts.slice(1).join('/');
+        if (key) return s3PresignedGetUrl(key, expiresIn);
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Forge CDN, fal.ai, cloudfront, and other public URLs — return as-is
   return storedUrl;
 }
