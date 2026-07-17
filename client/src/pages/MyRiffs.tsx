@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -821,6 +822,7 @@ const VISIBILITY_FILTERS: { value: "all" | Visibility; label: string; icon: Reac
 
 export default function MyRiffs() {
   const { isAuthenticated, user } = useAuth();
+  const { getToken } = useClerkAuth();
   const isPlatinum = (user as { isPlatinum?: boolean } | null)?.isPlatinum ?? false;
   const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
@@ -843,9 +845,14 @@ export default function MyRiffs() {
     }
     setIsDownloading(true);
     try {
+      let token: string | null = null;
+      try { token = await getToken(); } catch { /* not signed in */ }
       const res = await fetch("/api/tracks/download-zip", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         credentials: "include",
         body: JSON.stringify({ trackIds: Array.from(selectedIds) }),
       });
