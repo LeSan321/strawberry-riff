@@ -279,14 +279,16 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const play = useCallback((track: PlayerTrack, queue?: PlayerTrack[]) => {
     const audio = getOrCreateAudio();
 
-    // Same track already loaded and playable — just resume.
-    // IMPORTANT: only short-circuit if the audio element is NOT in an error state
-    // and the src actually matches the track's current URL. If the audio errored
-    // (e.g. a presigned URL expired or a private URL was loaded), fall through
-    // to reload with the fresh URL from the track object.
-    const audioHasError = audio.error !== null;
-    const audioSrcMatchesTrack = audio.src && track.audioUrl && audio.src.split('?')[0] === track.audioUrl.split('?')[0];
-    if (stateRef.current.currentTrack?.id === track.id && audio.src && !audioHasError && audioSrcMatchesTrack) {
+    // Same track already loaded and actively playing (or paused mid-track) — just resume.
+    // Only skip reload if:
+    //   1. Same track ID
+    //   2. Audio has no error (error code 0 = no error, null = no error)
+    //   3. Audio has already loaded some data (readyState >= HAVE_CURRENT_DATA = 2)
+    //   4. Audio is not at position 0 with duration 0 (i.e. actually loaded, not just src-set)
+    // This prevents the case where a presigned URL was never loaded (silent track)
+    // from being skipped over on re-click.
+    const audioIsLoaded = !audio.error && audio.readyState >= 2 && (audio.currentTime > 0 || audio.duration > 0);
+    if (stateRef.current.currentTrack?.id === track.id && audioIsLoaded) {
       audio.play().catch(console.error);
       setState((s) => ({ ...s, isPlaying: true }));
       return;
