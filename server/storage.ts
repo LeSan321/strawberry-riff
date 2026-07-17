@@ -1,8 +1,9 @@
 // Storage helpers for Strawberry Riff
-// Priority: Railway S3 (when BUCKET + REGION + ACCESS_KEY_ID + SECRET_ACCESS_KEY are set)
+// Priority: Railway S3/R2 (when BUCKET + ACCESS_KEY_ID + SECRET_ACCESS_KEY are set)
 //           → Manus Forge proxy (fallback for local dev / Manus-hosted deployment)
 //
 // S3 path uses AWS Signature V4 via Node.js crypto — no SDK required.
+// Supports Railway Object Storage (t3.storageapi.dev, region=auto/us-west-1, path-style URLs)
 
 import { ENV } from './_core/env';
 import { createHmac, createHash } from 'crypto';
@@ -12,10 +13,16 @@ import { createHmac, createHash } from 'crypto';
 function hasS3Config(): boolean {
   return !!(
     ENV.s3Bucket &&
-    ENV.s3Region &&
     ENV.s3AccessKeyId &&
     ENV.s3SecretAccessKey
   );
+}
+
+// Railway Object Storage uses 'auto' as the region label but signs with 'auto'
+// For Cloudflare R2-compatible stores, the signing region is literally 'auto'
+function signingRegion(): string {
+  const r = ENV.s3Region || 'auto';
+  return r;
 }
 
 function sha256hex(data: string | Buffer): string {
@@ -33,12 +40,13 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, 'aws4_request');
 }
 
-function s3BaseUrl(): string {
+// For Railway Object Storage (path-style): https://endpoint/bucket/key
+// For standard AWS S3 (virtual-hosted): https://bucket.s3.region.amazonaws.com/key
+function s3ObjectUrl(key: string): string {
   if (ENV.s3Endpoint) {
-    // Railway Object Storage: endpoint already includes the bucket in the path
-    return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}`;
+    return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/${key}`;
   }
-  return `https://${ENV.s3Bucket}.s3.${ENV.s3Region}.amazonaws.com`;
+  return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
 }
 
 // Sign and execute an S3 PUT using AWS Signature V4
@@ -53,9 +61,9 @@ async function s3Put(
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
   const dateStamp = amzDate.slice(0, 8);
+  const region = signingRegion();
 
-  const baseUrl = s3BaseUrl();
-  const url = `${baseUrl}/${key}`;
+  const url = s3ObjectUrl(key);
   const parsedUrl = new URL(url);
   const host = parsedUrl.host;
   const path = parsedUrl.pathname;
@@ -65,13 +73,15 @@ async function s3Put(
   const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
   const canonicalRequest = `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
-  const credentialScope = `${dateStamp}/${ENV.s3Region}/s3/aws4_request`;
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
   const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
 
-  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, ENV.s3Region, 's3');
+  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
   const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
 
   const authHeader = `AWS4-HMAC-SHA256 Credential=${ENV.s3AccessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  console.log(`[Storage S3] Uploading ${key} to ${url} (region=${region})`);
 
   const response = await fetch(url, {
     method: 'PUT',
@@ -87,6 +97,7 @@ async function s3Put(
 
   if (!response.ok) {
     const text = await response.text().catch(() => response.statusText);
+    console.error(`[Storage S3] Upload failed (${response.status}): ${text}`);
     throw new Error(`S3 upload failed (${response.status}): ${text}`);
   }
 
@@ -103,7 +114,7 @@ function getForgeConfig(): StorageConfig {
   const apiKey = ENV.forgeApiKey;
   if (!baseUrl || !apiKey) {
     throw new Error(
-      'Storage credentials missing: set BUCKET/REGION/ACCESS_KEY_ID/SECRET_ACCESS_KEY for S3, or BUILT_IN_FORGE_API_URL/BUILT_IN_FORGE_API_KEY for Forge proxy'
+      'Storage credentials missing: set BUCKET/ACCESS_KEY_ID/SECRET_ACCESS_KEY for S3, or BUILT_IN_FORGE_API_URL/BUILT_IN_FORGE_API_KEY for Forge proxy'
     );
   }
   return { baseUrl: baseUrl.replace(/\/+$/, ''), apiKey };
@@ -183,7 +194,7 @@ export async function storagePut(
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   if (hasS3Config()) {
     const key = relKey.replace(/^\/+/, '');
-    return { key, url: `${s3BaseUrl()}/${key}` };
+    return { key, url: s3ObjectUrl(key) };
   }
   return forgeGet(relKey);
 }
