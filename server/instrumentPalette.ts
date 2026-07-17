@@ -275,6 +275,15 @@ export const INSTRUMENT_CATALOG: InstrumentSample[] = [
     tags: ["percussion", "ambient", "ethereal", "meditative"],
   },
   {
+    id: "cowbell",
+    name: "Cowbell",
+    family: "Percussion",
+    description: "Iconic metallic percussion — needs more of it, always",
+    audioPath: "/manus-storage/cowbell_b2f64323.mp3",
+    source: "Philharmonia Orchestra (CC BY-SA 3.0)",
+    tags: ["percussion", "metallic", "rhythmic", "iconic", "cowbell"],
+  },
+  {
     id: "djembe",
     name: "Djembe",
     family: "Percussion",
