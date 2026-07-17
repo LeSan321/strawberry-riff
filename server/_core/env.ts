@@ -12,4 +12,10 @@ export const ENV = {
   // Key Studios sends to Riff for inbound bridge calls (same shared secret, different direction)
   studiosBridgeKeyInbound: process.env.STUDIOS_BRIDGE_KEY ?? process.env.BRIDGE_API_KEY ?? "",
   clerkSecretKey: process.env.CLERK_SECRET_KEY ?? "",
+  // Railway S3 storage (takes priority over Forge proxy when all four are set)
+  s3Bucket: process.env.BUCKET ?? "",
+  s3Region: process.env.REGION ?? "",
+  s3Endpoint: process.env.ENDPOINT ?? "",
+  s3AccessKeyId: process.env.ACCESS_KEY_ID ?? "",
+  s3SecretAccessKey: process.env.SECRET_ACCESS_KEY ?? "",
 };
