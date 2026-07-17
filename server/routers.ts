@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { INSTRUMENT_CATALOG, INSTRUMENT_FAMILIES, getCatalogByFamily } from "./instrumentPalette";
 import { assistantChat } from "./assistant";
 import { z } from "zod";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
@@ -1542,6 +1543,15 @@ const assistantRouter = router({
     }),
 });
 
+// ─── Instrument Palette Router ──────────────────────────────────────────────
+const instrumentPaletteRouter = router({
+  getCatalog: publicProcedure.query(() => ({
+    families: INSTRUMENT_FAMILIES,
+    byFamily: getCatalogByFamily(),
+    all: INSTRUMENT_CATALOG,
+  })),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1564,6 +1574,7 @@ export const appRouter = router({
   coverArt: coverArtRouter,
   frequency: frequencyRouter,
   assistant: assistantRouter,
+  instrumentPalette: instrumentPaletteRouter,
 });
 
 export type AppRouter = typeof appRouter;

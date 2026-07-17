@@ -22,6 +22,7 @@ import {
   Library,
   Home,
   Download,
+  Piano,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ import { toast } from "sonner";
 import { GeneratePage } from "./Generate";
 import { LyricsGeneratorPage } from "./LyricsGenerator";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
+import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
 import { FrequencyModal } from "@/components/FrequencyModal";
 import { StyleLibrary } from "./StyleLibrary";
 import { MyStemsPanel } from "@/components/MyStemsPanel";
@@ -187,6 +189,7 @@ function StudioSidebar({
   onOpenThemePicker,
   onOpenFusions,
   onOpenFrequency,
+  onOpenInstrumentPalette,
 }: {
   activeTool: "generate" | "lyrics" | "styles" | "stems";
   onToolChange: (t: "generate" | "lyrics" | "styles" | "stems") => void;
@@ -194,6 +197,7 @@ function StudioSidebar({
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
   onOpenFrequency: () => void;
+  onOpenInstrumentPalette: () => void;
 }) {
   const { user } = useAuth();
   const { data: monthlyUsage } = trpc.musicGeneration.monthlyUsage.useQuery(
@@ -285,15 +289,26 @@ function StudioSidebar({
             <p className="text-xs mt-0.5 opacity-60">Visual universe</p>
           </div>
         </button>
+
+        <button
+          onClick={onOpenInstrumentPalette}
+          className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}
+        >
+          <Piano className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none">Instrument Palette</p>
+            <p className="text-xs mt-0.5 opacity-60">36 sonic references</p>
+          </div>
+        </button>
       </nav>
 
       {/* Premium / Usage Banner */}
       {monthlyUsage && (
         <div className={`hidden md:block px-2 pb-2`}>
           {monthlyUsage.isPremium ? (
-            <div className={`flex items-center gap-2 rounded-lg px-3 py-2 bg-yellow-500/10 border border-yellow-300/20 text-xs text-yellow-400`}>
-              <Crown className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-medium">Premium — unlimited</span>
+            <div className={`flex items-center gap-2 rounded-lg px-2 py-1.5 bg-yellow-500/10 border border-yellow-300/20 text-xs text-yellow-400`}>
+              <Crown className="w-3 h-3 shrink-0" />
+              <span className="font-medium hidden md:inline">Premium</span>
             </div>
           ) : (
             <div className={`rounded-lg px-3 py-2 bg-white/5 border ${theme.borderAccent}`}>
@@ -561,6 +576,7 @@ export default function Studio() {
   const [contextOpen, setContextOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
+  const [instrumentPaletteOpen, setInstrumentPaletteOpen] = useState(false);
 
   const prefsQuery = trpc.studio.getPreferences.useQuery(undefined, {
     enabled: !!user,
@@ -667,6 +683,7 @@ export default function Studio() {
           onOpenThemePicker={() => setThemePickerOpen(true)}
           onOpenFusions={() => setFusionsOpen(true)}
         onOpenFrequency={() => setFrequencyOpen(true)}
+        onOpenInstrumentPalette={() => setInstrumentPaletteOpen(true)}
         />
       </div>
 
@@ -801,6 +818,17 @@ export default function Studio() {
 
       {/* Frequency / Visual Universe Modal */}
       <FrequencyModal open={frequencyOpen} onClose={() => setFrequencyOpen(false)} />
+
+      {/* Instrument Palette Drawer */}
+      <InstrumentPaletteDrawer
+        open={instrumentPaletteOpen}
+        onClose={() => setInstrumentPaletteOpen(false)}
+        onSelectInstrument={(audioPath, name) => {
+          sessionStorage.setItem("instrumentReferenceUrl", audioPath);
+          sessionStorage.setItem("instrumentReferenceName", name);
+          setActiveTool("generate");
+        }}
+      />
     </div>
   );
 }

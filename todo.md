@@ -1201,3 +1201,16 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] GET /api/bridge/tracks endpoint — returns user's full track library (id, title, artist, genre, audioUrl, duration, coverArtUrl, visibility, createdAt) authenticated via Clerk Bearer token (primary) or x-bridge-key + openId fallback
 - [ ] Platinum tier — add to subscription schema, pricing page, and gate logic
 - [ ] "Create Music Video" button on track cards — platinum-only, deep-links to studios.strawberryriff.com/music-videos/new?trackId=<id>&source=riff
+
+## Instrument Palette
+- [x] Download and curate 36 instrument samples (Philharmonia CC BY-SA 3.0, Freesound CC0, Wikimedia CC0)
+- [x] Upload all samples to S3 via manus-upload-file --webdev
+- [x] Create server/instrumentPalette.ts catalog with correct S3 paths
+- [x] Add instrumentPaletteRouter tRPC procedure (getCatalog) to routers.ts
+- [x] Create InstrumentPaletteDrawer component (preview, select, family tabs, info note)
+- [x] Add Instrument Palette button to Studio sidebar Resources section
+- [x] Add instrumentPaletteOpen state and drawer mount to Studio.tsx
+- [x] Wire sessionStorage handoff: selecting instrument sets instrumentReferenceUrl/Name
+- [x] Generate.tsx reads instrumentReferenceUrl from sessionStorage on mount
+- [x] Remove buggy auto-fill of prompt with referenceAudioUrl
+- [x] Slim Premium badge in sidebar (remove "— unlimited" text)

@@ -907,14 +907,18 @@ export function GeneratePage() {
       toast.success(`Fusion recipe "${fusionName || "Fusion"}" loaded!`);
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, []);
-
-  // Auto-fill prompt with reference audio URL when uploaded
-  useEffect(() => {
-    if (referenceAudioUrl) {
-      setPrompt(referenceAudioUrl);
+    // Pre-fill reference audio from Instrument Palette (via sessionStorage)
+    const instrumentUrl = sessionStorage.getItem("instrumentReferenceUrl");
+    const instrumentName = sessionStorage.getItem("instrumentReferenceName");
+    if (instrumentUrl) {
+      setReferenceAudioUrl(instrumentUrl);
+      setReferenceAudioName(instrumentName ?? "Instrument Reference");
+      sessionStorage.removeItem("instrumentReferenceUrl");
+      sessionStorage.removeItem("instrumentReferenceName");
+      toast.success(`"${instrumentName || "Instrument"}" set as sonic reference`);
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [referenceAudioUrl]);
+  }, []);
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
