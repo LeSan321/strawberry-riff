@@ -167,8 +167,32 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     audio.onplaying = () => {
       setState((s) => ({ ...s, isBuffering: false, isPlaying: true }));
     };
-    audio.onerror = () => {
-      setState((s) => ({ ...s, isPlaying: false, isBuffering: false }));
+    audio.onerror = (e) => {
+      const { queue, queueIndex } = stateRef.current;
+      console.warn("[AudioPlayer] Load error — attempting to skip to next track", e);
+
+      // If there's a next track in the queue, skip to it automatically
+      if (queue.length > 0 && queueIndex + 1 < queue.length) {
+        const nextIndex = queueIndex + 1;
+        const nextTrack = queue[nextIndex];
+        setState((s) => ({
+          ...s,
+          currentTrack: nextTrack,
+          queueIndex: nextIndex,
+          isPlaying: true,
+          isBuffering: true,
+          progress: 0,
+          currentTime: 0,
+        }));
+        // Restore volume in case fade-out left it at 0
+        audio.volume = stateRef.current.volume;
+        audio.src = getProxyAudioUrl(nextTrack);
+        audio.load();
+        audio.play().catch(console.error);
+      } else {
+        // End of queue or no queue — stop gracefully
+        setState((s) => ({ ...s, isPlaying: false, isBuffering: false }));
+      }
     };
 
     audio.onended = () => {
