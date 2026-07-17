@@ -72,8 +72,8 @@ async function s3Put(
   const path = parsedUrl.pathname;
 
   const payloadHash = sha256hex(body);
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-acl:public-read\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders = 'content-type;host;x-amz-acl;x-amz-content-sha256;x-amz-date';
   const canonicalRequest = `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
   const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
@@ -91,6 +91,7 @@ async function s3Put(
     headers: {
       'Content-Type': contentType,
       'Host': host,
+      'x-amz-acl': 'public-read',
       'x-amz-content-sha256': payloadHash,
       'x-amz-date': amzDate,
       'Authorization': authHeader,
