@@ -82,13 +82,21 @@ import { coverArtRouter } from "./coverArt/router";
 import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { storagePut, storageGet } from "./storage";
+import { storagePut, storageGet, resolveAudioUrl } from "./storage";
 import { nanoid } from "nanoid";
+
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
 import { generateVisualBrief } from "./visualBriefGenerator";
 import { createLyricsDraft, getLyricsDraftsByUserId, getLyricsDraftById, deleteLyricsDraft } from "./db";
+
+// Apply presigned URL resolution to any track object's audioUrl.
+// For Railway S3 (private bucket), generates a 24-hour presigned GET URL.
+// For Forge CDN URLs, returns them unchanged (already publicly accessible).
+function withPlayableUrl<T extends { audioUrl: string }>(track: T): T {
+  return { ...track, audioUrl: resolveAudioUrl(track.audioUrl) };
+}
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 const authRouter = router({
@@ -219,7 +227,7 @@ const tracksRouter = router({
 
   myTracks: protectedProcedure.query(async ({ ctx }) => {
     const trackList = await getTracksByUserId(ctx.user.id);
-    return trackList.map((t) => ({
+    return trackList.map((t) => withPlayableUrl({
       ...t,
       moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
     }));
@@ -250,7 +258,7 @@ const tracksRouter = router({
           }
         }
       }
-      return {
+      return withPlayableUrl({
         accessDenied: false as const,
         ...track,
         moodTags: track.moodTags ? (JSON.parse(track.moodTags) as string[]) : [],
@@ -258,7 +266,7 @@ const tracksRouter = router({
         creatorUsername: result.creatorUsername,
         creatorAvatarUrl: result.creatorAvatarUrl,
         creatorBio: result.creatorBio,
-      };
+      });
     }),
 
   publicFeed: publicProcedure
@@ -269,19 +277,19 @@ const tracksRouter = router({
         trackList.map(async (t) => {
           const profile = await getProfileByUserId(t.userId);
           const creator = await getUserById(t.userId);
-          return {
+          return withPlayableUrl({
             ...t,
             moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
             creatorUsername: profile?.displayName ?? null,
             creatorIsPremium: creator?.isPremium ?? false,
-          };
+          });
         })
       );
     }),
 
   friendFeed: protectedProcedure.query(async ({ ctx }) => {
     const trackList = await getInnerCircleTracks(ctx.user.id);
-    return trackList.map((t) => ({
+    return trackList.map((t) => withPlayableUrl({
       ...t,
       moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
     }));
@@ -524,7 +532,7 @@ const playlistsRouter = router({
       const pl = await getPlaylistById(input.playlistId);
       if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       const trackList = await getPlaylistTracks(input.playlistId);
-      return trackList.map((t) => ({
+      return trackList.map((t) => withPlayableUrl({
         ...t,
         moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
       }));
@@ -664,7 +672,7 @@ const playlistsRouter = router({
 
       return {
         playlist: pl,
-        tracks: trackList.map((t) => ({
+        tracks: trackList.map((t) => withPlayableUrl({
           ...t,
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
         })),
@@ -708,7 +716,7 @@ const creatorsRouter = router({
         trackCount: visibleTracks.length,
         isOwnProfile,
         viewerIsFollowing,
-        tracks: visibleTracks.map((t) => ({
+        tracks: visibleTracks.map((t) => withPlayableUrl({
           ...t,
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
         })),
@@ -1461,7 +1469,7 @@ const previewLinksRouter = router({
           id: track.id,
           title: track.title,
           artist: track.artist,
-          audioUrl: track.audioUrl,
+          audioUrl: resolveAudioUrl(track.audioUrl),
           audioKey: track.audioKey,
           duration: track.duration,
           gradient: track.gradient,

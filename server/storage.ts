@@ -1,9 +1,9 @@
 // Storage helpers for Strawberry Riff
-// Priority: Railway S3/R2 (when BUCKET + ACCESS_KEY_ID + SECRET_ACCESS_KEY are set)
+// Priority: Railway S3/Tigris (when AWS_S3_BUCKET_NAME + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY are set)
 //           → Manus Forge proxy (fallback for local dev / Manus-hosted deployment)
 //
 // S3 path uses AWS Signature V4 via Node.js crypto — no SDK required.
-// Supports Railway Object Storage (t3.storageapi.dev, region=auto/us-west-1, path-style URLs)
+// Railway Object Storage (Tigris) is private-only; presigned URLs are used for GET access.
 
 import { ENV } from './_core/env';
 import { createHmac, createHash } from 'crypto';
@@ -11,21 +11,21 @@ import { createHmac, createHash } from 'crypto';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // Log S3 config status at startup so Railway logs show what's available
-console.log('[Storage] Config check — BUCKET:', ENV.s3Bucket ? `"${ENV.s3Bucket}"` : 'EMPTY', '| REGION:', ENV.s3Region || 'EMPTY', '| ENDPOINT:', ENV.s3Endpoint || 'EMPTY', '| ACCESS_KEY_ID:', ENV.s3AccessKeyId ? `set (${ENV.s3AccessKeyId.slice(0,8)}...)` : 'EMPTY', '| SECRET:', ENV.s3SecretAccessKey ? 'set' : 'EMPTY');
+console.log(
+  '[Storage] Config check — BUCKET:',
+  ENV.s3Bucket ? `"${ENV.s3Bucket}"` : 'EMPTY',
+  '| REGION:', ENV.s3Region || 'EMPTY',
+  '| ENDPOINT:', ENV.s3Endpoint || 'EMPTY',
+  '| ACCESS_KEY_ID:', ENV.s3AccessKeyId ? `set (${ENV.s3AccessKeyId.slice(0, 8)}...)` : 'EMPTY',
+  '| SECRET:', ENV.s3SecretAccessKey ? 'set' : 'EMPTY'
+);
 
 function hasS3Config(): boolean {
-  return !!(
-    ENV.s3Bucket &&
-    ENV.s3AccessKeyId &&
-    ENV.s3SecretAccessKey
-  );
+  return !!(ENV.s3Bucket && ENV.s3AccessKeyId && ENV.s3SecretAccessKey);
 }
 
-// Railway Object Storage uses 'auto' as the region label but signs with 'auto'
-// For Cloudflare R2-compatible stores, the signing region is literally 'auto'
 function signingRegion(): string {
-  const r = ENV.s3Region || 'auto';
-  return r;
+  return ENV.s3Region || 'auto';
 }
 
 function sha256hex(data: string | Buffer): string {
@@ -43,8 +43,7 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, 'aws4_request');
 }
 
-// For Railway Object Storage (path-style): https://endpoint/bucket/key
-// For standard AWS S3 (virtual-hosted): https://bucket.s3.region.amazonaws.com/key
+// Path-style URL: https://endpoint/bucket/key
 function s3ObjectUrl(key: string): string {
   if (ENV.s3Endpoint) {
     return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/${key}`;
@@ -52,7 +51,52 @@ function s3ObjectUrl(key: string): string {
   return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
 }
 
-// Sign and execute an S3 PUT using AWS Signature V4
+// ─── Presigned GET URL ────────────────────────────────────────────────────────
+
+// Generate an AWS Signature V4 presigned GET URL valid for `expiresIn` seconds.
+// This is the correct way to serve files from Railway's private-only S3 buckets.
+function s3PresignedGetUrl(key: string, expiresIn = 86400): string {
+  const cleanKey = key.replace(/^\/+/, '');
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const dateStamp = amzDate.slice(0, 8);
+  const region = signingRegion();
+
+  const url = s3ObjectUrl(cleanKey);
+  const parsedUrl = new URL(url);
+  const host = parsedUrl.host;
+  const path = parsedUrl.pathname;
+
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  const credential = `${ENV.s3AccessKeyId}/${credentialScope}`;
+
+  // Build canonical query string (params must be sorted)
+  const queryParams = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': credential,
+    'X-Amz-Date': amzDate,
+    'X-Amz-Expires': String(expiresIn),
+    'X-Amz-SignedHeaders': 'host',
+  });
+  // Sort params alphabetically as required by SigV4
+  queryParams.sort();
+  const canonicalQueryString = queryParams.toString();
+
+  const canonicalHeaders = `host:${host}\n`;
+  const signedHeaders = 'host';
+  const payloadHash = 'UNSIGNED-PAYLOAD';
+
+  const canonicalRequest = `GET\n${path}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
+
+  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
+  const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
+
+  return `${url}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+}
+
+// ─── S3 PUT ───────────────────────────────────────────────────────────────────
+
 async function s3Put(
   relKey: string,
   data: Buffer | Uint8Array | string,
@@ -72,8 +116,8 @@ async function s3Put(
   const path = parsedUrl.pathname;
 
   const payloadHash = sha256hex(body);
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-acl:public-read\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = 'content-type;host;x-amz-acl;x-amz-content-sha256;x-amz-date';
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
   const canonicalRequest = `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
   const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
@@ -91,7 +135,6 @@ async function s3Put(
     headers: {
       'Content-Type': contentType,
       'Host': host,
-      'x-amz-acl': 'public-read',
       'x-amz-content-sha256': payloadHash,
       'x-amz-date': amzDate,
       'Authorization': authHeader,
@@ -105,6 +148,7 @@ async function s3Put(
     throw new Error(`S3 upload failed (${response.status}): ${text}`);
   }
 
+  // Store the raw object URL as the key — presigned URLs are generated at read time
   console.log(`[Storage S3] Uploaded ${key} → ${url}`);
   return { key, url };
 }
@@ -195,10 +239,33 @@ export async function storagePut(
   return forgePut(relKey, data, contentType);
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
+export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ key: string; url: string }> {
   if (hasS3Config()) {
     const key = relKey.replace(/^\/+/, '');
-    return { key, url: s3ObjectUrl(key) };
+    const url = s3PresignedGetUrl(key, expiresIn);
+    return { key, url };
   }
   return forgeGet(relKey);
+}
+
+/**
+ * Given a stored audioUrl (which may be a raw S3 path-style URL or a Forge CDN URL),
+ * return a playable URL. For S3 URLs, generate a presigned URL. For Forge/other URLs,
+ * return as-is since they are already publicly accessible.
+ */
+export function resolveAudioUrl(storedUrl: string, expiresIn = 86400): string {
+  if (!storedUrl) return storedUrl;
+
+  // If it's an S3 URL from our bucket, extract the key and generate a presigned URL
+  if (hasS3Config() && ENV.s3Endpoint && storedUrl.includes(ENV.s3Endpoint)) {
+    // Extract key from path-style URL: https://endpoint/bucket/key
+    const prefix = `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/`;
+    if (storedUrl.startsWith(prefix)) {
+      const key = storedUrl.slice(prefix.length).split('?')[0]; // strip any existing query params
+      return s3PresignedGetUrl(key, expiresIn);
+    }
+  }
+
+  // Forge CDN URLs and other URLs are publicly accessible — return as-is
+  return storedUrl;
 }
