@@ -10,6 +10,9 @@ import { createHmac, createHash } from 'crypto';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Log S3 config status at startup so Railway logs show what's available
+console.log('[Storage] Config check — BUCKET:', ENV.s3Bucket ? `"${ENV.s3Bucket}"` : 'EMPTY', '| REGION:', ENV.s3Region || 'EMPTY', '| ENDPOINT:', ENV.s3Endpoint || 'EMPTY', '| ACCESS_KEY_ID:', ENV.s3AccessKeyId ? `set (${ENV.s3AccessKeyId.slice(0,8)}...)` : 'EMPTY', '| SECRET:', ENV.s3SecretAccessKey ? 'set' : 'EMPTY');
+
 function hasS3Config(): boolean {
   return !!(
     ENV.s3Bucket &&
