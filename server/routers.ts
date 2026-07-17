@@ -973,11 +973,14 @@ const musicGenerationRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number().int() }))
     .query(async ({ input }) => {
-      return getMusicGenerationById(input.id);
+      const gen = await getMusicGenerationById(input.id);
+      if (!gen) return null;
+      return gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen;
     }),
 
   myGenerations: protectedProcedure.query(async ({ ctx }) => {
-    return getMusicGenerationsByUserId(ctx.user.id);
+    const gens = await getMusicGenerationsByUserId(ctx.user.id);
+    return gens.map((gen) => gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen);
   }),
 
   delete: protectedProcedure
@@ -1112,7 +1115,8 @@ const musicGenerationRouter = router({
       if (!generation || generation.userId !== ctx.user.id) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
-      return getMusicGenerationHistory(input.generationId);
+      const history = await getMusicGenerationHistory(input.generationId);
+      return history.map((h) => h.audioUrl ? { ...h, audioUrl: resolveAudioUrl(h.audioUrl) } : h);
     }),
 
   publish: protectedProcedure
@@ -1217,7 +1221,8 @@ const musicGenerationRouter = router({
       // Filter to only splits that are complete and have isSplit=true, sorted by most recent first
       return generations
         .filter((gen) => gen.isSplit === true && gen.status === "complete")
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map((gen) => gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen);
     }),
 });
 
