@@ -19,4 +19,6 @@ export const ENV = {
   s3Endpoint: process.env.AWS_ENDPOINT_URL ?? process.env.ENDPOINT ?? "",
   s3AccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? process.env.ACCESS_KEY_ID ?? "",
   s3SecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SECRET_ACCESS_KEY ?? "",
+  // Stability AI — Stable Audio 2.5 for Bespoke Instrumental generation
+  stabilityAiApiKey: process.env.STABILITY_AI_API_KEY ?? "",
 };

@@ -70,6 +70,20 @@ vi.mock("./storage", () => ({
     url: "https://s3.example.com/music/1/1-abc123.mp3",
     key: "music/1/1-abc123.mp3",
   }),
+  storageGet: vi.fn().mockResolvedValue({
+    url: "https://s3.example.com/instruments/violin.mp3",
+    key: "instruments/violin.mp3",
+  }),
+  resolveAudioUrl: vi.fn().mockImplementation((url: string) => url + "?presigned=1"),
+}));
+
+// Mock stableAudio
+vi.mock("./stableAudio", () => ({
+  generateBespokeInstrumental: vi.fn().mockResolvedValue({
+    key: "bespoke-generations/1234567890-abc123.mp3",
+    url: "https://s3.example.com/bespoke-generations/1234567890-abc123.mp3",
+    duration: 30,
+  }),
 }));
 
 function makeCtx(userId: number = 1, isPremium = false) {
@@ -255,6 +269,54 @@ describe("Music Generation Router", () => {
 
       await expect(
         otherUserCaller.musicGeneration.getHistory({ generationId: 1 })
+      ).rejects.toThrow(TRPCError);
+    });
+  });
+
+  describe("generateBespoke", () => {
+    it("should create a bespoke instrumental generation", async () => {
+      const result = await caller.musicGeneration.generateBespoke({
+        title: "Bespoke Violin Piece",
+        prompt: "Melancholic, slow, cinematic, minor key",
+        instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
+        instrumentName: "Violin",
+        strength: 0.7,
+        duration: 30,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe(1);
+      expect(result.status).toBe("complete");
+      expect(result.audioUrl).toContain("bespoke-generations");
+    });
+
+    it("should reject when monthly limit is reached", async () => {
+      vi.mocked(dbModule.countGenerationsThisMonth).mockResolvedValue(5);
+
+      await expect(
+        caller.musicGeneration.generateBespoke({
+          title: "Over Limit",
+          prompt: "test",
+          instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
+          instrumentName: "Violin",
+          strength: 0.7,
+          duration: 30,
+        })
+      ).rejects.toThrow(TRPCError);
+    });
+
+    it("should require authentication", async () => {
+      const anonCaller = appRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+
+      await expect(
+        anonCaller.musicGeneration.generateBespoke({
+          title: "Anon Test",
+          prompt: "test",
+          instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
+          instrumentName: "Violin",
+          strength: 0.7,
+          duration: 30,
+        })
       ).rejects.toThrow(TRPCError);
     });
   });

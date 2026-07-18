@@ -87,6 +87,7 @@ import { storagePut, storageGet, resolveAudioUrl } from "./storage";
 import { nanoid } from "nanoid";
 
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
+import { generateBespokeInstrumental } from "./stableAudio";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
 import { generateVisualBrief } from "./visualBriefGenerator";
@@ -1255,6 +1256,128 @@ const musicGenerationRouter = router({
         .filter((gen) => gen.isSplit === true && gen.status === "complete")
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .map((gen) => gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen);
+    }),
+
+  /**
+   * Bespoke Instrumental Generation — Stable Audio 2.5
+   *
+   * Generates an instrumental piece using the sonic DNA of a selected instrument
+   * sample from the Instrument Palette. Unlike Quick Generate (MiniMax text→song),
+   * this route is synchronous: Stable Audio returns audio in ~10–15 seconds.
+   *
+   * Counts against the user's monthly generation limit.
+   */
+  generateBespoke: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        prompt: z.string().min(1).max(1000),
+        instrumentAudioPath: z.string().min(1),  // /manus-storage/ path or full URL
+        instrumentName: z.string().min(1).max(100),  // display name for the instrument
+        strength: z.number().min(0).max(1).default(0.7),
+        duration: z.number().min(10).max(190).default(30),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check monthly generation limit
+      const used = await countGenerationsThisMonth(ctx.user.id);
+      const limit = ctx.user.isPremium ? Infinity : 5;
+      if (used >= limit) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Monthly generation limit reached. Upgrade to Premium for unlimited generations.",
+        });
+      }
+
+      console.log(`[Bespoke] Starting generation — instrument=${input.instrumentName} prompt="${input.prompt.slice(0, 60)}..."`);
+
+      // Create generation record immediately (status: generating)
+      const generationId = await createMusicGeneration({
+        userId: ctx.user.id,
+        title: input.title,
+        prompt: input.prompt,
+        lyrics: "",
+        duration: input.duration,
+        audioUrl: "",
+        audioKey: "",
+        status: "generating",
+        metadata: JSON.stringify({
+          mode: "bespoke-instrumental",
+          provider: "stable-audio-2.5",
+          instrumentName: input.instrumentName,
+          instrumentAudioPath: input.instrumentAudioPath,
+          strength: input.strength,
+        }),
+        aceStepTaskId: null,
+        errorMessage: null,
+        isFavorited: false,
+        referenceAudioUrl: input.instrumentAudioPath,
+        voiceReferenceUrl: null,
+        vocalSpectrumValue: 50,
+        visualBrief: null,
+        isSplit: false,
+      });
+
+      if (!generationId) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
+      }
+
+      // Stable Audio is synchronous (~10–15s) — run inline but handle errors gracefully
+      try {
+        const result = await generateBespokeInstrumental({
+          prompt: input.prompt,
+          instrumentAudioPath: input.instrumentAudioPath,
+          strength: input.strength,
+          duration: input.duration,
+          outputFormat: "mp3",
+        });
+
+        // Generate visual brief (non-blocking)
+        let visualBriefJson: string | null = null;
+        try {
+          const brief = await generateVisualBrief({
+            prompt: input.prompt,
+            lyrics: "",
+            title: input.title,
+          });
+          visualBriefJson = JSON.stringify(brief);
+        } catch (briefErr) {
+          console.warn(`[Bespoke] Visual brief failed for ID ${generationId}:`, briefErr instanceof Error ? briefErr.message : String(briefErr));
+        }
+
+        await updateMusicGenerationStatus(generationId, "complete", {
+          audioUrl: result.url,
+          audioKey: result.key,
+          metadata: JSON.stringify({
+            mode: "bespoke-instrumental",
+            provider: "stable-audio-2.5",
+            instrumentName: input.instrumentName,
+            strength: input.strength,
+          }),
+          ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
+        });
+
+        const gen = await getMusicGenerationById(generationId);
+        if (!gen) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        return {
+          ...gen,
+          audioUrl: resolveAudioUrl(result.url),
+          status: "complete" as const,
+        };
+      } catch (error: unknown) {
+        const raw = error instanceof Error ? error.message : String(error);
+        console.error(`[Bespoke] Generation failed for ID ${generationId}:`, raw);
+
+        let userMessage = "Bespoke generation failed — please try again.";
+        if (raw.toLowerCase().includes("insufficient credit") || raw.includes("402")) {
+          userMessage = "Bespoke generation temporarily unavailable (credit limit reached). Please try again later.";
+        } else if (raw.toLowerCase().includes("stability_ai_api_key")) {
+          userMessage = "Bespoke generation is not configured on this server. Please contact support.";
+        }
+
+        await updateMusicGenerationStatus(generationId, "failed", { errorMessage: userMessage });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: userMessage });
+      }
     }),
 });
 

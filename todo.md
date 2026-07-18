@@ -1221,3 +1221,17 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Update Generate and Studio page context descriptions for Creative Director posture
 - [ ] Update strawberry-riff-features.md to reflect Stable Audio integration and Bespoke Generate modes (Phase 2)
 - [ ] Add Bespoke Full Song (inpainting) to Riffy's KB when Phase 2 is built
+
+## Bespoke Instrumental Generate — Phase 1 (Stable Audio 2.5)
+- [x] Add STABILITY_AI_API_KEY to project secrets and ENV object
+- [x] Create server/stableAudio.ts — Stable Audio 2.5 audio-to-audio service module
+- [x] Add generateBespoke tRPC procedure to musicGenerationRouter
+- [x] Add generation mode selector UI to Generate.tsx (Quick vs Bespoke)
+- [x] Branch handleGenerate to call bespokeMutation when in bespoke mode
+- [x] Hide lyrics/vocal controls in bespoke mode (always instrumental)
+- [x] Add bespoke-specific loading copy ("Crafting your bespoke instrumental...")
+- [x] Fix storage mock in musicGeneration.test.ts (resolveAudioUrl, storageGet)
+- [x] Add stableAudio mock and generateBespoke test suite (3 tests)
+- [x] All 345 tests passing (0 failures)
+- [ ] Add STABILITY_AI_API_KEY to Railway environment variables (manual — user action required)
+- [ ] Update strawberry-riff-features.md to reflect Stable Audio integration

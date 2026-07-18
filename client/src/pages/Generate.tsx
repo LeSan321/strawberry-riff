@@ -910,18 +910,27 @@ export function GeneratePage() {
     // Pre-fill reference audio from Instrument Palette (via sessionStorage)
     const instrumentUrl = sessionStorage.getItem("instrumentReferenceUrl");
     const instrumentName = sessionStorage.getItem("instrumentReferenceName");
+    const instrumentIdVal = sessionStorage.getItem("instrumentReferenceId");
     if (instrumentUrl) {
       setReferenceAudioUrl(instrumentUrl);
       setReferenceAudioName(instrumentName ?? "Instrument Reference");
+      setInstrumentId(instrumentIdVal ?? null);
       sessionStorage.removeItem("instrumentReferenceUrl");
       sessionStorage.removeItem("instrumentReferenceName");
+      sessionStorage.removeItem("instrumentReferenceId");
       toast.success(`"${instrumentName || "Instrument"}" set as sonic reference`);
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   }, []);
 
+  // Generation mode — only relevant when an instrument palette item is selected
+  const [generationMode, setGenerationMode] = useState<"quick" | "bespoke">("quick");
+  // Track the instrument ID separately for bespoke mode (from sessionStorage)
+  const [instrumentId, setInstrumentId] = useState<string | null>(null);
+
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
+  const bespokeMutation = trpc.musicGeneration.generateBespoke.useMutation();
   const regenerateMutation = trpc.musicGeneration.regenerate.useMutation({
     onMutate: async ({ generationId }) => {
       await utils.musicGeneration.myGenerations.cancel();
@@ -1128,10 +1137,39 @@ export function GeneratePage() {
 
     if (!title.trim()) { setError("Title is required"); return; }
     if (!referenceAudioUrl && !prompt.trim()) { setError("Prompt or reference audio is required"); return; }
-    if (!instrumental && !lyrics.trim()) { setError("Lyrics are required (or enable Instrumental mode)"); return; }
+    // Bespoke mode is always instrumental — skip lyrics validation
+    if (generationMode !== "bespoke" && !instrumental && !lyrics.trim()) { setError("Lyrics are required (or enable Instrumental mode)"); return; }
 
     setIsGenerating(true);
     try {
+      // ── Bespoke Instrumental mode (Stable Audio 2.5) ──────────────────────────
+      if (generationMode === "bespoke" && referenceAudioUrl) {
+        if (!prompt.trim()) { setError("A style direction prompt is required for Bespoke generation"); setIsGenerating(false); return; }
+        const result = await bespokeMutation.mutateAsync({
+          title: title.trim(),
+          prompt: prompt.trim(),
+          instrumentAudioPath: referenceAudioUrl,
+          instrumentName: referenceAudioName ?? "Instrument",
+          strength: 0.7,
+          duration: 30,
+        });
+        await utils.musicGeneration.myGenerations.invalidate();
+        await utils.musicGeneration.monthlyUsage.invalidate();
+        // Bespoke is synchronous — result is immediately complete
+        if (result.id) {
+          setNewlyCompletedId(result.id);
+          setTimeout(() => setNewlyCompletedId(null), 3000);
+        }
+        setTitle("");
+        setPrompt("");
+        setReferenceAudioUrl(null);
+        setReferenceAudioName(null);
+        setInstrumentId(null);
+        toast.success(`Your bespoke instrumental is ready.`);
+        return;
+      }
+
+      // ── Quick Generate mode (MiniMax) ─────────────────────────────────────────
       console.log("[Generate] About to send:", { vocalGender, vocalArchetype, vocalSpectrumValue });
       const result = await generateMutation.mutateAsync({
         title: title.trim(),
@@ -1377,6 +1415,62 @@ export function GeneratePage() {
                 </div>
               )}
 
+              {/* Generation Mode Selector — only shown when an instrument palette item is selected */}
+              {referenceAudioUrl && referenceAudioName && instrumentId && (
+                <div className="rounded-xl border border-purple-300/40 bg-purple-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-4 w-4 text-purple-400" />
+                    <p className="text-sm font-semibold text-purple-200">How do you want to generate?</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Quick Generate option */}
+                    <button
+                      type="button"
+                      onClick={() => setGenerationMode("quick")}
+                      className={`rounded-lg border p-3 text-left transition-all ${
+                        generationMode === "quick"
+                          ? "border-purple-400 bg-purple-500/20 ring-1 ring-purple-400/50"
+                          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Zap className="h-3.5 w-3.5 text-yellow-400" />
+                        <span className="text-xs font-semibold text-foreground">Quick Generate</span>
+                        {generationMode === "quick" && <span className="ml-auto text-xs text-purple-300">selected</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Full song with vocals and lyrics. Uses the instrument as a style hint. ~1–3 minutes.
+                      </p>
+                    </button>
+
+                    {/* Bespoke Instrumental option */}
+                    <button
+                      type="button"
+                      onClick={() => setGenerationMode("bespoke")}
+                      className={`rounded-lg border p-3 text-left transition-all ${
+                        generationMode === "bespoke"
+                          ? "border-pink-400 bg-pink-500/20 ring-1 ring-pink-400/50"
+                          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Music className="h-3.5 w-3.5 text-pink-400" />
+                        <span className="text-xs font-semibold text-foreground">Bespoke Instrumental</span>
+                        {generationMode === "bespoke" && <span className="ml-auto text-xs text-pink-300">selected</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Pure instrumental built from the sonic DNA of your chosen instrument. ~15 seconds.
+                      </p>
+                    </button>
+                  </div>
+                  {generationMode === "bespoke" && (
+                    <p className="text-xs text-pink-300/80 bg-pink-500/10 rounded-md px-3 py-2 border border-pink-400/20">
+                      <strong>Bespoke mode:</strong> No lyrics needed. Your style prompt steers the mood and texture — the {referenceAudioName} provides the sonic foundation. It’s not a lag, it’s bespoke.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Voice Reference Audio Panel — Premium only (visible-but-locked for free users) */}
               {!monthlyUsage?.isPremium ? (
                 <div
@@ -1491,7 +1585,8 @@ export function GeneratePage() {
                 onUsePrompt={(p) => { setPrompt(p); setFusionsOpen(false); }}
               />
 
-              {/* Instrumental toggle */}
+              {/* Instrumental toggle — hidden in bespoke mode (always instrumental) */}
+              {generationMode !== "bespoke" && (
               <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
                 <button
                   type="button"
@@ -1518,9 +1613,10 @@ export function GeneratePage() {
                   )}
                 </div>
               </div>
+              )}
 
-              {/* Lyrics — hidden in instrumental mode */}
-              {!instrumental && (
+              {/* Lyrics — hidden in instrumental mode or bespoke mode */}
+              {generationMode !== "bespoke" && !instrumental && (
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <label className="text-sm font-medium">Lyrics</label>
@@ -1569,15 +1665,30 @@ export function GeneratePage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={isGenerating || !!pollingId || !title.trim() || (!prompt.trim() && !referenceAudioUrl) || (!instrumental && !lyrics.trim()) || !!isAtLimit}
-                className="w-full"
+                disabled={
+                  isGenerating ||
+                  !!pollingId ||
+                  !title.trim() ||
+                  (!prompt.trim() && !referenceAudioUrl) ||
+                  (generationMode !== "bespoke" && !instrumental && !lyrics.trim()) ||
+                  !!isAtLimit
+                }
+                className={`w-full ${
+                  generationMode === "bespoke" && referenceAudioUrl
+                    ? "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white border-0"
+                    : ""
+                }`}
               >
-                {isGenerating ? (
+                {isGenerating && generationMode === "bespoke" ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Crafting your bespoke instrumental...</>
+                ) : isGenerating ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Something is becoming...</>
                 ) : pollingId ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Your track is finding its shape...</>
                 ) : isAtLimit ? (
                   <><Crown className="mr-2 h-4 w-4" />Upgrade to Premium to Generate More</>
+                ) : generationMode === "bespoke" && referenceAudioUrl ? (
+                  <><Music className="mr-2 h-4 w-4" />Craft Bespoke Instrumental</>
                 ) : (
                   <><Music className="mr-2 h-4 w-4" />Bring It to Life</>
                 )}
