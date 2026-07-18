@@ -155,8 +155,8 @@ function InstrumentCard({
 interface InstrumentPaletteDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** Called when user selects an instrument — passes the audioPath and name */
-  onSelectInstrument?: (audioPath: string, name: string) => void;
+  /** Called when user selects an instrument — passes the full instrument object */
+  onSelectInstrument?: (instrument: InstrumentSample) => void;
 }
 
 export default function InstrumentPaletteDrawer({
@@ -174,26 +174,38 @@ export default function InstrumentPaletteDrawer({
   const families = catalog?.families ?? ["Strings", "Woodwind", "Brass", "Percussion", "World & Folk"];
   const instruments = catalog?.byFamily[activeFamily] ?? [];
 
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentSample | null>(null);
+
   const handleSelect = (instrument: InstrumentSample) => {
     const newId = selectedId === instrument.id ? null : instrument.id;
     setSelectedId(newId);
+    setSelectedInstrument(newId ? instrument : null);
 
     if (newId) {
-      if (onSelectInstrument) {
-        onSelectInstrument(instrument.audioPath, instrument.name);
-        onClose();
-      } else {
-        // sessionStorage fallback for when used outside Studio context
-        sessionStorage.setItem("instrumentReferenceUrl", instrument.audioPath);
-        sessionStorage.setItem("instrumentReferenceName", instrument.name);
-        onClose();
-      }
-      toast.success(`"${instrument.name}" set as sonic reference`);
+      // Always write to sessionStorage as fallback
+      sessionStorage.setItem("instrumentReferenceUrl", instrument.audioPath);
+      sessionStorage.setItem("instrumentReferenceName", instrument.name);
+      sessionStorage.setItem("instrumentReferenceId", instrument.id);
+      sessionStorage.setItem("instrumentReferenceDescription", instrument.description);
+      sessionStorage.setItem("instrumentReferenceFamily", instrument.family);
+      sessionStorage.setItem("instrumentReferenceTags", JSON.stringify(instrument.tags));
     } else {
       // Deselect
       sessionStorage.removeItem("instrumentReferenceUrl");
       sessionStorage.removeItem("instrumentReferenceName");
+      sessionStorage.removeItem("instrumentReferenceId");
+      sessionStorage.removeItem("instrumentReferenceDescription");
+      sessionStorage.removeItem("instrumentReferenceFamily");
+      sessionStorage.removeItem("instrumentReferenceTags");
     }
+  };
+
+  const handleConfirmSelection = () => {
+    if (!selectedInstrument) return;
+    if (onSelectInstrument) {
+      onSelectInstrument(selectedInstrument);
+    }
+    onClose();
   };
 
   return (
@@ -293,11 +305,37 @@ export default function InstrumentPaletteDrawer({
               )}
             </div>
 
-            {/* Footer */}
-            <div className="px-5 py-3 border-t border-gray-800 flex-shrink-0">
-              <p className="text-[10px] text-gray-600 text-center">
-                Philharmonia Orchestra (CC BY-SA 3.0) · Freesound.org (CC0) · Wikimedia Commons (CC0)
-              </p>
+            {/* Footer — shows selection confirmation or attribution */}
+            <div className="px-5 py-4 border-t border-gray-800 flex-shrink-0">
+              {selectedInstrument ? (
+                <div className="space-y-3">
+                  {/* Selected instrument summary */}
+                  <div className="flex items-center gap-3 rounded-xl bg-pink-500/10 border border-pink-500/30 px-3 py-2.5">
+                    <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-pink-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white leading-tight">{selectedInstrument.name} selected</p>
+                      <p className="text-xs text-gray-400 truncate">{selectedInstrument.description}</p>
+                    </div>
+                  </div>
+                  {/* Go to Generate CTA */}
+                  <Button
+                    className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold border-0"
+                    onClick={handleConfirmSelection}
+                  >
+                    <Music2 className="w-4 h-4 mr-2" />
+                    Build a Song with {selectedInstrument.name} →
+                  </Button>
+                  <p className="text-[10px] text-gray-600 text-center">
+                    You’ll see prompt starters and mode options on the Generate page
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-gray-600 text-center">
+                  Philharmonia Orchestra (CC BY-SA 3.0) · Freesound.org (CC0) · Wikimedia Commons (CC0)
+                </p>
+              )}
             </div>
           </motion.div>
         </>

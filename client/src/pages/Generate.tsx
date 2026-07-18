@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause, Download } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause, Download, Check, Piano, Lightbulb } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
@@ -31,7 +31,238 @@ import { getRandomFusion } from "@shared/fusionLibrary";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
 import { Tag } from "lucide-react";
 
-// ─── Status polling hook ───────────────────────────────────────────────────────
+// ─── Instrument-aware starter prompts ─────────────────────────────────────────────────────────
+const INSTRUMENT_STARTERS: Record<string, string[]> = {
+  bagpipes: [
+    "Celtic folk march, highland drone and chanter, raw and ancient, 120 BPM",
+    "Cinematic battle theme, pipes and war drums, epic and driving, 140 BPM",
+    "Scottish lament, slow and mournful, solo pipes in the mist, 60 BPM",
+    "Upbeat reel, festive highland dance, bright and energetic, 160 BPM",
+  ],
+  violin: [
+    "Emotional string ballad, solo violin, intimate and heartfelt, 70 BPM",
+    "Cinematic orchestral swell, soaring violin melody, dramatic, 90 BPM",
+    "Folk fiddle tune, lively and dancing, warm and playful, 130 BPM",
+    "Melancholic nocturne, slow violin over piano, introspective, 55 BPM",
+  ],
+  viola: [
+    "Dark chamber piece, brooding viola, mysterious and tense, 80 BPM",
+    "Romantic slow burn, warm viola lead, emotional and yearning, 65 BPM",
+    "Orchestral mid-layer, rich viola texture, cinematic and full, 95 BPM",
+    "Intimate duo, viola and piano, quiet and reflective, 72 BPM",
+  ],
+  cello: [
+    "Deep emotional ballad, solo cello, raw and expressive, 60 BPM",
+    "Cinematic tension build, low cello drones, dark and suspenseful, 85 BPM",
+    "Baroque-inspired piece, cello continuo, classical and structured, 100 BPM",
+    "Soulful meditation, slow cello over ambient pads, peaceful, 50 BPM",
+  ],
+  "double-bass": [
+    "Jazz walking bass groove, upright bass, warm and swinging, 120 BPM",
+    "Orchestral foundation, deep bass rumble, powerful and grounding, 90 BPM",
+    "Minimalist bass meditation, slow and resonant, dark ambient, 55 BPM",
+    "Funk bass line, punchy and rhythmic, energetic and groovy, 110 BPM",
+  ],
+  guitar: [
+    "Acoustic folk ballad, fingerpicked guitar, warm and intimate, 75 BPM",
+    "Indie singer-songwriter, strummed acoustic, honest and raw, 95 BPM",
+    "Flamenco-inspired piece, classical guitar, passionate and rhythmic, 140 BPM",
+    "Ambient guitar loop, reverb-drenched, dreamy and atmospheric, 80 BPM",
+  ],
+  harp: [
+    "Ethereal Celtic harp, flowing arpeggios, magical and serene, 70 BPM",
+    "Orchestral harp glissando, shimmering and cinematic, 90 BPM",
+    "Meditative harp solo, slow and peaceful, spa-like calm, 55 BPM",
+    "Fantasy adventure theme, harp and strings, epic and wonder-filled, 110 BPM",
+  ],
+  flute: [
+    "Pastoral folk flute, light and airy, nature-inspired, 100 BPM",
+    "Japanese shakuhachi-style, meditative and sparse, 60 BPM",
+    "Classical flute sonata, bright and expressive, 120 BPM",
+    "Celtic tin whistle feel, lively jig, festive and dancing, 150 BPM",
+  ],
+  oboe: [
+    "Pastoral orchestral theme, oboe melody over strings, warm and lyrical, 85 BPM",
+    "Baroque oboe concerto, ornate and precise, classical, 110 BPM",
+    "Melancholic oboe solo, slow and expressive, deeply emotional, 60 BPM",
+    "Chamber music duet, oboe and harpsichord, intimate and refined, 95 BPM",
+  ],
+  clarinet: [
+    "Klezmer folk dance, clarinet lead, joyful and expressive, 130 BPM",
+    "Jazz clarinet swing, smoky and cool, New Orleans style, 120 BPM",
+    "Classical clarinet sonata, lyrical and precise, 95 BPM",
+    "Balkan folk melody, clarinet with percussion, energetic and wild, 145 BPM",
+  ],
+  bassoon: [
+    "Dark orchestral undercurrent, low bassoon, mysterious and deep, 80 BPM",
+    "Comedic staccato theme, bouncy bassoon, playful and quirky, 110 BPM",
+    "Baroque bassoon continuo, structured and formal, 100 BPM",
+    "Cinematic tension, bassoon and low strings, suspenseful, 70 BPM",
+  ],
+  saxophone: [
+    "Smooth jazz ballad, alto sax, late-night and sultry, 75 BPM",
+    "Funk groove, tenor sax riff, punchy and energetic, 115 BPM",
+    "Cinematic noir theme, soprano sax, melancholic and cinematic, 85 BPM",
+    "Bossa nova, sax and light percussion, breezy and warm, 105 BPM",
+  ],
+  trumpet: [
+    "Jazz trumpet fanfare, bright and bold, uplifting and triumphant, 130 BPM",
+    "Miles Davis-inspired cool jazz, muted trumpet, introspective, 90 BPM",
+    "Mariachi trumpet lead, festive and vibrant, 140 BPM",
+    "Cinematic hero theme, soaring trumpet, epic and inspiring, 110 BPM",
+  ],
+  "french-horn": [
+    "Epic cinematic fanfare, French horn, heroic and majestic, 100 BPM",
+    "Hunting call in the forest, horn echo, natural and ancient, 80 BPM",
+    "Romantic orchestral swell, warm horn melody, emotional, 75 BPM",
+    "Fantasy adventure theme, horns and strings, grand and sweeping, 115 BPM",
+  ],
+  trombone: [
+    "Jazz trombone slide, bluesy and soulful, 95 BPM",
+    "Brass ensemble fanfare, bold and ceremonial, 120 BPM",
+    "New Orleans funeral march, slow and mournful, 65 BPM",
+    "Ska upstroke, punchy trombone, energetic and fun, 145 BPM",
+  ],
+  tuba: [
+    "Oom-pah march, tuba bass line, festive and rhythmic, 115 BPM",
+    "Orchestral bass foundation, deep tuba drone, powerful, 85 BPM",
+    "Quirky comedic theme, bouncy tuba, playful and fun, 100 BPM",
+    "Brass choir, tuba anchor, ceremonial and grand, 90 BPM",
+  ],
+  "snare-drum": [
+    "Military march, crisp snare, disciplined and driving, 120 BPM",
+    "Rock drum fill, snare crack, energetic and punchy, 140 BPM",
+    "Jazz brush snare, soft and swinging, intimate, 100 BPM",
+    "Cinematic battle rhythm, rolling snare, tense and building, 130 BPM",
+  ],
+  "bass-drum": [
+    "Orchestral impact, booming bass drum, dramatic and powerful, 90 BPM",
+    "Electronic kick pattern, deep thump, driving and hypnotic, 128 BPM",
+    "Cinematic percussion, bass drum hits, epic and sparse, 80 BPM",
+    "Marching band foundation, steady bass drum, bold and ceremonial, 110 BPM",
+  ],
+  "tam-tam": [
+    "Ceremonial gong strike, resonant and shimmering, meditative, 50 BPM",
+    "Cinematic tension release, gong crash, dramatic and climactic, 70 BPM",
+    "Eastern meditation, tam-tam and silence, spiritual and ancient, 40 BPM",
+    "Orchestral climax, gong swell, massive and overwhelming, 85 BPM",
+  ],
+  triangle: [
+    "Delicate orchestral accent, triangle shimmer, bright and airy, 90 BPM",
+    "Minimalist percussion, triangle pulse, clean and precise, 100 BPM",
+    "Children's music, playful triangle, light and cheerful, 110 BPM",
+    "Ambient texture, triangle ring, ethereal and floating, 70 BPM",
+  ],
+  tambourine: [
+    "Folk dance, tambourine jingle, festive and energetic, 130 BPM",
+    "Gospel rhythm, tambourine on the 2 and 4, soulful, 110 BPM",
+    "Mediterranean folk, tambourine and strings, warm and lively, 140 BPM",
+    "Pop groove, tambourine accent, bright and upbeat, 120 BPM",
+  ],
+  "sleigh-bells": [
+    "Festive winter theme, sleigh bells and strings, joyful, 130 BPM",
+    "Christmas carol arrangement, bells and choir, warm, 100 BPM",
+    "Whimsical fairy tale, tinkling bells, magical and light, 110 BPM",
+    "Upbeat holiday pop, bells and piano, celebratory, 125 BPM",
+  ],
+  "wind-chimes": [
+    "Ambient meditation, wind chimes and silence, peaceful, 50 BPM",
+    "Spa relaxation, gentle chimes and nature sounds, serene, 60 BPM",
+    "Ethereal dream sequence, chimes and reverb, floating, 70 BPM",
+    "Japanese garden, wind chimes and koto, tranquil and ancient, 55 BPM",
+  ],
+  cowbell: [
+    "Disco funk groove, cowbell on the beat, energetic, 120 BPM",
+    "Latin percussion, cowbell and clave, rhythmic and hot, 135 BPM",
+    "Rock anthem, cowbell accent, bold and driving, 130 BPM",
+    "Afrobeat pattern, cowbell and drums, hypnotic and pulsing, 115 BPM",
+  ],
+  djembe: [
+    "West African drum circle, djembe lead, earthy and rhythmic, 120 BPM",
+    "Afrobeat groove, djembe and bass, hypnotic and driving, 110 BPM",
+    "Tribal ceremony, djembe and chant, ancient and powerful, 100 BPM",
+    "World fusion, djembe and electronic, modern and grounding, 125 BPM",
+  ],
+  didgeridoo: [
+    "Aboriginal drone, deep didgeridoo, ancient and meditative, 60 BPM",
+    "World fusion, didgeridoo and electronic, hypnotic and modern, 90 BPM",
+    "Ambient soundscape, didgeridoo drone, earthy and vast, 50 BPM",
+    "Cinematic wilderness, didgeridoo and percussion, primal, 80 BPM",
+  ],
+  sitar: [
+    "Indian classical raga, sitar lead, meditative and intricate, 80 BPM",
+    "Psychedelic rock fusion, sitar and electric guitar, 1960s inspired, 110 BPM",
+    "Bollywood-inspired, sitar and tabla, vibrant and ornate, 130 BPM",
+    "Ambient drone, sitar and tanpura, deep and hypnotic, 60 BPM",
+  ],
+  koto: [
+    "Japanese classical, koto solo, delicate and precise, 80 BPM",
+    "Zen garden meditation, koto and silence, tranquil, 55 BPM",
+    "Modern Japanese fusion, koto and electronic, 100 BPM",
+    "Cherry blossom theme, koto and flute, light and beautiful, 75 BPM",
+  ],
+  erhu: [
+    "Chinese folk melody, erhu lead, expressive and mournful, 70 BPM",
+    "Cinematic Asian theme, erhu and orchestra, sweeping, 90 BPM",
+    "Meditation, slow erhu, deeply emotional, 50 BPM",
+    "Festive Chinese New Year, erhu and percussion, bright, 130 BPM",
+  ],
+  accordion: [
+    "French café musette, accordion waltz, romantic and nostalgic, 120 BPM",
+    "Tango, accordion lead, passionate and dramatic, 110 BPM",
+    "Zydeco Louisiana, accordion and washboard, lively, 140 BPM",
+    "Eastern European folk, accordion and strings, joyful, 130 BPM",
+  ],
+  banjo: [
+    "Bluegrass breakdown, banjo picking, fast and energetic, 160 BPM",
+    "Folk ballad, slow banjo, warm and storytelling, 80 BPM",
+    "Old-time mountain music, banjo and fiddle, rustic, 140 BPM",
+    "Americana road song, banjo and guitar, open and free, 110 BPM",
+  ],
+  ukulele: [
+    "Hawaiian beach song, ukulele strum, sunny and carefree, 120 BPM",
+    "Indie folk, ukulele and vocals, intimate and sweet, 95 BPM",
+    "Children's lullaby, gentle ukulele, soft and warm, 70 BPM",
+    "Upbeat pop, ukulele and claps, joyful and bouncy, 130 BPM",
+  ],
+  mandolin: [
+    "Italian folk, mandolin tremolo, passionate and bright, 130 BPM",
+    "Bluegrass, mandolin chop, driving and energetic, 150 BPM",
+    "Celtic jig, mandolin and fiddle, lively and dancing, 145 BPM",
+    "Romantic serenade, slow mandolin, tender and expressive, 75 BPM",
+  ],
+  dulcimer: [
+    "Appalachian folk, dulcimer drone, ancient and haunting, 90 BPM",
+    "Mountain ballad, slow dulcimer, melancholic and raw, 70 BPM",
+    "Celtic-inspired, hammered dulcimer, bright and ringing, 120 BPM",
+    "Meditative drone, dulcimer and voice, spiritual and still, 55 BPM",
+  ],
+  "steel-drum": [
+    "Caribbean calypso, steel drum lead, sunny and festive, 130 BPM",
+    "Reggae groove, steel drum and bass, relaxed and warm, 90 BPM",
+    "Tropical beach party, steel drum and percussion, joyful, 125 BPM",
+    "Soca rhythm, steel drum and brass, energetic and danceable, 140 BPM",
+  ],
+  "pan-flute": [
+    "Andean folk, pan flute and charango, earthy and ancient, 90 BPM",
+    "Meditation, slow pan flute, peaceful and ethereal, 55 BPM",
+    "New Age ambient, pan flute and nature sounds, serene, 65 BPM",
+    "Cinematic landscape, pan flute and orchestra, sweeping, 85 BPM",
+  ],
+};
+
+const DEFAULT_STARTERS = [
+  "Cinematic instrumental, expressive and dynamic, 90 BPM",
+  "Folk-inspired melody, acoustic and warm, 100 BPM",
+  "Ambient meditation, slow and atmospheric, 60 BPM",
+  "Upbeat world fusion, rhythmic and energetic, 120 BPM",
+];
+
+function getStartersForInstrument(instrumentId: string | null): string[] {
+  if (!instrumentId) return DEFAULT_STARTERS;
+  return INSTRUMENT_STARTERS[instrumentId] ?? DEFAULT_STARTERS;
+}
+
 function useGenerationPolling(
   generationId: number | null,
   onComplete: () => void
@@ -911,22 +1142,34 @@ export function GeneratePage() {
     const instrumentUrl = sessionStorage.getItem("instrumentReferenceUrl");
     const instrumentName = sessionStorage.getItem("instrumentReferenceName");
     const instrumentIdVal = sessionStorage.getItem("instrumentReferenceId");
+    const instrumentDescVal = sessionStorage.getItem("instrumentReferenceDescription");
+    const instrumentFamilyVal = sessionStorage.getItem("instrumentReferenceFamily");
+    const instrumentTagsVal = sessionStorage.getItem("instrumentReferenceTags");
     if (instrumentUrl) {
       setReferenceAudioUrl(instrumentUrl);
       setReferenceAudioName(instrumentName ?? "Instrument Reference");
       setInstrumentId(instrumentIdVal ?? null);
+      setInstrumentDescription(instrumentDescVal ?? null);
+      setInstrumentFamily(instrumentFamilyVal ?? null);
+      setInstrumentTags(instrumentTagsVal ? JSON.parse(instrumentTagsVal) : []);
       sessionStorage.removeItem("instrumentReferenceUrl");
       sessionStorage.removeItem("instrumentReferenceName");
       sessionStorage.removeItem("instrumentReferenceId");
-      toast.success(`"${instrumentName || "Instrument"}" set as sonic reference`);
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      sessionStorage.removeItem("instrumentReferenceDescription");
+      sessionStorage.removeItem("instrumentReferenceFamily");
+      sessionStorage.removeItem("instrumentReferenceTags");
+      // Scroll to form so user sees the instrument banner
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
     }
   }, []);
 
   // Generation mode — only relevant when an instrument palette item is selected
   const [generationMode, setGenerationMode] = useState<"quick" | "bespoke">("quick");
-  // Track the instrument ID separately for bespoke mode (from sessionStorage)
+  // Full instrument context from Palette (from sessionStorage or prop)
   const [instrumentId, setInstrumentId] = useState<string | null>(null);
+  const [instrumentDescription, setInstrumentDescription] = useState<string | null>(null);
+  const [instrumentFamily, setInstrumentFamily] = useState<string | null>(null);
+  const [instrumentTags, setInstrumentTags] = useState<string[]>([]);
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
@@ -1233,6 +1476,68 @@ export function GeneratePage() {
             </div>
 
             <form onSubmit={handleGenerate} className="space-y-6">
+              {/* ─── Instrument Context Banner ─────────────────────────────────────── */}
+              {instrumentId && referenceAudioName && (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/8 p-4 space-y-3">
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <Piano className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-white">{referenceAudioName} is your sonic anchor</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
+                            {instrumentFamily ?? "Instrument"}
+                          </span>
+                        </div>
+                        {instrumentDescription && (
+                          <p className="text-xs text-gray-400 mt-0.5">{instrumentDescription}</p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReferenceAudioUrl(null);
+                        setReferenceAudioName(null);
+                        setInstrumentId(null);
+                        setInstrumentDescription(null);
+                        setInstrumentFamily(null);
+                        setInstrumentTags([]);
+                        setGenerationMode("quick");
+                      }}
+                      className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0 mt-0.5"
+                      title="Remove instrument reference"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Starter prompts */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Lightbulb className="w-3 h-3 text-amber-400" />
+                      <p className="text-xs font-medium text-amber-300">Not sure what to write? Pick a starting point:</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {getStartersForInstrument(instrumentId).map((starter, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setPrompt(starter)}
+                          className="text-left text-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-purple-500/15 hover:border-purple-500/30 hover:text-white transition-all leading-relaxed"
+                        >
+                          {starter}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-600 mt-2">Click any starter to fill the prompt — then customise it to make it yours.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Title */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Title</label>

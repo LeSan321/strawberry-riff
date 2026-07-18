@@ -823,9 +823,9 @@ export default function Studio() {
       <InstrumentPaletteDrawer
         open={instrumentPaletteOpen}
         onClose={() => setInstrumentPaletteOpen(false)}
-        onSelectInstrument={(audioPath, name) => {
-          sessionStorage.setItem("instrumentReferenceUrl", audioPath);
-          sessionStorage.setItem("instrumentReferenceName", name);
+        onSelectInstrument={(instrument) => {
+          // sessionStorage is already written by the drawer's handleSelect
+          // Just switch to Generate tab so the banner appears
           setActiveTool("generate");
         }}
       />

@@ -1233,5 +1233,16 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix storage mock in musicGeneration.test.ts (resolveAudioUrl, storageGet)
 - [x] Add stableAudio mock and generateBespoke test suite (3 tests)
 - [x] All 345 tests passing (0 failures)
-- [ ] Add STABILITY_AI_API_KEY to Railway environment variables (manual — user action required)
+- [x] Add STABILITY_AI_API_KEY to Railway environment variables (done by user)
 - [ ] Update strawberry-riff-features.md to reflect Stable Audio integration
+
+## Instrument Palette UX Handoff Fix
+- [x] Fix sessionStorage remount bug — sessionStorage now written before onSelectInstrument fires
+- [x] Pass full instrument object (id, description, family, tags) via sessionStorage
+- [x] Add instrument context banner to Generate page — shows name, family badge, description
+- [x] Add 4 one-click starter prompts per instrument (all 36 instruments covered)
+- [x] Add dismiss (X) button on banner to clear instrument reference
+- [x] Update InstrumentPaletteDrawer footer — shows selected instrument summary + "Build a Song with X →" CTA
+- [x] CTA button navigates to Generate tab and closes drawer
+- [x] Update onSelectInstrument signature to pass full InstrumentSample object
+- [x] Update Studio.tsx onSelectInstrument handler to match new signature
