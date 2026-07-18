@@ -788,7 +788,7 @@ const musicGenerationRouter = router({
         lyrics: z.string().optional(),  // optional: omit for instrumental-only generation
         instrumental: z.boolean().default(false),  // true = no vocals, no lyrics required
         intensity: z.enum(["subtle", "balanced", "aggressive"]).default("balanced"),
-        referenceAudioUrl: z.string().url().optional(),
+        referenceAudioUrl: z.string().optional(), // accepts full URLs or /manus-storage/ paths
         voiceReferenceUrl: z.string().url().optional(),
         vocalArchetype: z.enum([
           "intimate-bedroom",
@@ -833,12 +833,43 @@ const musicGenerationRouter = router({
         });
       }
 
+      // Resolve /manus-storage/ paths to full presigned URLs before passing to MiniMax
+      let resolvedReferenceAudioUrl = input.referenceAudioUrl;
+      if (resolvedReferenceAudioUrl && resolvedReferenceAudioUrl.startsWith('/manus-storage/')) {
+        const key = resolvedReferenceAudioUrl.replace('/manus-storage/', '');
+        try {
+          const forgeApiUrl = process.env.BUILT_IN_FORGE_API_URL ?? '';
+          const forgeApiKey = process.env.BUILT_IN_FORGE_API_KEY ?? '';
+          const forgeUrl = new URL(
+            'v1/storage/presign/get',
+            forgeApiUrl.replace(/\/+$/, '') + '/'
+          );
+          forgeUrl.searchParams.set('path', key);
+          const forgeResp = await fetch(forgeUrl.toString(), {
+            headers: { Authorization: `Bearer ${forgeApiKey}` },
+          });
+          if (forgeResp.ok) {
+            const { url } = await forgeResp.json() as { url: string };
+            if (url) {
+              resolvedReferenceAudioUrl = url;
+              console.log(`[Generate] Resolved /manus-storage/${key} → presigned URL (${url.substring(0, 60)}...)`);
+            }
+          } else {
+            console.error(`[Generate] Failed to presign instrument reference: ${forgeResp.status}`);
+            resolvedReferenceAudioUrl = undefined;
+          }
+        } catch (err) {
+          console.error('[Generate] Error resolving manus-storage path:', err);
+          resolvedReferenceAudioUrl = undefined;
+        }
+      }
+
       // Build prompt with intensity prefix and vocal archetype guidance
       // When reference audio is provided, use MINIMAL prompt to let MiniMax's audio analysis take priority
       // (reference audio IS the style instruction — text prompt would override it)
       let promptWithIntensity: string;
       
-      if (input.referenceAudioUrl) {
+      if (resolvedReferenceAudioUrl) {
         // Reference audio mode: MINIMAL prompt (just intensity + vocal gender)
         // MiniMax will analyze the song_file and match its style automatically
         // We only add intensity and vocal gender as structural guides, not style overrides
@@ -912,7 +943,7 @@ const musicGenerationRouter = router({
         prompt: promptWithIntensity,
         lyrics: input.instrumental ? "" : (input.lyrics ?? ""),
         isInstrumental: input.instrumental,
-        referenceAudioUrl: input.referenceAudioUrl,
+        referenceAudioUrl: resolvedReferenceAudioUrl,
         voiceReferenceUrl: input.voiceReferenceUrl,
       })
         .then(async (predictionId) => {
