@@ -1214,3 +1214,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Generate.tsx reads instrumentReferenceUrl from sessionStorage on mount
 - [x] Remove buggy auto-fill of prompt with referenceAudioUrl
 - [x] Slim Premium badge in sidebar (remove "— unlimited" text)
+
+## Riffy Knowledge Base — Instrument Palette & Bespoke Generate
+- [x] Write instrument-palette-and-bespoke-generate.md reference document
+- [x] Load new KB document into Riffy's system prompt at startup
+- [x] Update Generate and Studio page context descriptions for Creative Director posture
+- [ ] Update strawberry-riff-features.md to reflect Stable Audio integration and Bespoke Generate modes (Phase 2)
+- [ ] Add Bespoke Full Song (inpainting) to Riffy's KB when Phase 2 is built

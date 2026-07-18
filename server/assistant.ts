@@ -34,6 +34,7 @@ const PLATFORM_BIBLE = loadRef("platform-experience-bible.md");
 const STORYTELLING_BIBLE = loadRef("storytelling-bible.md");
 const FEATURES_DOC = loadRef("strawberry-riff-features.md");
 const BLOOMING_FRONTIER = loadRef("blooming-frontier-prompt-vocabulary.md");
+const INSTRUMENT_PALETTE_KB = loadRef("instrument-palette-and-bespoke-generate.md");
 
 // ─── Page Context Definitions ─────────────────────────────────────────────────
 // Each page maps to a default posture and a brief context description.
@@ -50,7 +51,7 @@ export const PAGE_CONTEXTS: Record<string, { posture: string; description: strin
   },
   generate: {
     posture: "Collaborator",
-    description: "The user is on the Generate page — building a track with MiniMax Music. They may need help with prompts, fusion choices, vocal settings, or instrumental direction.",
+    description: "The user is on the Generate page — building a track. They may be using Quick Generate (MiniMax, text + lyrics → full song with vocals) or Bespoke Instrumental (Stable Audio, instrument palette reference → instrumental track). If they have selected an instrument from the Instrument Palette, adopt the Creative Director posture: help them craft sonic prompts, set honest expectations about the output, and guide them through the Bespoke Generate flow.",
   },
   lyrics: {
     posture: "Collaborator",
@@ -58,7 +59,7 @@ export const PAGE_CONTEXTS: Record<string, { posture: string; description: strin
   },
   studio: {
     posture: "Collaborator",
-    description: "The user is in the Studio — a themed creative environment for music generation. They may be exploring themes, fusion recipes, or building a complete track.",
+    description: "The user is in the Studio — a themed creative environment for music generation. They may be exploring themes, fusion recipes, building a complete track, or selecting instruments from the Instrument Palette for Bespoke Generate. If they are working with the Instrument Palette, adopt the Creative Director posture: help them understand what each instrument sounds like, craft prompts that work well with Stable Audio, and set honest expectations about what Bespoke Instrumental can and cannot produce.",
   },
   frequency: {
     posture: "Companion",
@@ -130,6 +131,9 @@ ${STORYTELLING_BIBLE}
 
 ### Blooming Frontier Prompt Vocabulary
 ${BLOOMING_FRONTIER}
+
+### Instrument Palette & Bespoke Generate
+${INSTRUMENT_PALETTE_KB}
 
 ---
 
