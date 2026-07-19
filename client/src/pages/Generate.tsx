@@ -1108,6 +1108,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
   const [newlyCompletedId, setNewlyCompletedId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   // Reference audio state
   const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
@@ -1131,8 +1132,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
       setInstrumentTags(selectedInstrument.tags ?? []);
       // Auto-switch to Bespoke mode — palette selection implies bespoke intent
       setGenerationMode("bespoke");
-      // Scroll to form so user sees the instrument banner
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      // Scroll to the instrument banner so it's fully visible
+      setTimeout(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
     }
   }, [selectedInstrument]);
 
@@ -1187,8 +1188,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
       sessionStorage.removeItem("instrumentReferenceDescription");
       sessionStorage.removeItem("instrumentReferenceFamily");
       sessionStorage.removeItem("instrumentReferenceTags");
-      // Scroll to form so user sees the instrument banner
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      // Scroll to the instrument banner so it's fully visible
+      setTimeout(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
     }
   }, []);
 
@@ -1509,7 +1510,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
             <form onSubmit={handleGenerate} className="space-y-6">
               {/* ─── Instrument Context Banner ─────────────────────────────────────── */}
               {instrumentId && referenceAudioName && (
-                <div className="rounded-xl border border-purple-500/30 bg-purple-500/8 p-4 space-y-3">
+                <div ref={bannerRef} className="rounded-xl border border-purple-500/30 bg-purple-500/8 p-4 space-y-3">
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5">

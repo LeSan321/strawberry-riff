@@ -79,6 +79,7 @@ import { stemsplitRouter } from "./routers/stemsplit";
 import { mixerRouter } from "./routers/mixer";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { ogImageRouter } from "./routers/ogImage";
+import { adminMigrationRouter } from "./routers/adminMigration";
 import { coverArtRouter } from "./coverArt/router";
 import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
@@ -1736,6 +1737,7 @@ export const appRouter = router({
   frequency: frequencyRouter,
   assistant: assistantRouter,
   instrumentPalette: instrumentPaletteRouter,
+  admin: adminMigrationRouter,
 });
 
 export type AppRouter = typeof appRouter;

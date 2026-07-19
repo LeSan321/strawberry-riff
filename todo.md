@@ -1262,3 +1262,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix App.tsx /generate route to use wrapper component (avoids RouteComponentProps conflict)
 - [x] All 345 tests passing (0 failures), TypeScript clean
 - [ ] Deploy to Railway (manual — user action required)
+
+## Bespoke Generation Fix — Instrument Sample Migration (Jul 19 2026)
+- [ ] Build admin migration endpoint (trpc.admin.migrateInstrumentSamples) — fetches all 37 samples from Forge, uploads to Tigris S3
+- [ ] Deploy to Railway and trigger migration endpoint to capture permanent Tigris URLs
+- [ ] Update instrumentPalette.ts with permanent Tigris S3 URLs (removes Forge CDN dependency)
+- [ ] Fix Generate page scroll cut-off bug (banner scrolls off-screen when returning from drawer)
