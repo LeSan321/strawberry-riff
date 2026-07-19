@@ -13,7 +13,7 @@
  */
 
 import { ENV } from "./_core/env";
-import { storageGet, storagePut } from "./storage";
+import { storageGet, storagePut, resolveAudioUrl } from "./storage";
 
 const STABLE_AUDIO_URL =
   "https://api.stability.ai/v2beta/audio/stable-audio-2/audio-to-audio";
@@ -45,7 +45,10 @@ export interface BespokeGenerationResult {
 
 /**
  * Resolve an instrument audio path to fetchable bytes.
- * Handles both /manus-storage/ paths (via Forge presigned URL) and full https:// URLs.
+ * Handles:
+ *   - /manus-storage/ paths (via Forge presigned URL)
+ *   - Tigris/S3 URLs (via presigned GET URL — bucket is private)
+ *   - Other public https:// URLs (fetched directly)
  */
 async function fetchInstrumentBytes(audioPath: string): Promise<Buffer> {
   let fetchUrl: string;
@@ -56,7 +59,11 @@ async function fetchInstrumentBytes(audioPath: string): Promise<Buffer> {
     const { url } = await storageGet(relKey);
     fetchUrl = url;
   } else if (audioPath.startsWith("https://") || audioPath.startsWith("http://")) {
-    fetchUrl = audioPath;
+    // For Tigris/S3 URLs the bucket is private — generate a presigned URL.
+    // resolveAudioUrl detects storageapi.dev / tigrisdata.com and signs the request;
+    // for other public URLs it returns the URL unchanged.
+    fetchUrl = resolveAudioUrl(audioPath, 900); // 15-minute presigned URL
+    console.log(`[StableAudio] Resolved instrument URL → ${fetchUrl.slice(0, 80)}...`);
   } else {
     throw new Error(`Unsupported instrument audio path format: ${audioPath}`);
   }
@@ -64,7 +71,7 @@ async function fetchInstrumentBytes(audioPath: string): Promise<Buffer> {
   const res = await fetch(fetchUrl);
   if (!res.ok) {
     throw new Error(
-      `Failed to fetch instrument audio (${res.status}): ${fetchUrl}`
+      `Failed to fetch instrument audio (${res.status}): ${fetchUrl.slice(0, 120)}`
     );
   }
 
