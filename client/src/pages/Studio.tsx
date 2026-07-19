@@ -577,6 +577,14 @@ export default function Studio() {
   const [fusionsOpen, setFusionsOpen] = useState(false);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
   const [instrumentPaletteOpen, setInstrumentPaletteOpen] = useState(false);
+  const [selectedInstrument, setSelectedInstrument] = useState<{
+    id: string;
+    name: string;
+    family: string;
+    description: string;
+    audioPath: string;
+    tags: string[];
+  } | null>(null);
 
   const prefsQuery = trpc.studio.getPreferences.useQuery(undefined, {
     enabled: !!user,
@@ -706,7 +714,7 @@ export default function Studio() {
               className="w-full max-w-full"
             >
               {activeTool === "generate" ? (
-                <GeneratePage />
+                <GeneratePage selectedInstrument={selectedInstrument} onClearInstrument={() => setSelectedInstrument(null)} />
               ) : activeTool === "lyrics" ? (
                 <LyricsGeneratorPage />
               ) : activeTool === "styles" ? (
@@ -824,8 +832,8 @@ export default function Studio() {
         open={instrumentPaletteOpen}
         onClose={() => setInstrumentPaletteOpen(false)}
         onSelectInstrument={(instrument) => {
-          // sessionStorage is already written by the drawer's handleSelect
-          // Just switch to Generate tab so the banner appears
+          // Lift instrument into React state so GeneratePage re-renders reactively
+          setSelectedInstrument(instrument);
           setActiveTool("generate");
         }}
       />

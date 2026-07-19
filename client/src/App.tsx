@@ -75,7 +75,7 @@ function Router() {
           <Switch>
         <Route path="/" component={Home} />
         <Route path="/discover" component={Discover} />
-        <Route path="/generate" component={GeneratePage} />
+        <Route path="/generate">{() => <GeneratePage />}</Route>
         <Route path="/upload" component={Upload} />
         <Route path="/my-riffs" component={MyRiffs} />
         <Route path="/friends" component={Friends} />

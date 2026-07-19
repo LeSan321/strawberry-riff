@@ -1080,7 +1080,19 @@ function PollingIndicator() {
 }
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
-export function GeneratePage() {
+interface GeneratePageProps {
+  selectedInstrument?: {
+    id: string;
+    name: string;
+    family: string;
+    description: string;
+    audioPath: string;
+    tags: string[];
+  } | null;
+  onClearInstrument?: () => void;
+}
+
+export function GeneratePage({ selectedInstrument, onClearInstrument }: GeneratePageProps = {}) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -1106,6 +1118,20 @@ export function GeneratePage() {
   const [voiceReferenceName, setVoiceReferenceName] = useState<string | null>(null);
   const [isUploadingVoiceRef, setIsUploadingVoiceRef] = useState(false);
   const voiceRefAudioInputRef = useRef<HTMLInputElement>(null);
+
+  // Respond to instrument selection from Studio's Palette drawer (prop-driven)
+  useEffect(() => {
+    if (selectedInstrument) {
+      setReferenceAudioUrl(selectedInstrument.audioPath);
+      setReferenceAudioName(selectedInstrument.name);
+      setInstrumentId(selectedInstrument.id);
+      setInstrumentDescription(selectedInstrument.description);
+      setInstrumentFamily(selectedInstrument.family);
+      setInstrumentTags(selectedInstrument.tags ?? []);
+      // Scroll to form so user sees the instrument banner
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    }
+  }, [selectedInstrument]);
 
   // Pre-fill lyrics from Lyrics Generator page (via sessionStorage)
   useEffect(() => {
@@ -1393,7 +1419,8 @@ export function GeneratePage() {
           prompt: prompt.trim(),
           instrumentAudioPath: referenceAudioUrl,
           instrumentName: referenceAudioName ?? "Instrument",
-          strength: 0.7,
+          instrumentId: instrumentId ?? undefined,
+          strength: 0.35,
           duration: 30,
         });
         await utils.musicGeneration.myGenerations.invalidate();
@@ -1507,6 +1534,7 @@ export function GeneratePage() {
                         setInstrumentFamily(null);
                         setInstrumentTags([]);
                         setGenerationMode("quick");
+                        onClearInstrument?.();
                       }}
                       className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0 mt-0.5"
                       title="Remove instrument reference"

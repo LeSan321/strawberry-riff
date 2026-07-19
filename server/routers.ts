@@ -88,6 +88,7 @@ import { nanoid } from "nanoid";
 
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { generateBespokeInstrumental } from "./stableAudio";
+import { buildBespokePrompt } from "./instrumentBible";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
 import { generateVisualBrief } from "./visualBriefGenerator";
@@ -1274,7 +1275,8 @@ const musicGenerationRouter = router({
         prompt: z.string().min(1).max(1000),
         instrumentAudioPath: z.string().min(1),  // /manus-storage/ path or full URL
         instrumentName: z.string().min(1).max(100),  // display name for the instrument
-        strength: z.number().min(0).max(1).default(0.7),
+        strength: z.number().min(0).max(1).default(0.35),
+        instrumentId: z.string().optional(),  // catalog ID for bible conditioning
         duration: z.number().min(10).max(190).default(30),
       })
     )
@@ -1289,7 +1291,12 @@ const musicGenerationRouter = router({
         });
       }
 
-      console.log(`[Bespoke] Starting generation — instrument=${input.instrumentName} prompt="${input.prompt.slice(0, 60)}..."`);
+      // Build conditioned prompt using the Instrument Bible
+      const conditionedPrompt = input.instrumentId
+        ? buildBespokePrompt(input.instrumentId, input.prompt)
+        : input.prompt;
+
+      console.log(`[Bespoke] Starting generation — instrument=${input.instrumentName} prompt="${conditionedPrompt.slice(0, 80)}..."`);
 
       // Create generation record immediately (status: generating)
       const generationId = await createMusicGeneration({
@@ -1325,7 +1332,7 @@ const musicGenerationRouter = router({
       // Stable Audio is synchronous (~10–15s) — run inline but handle errors gracefully
       try {
         const result = await generateBespokeInstrumental({
-          prompt: input.prompt,
+          prompt: conditionedPrompt,
           instrumentAudioPath: input.instrumentAudioPath,
           strength: input.strength,
           duration: input.duration,

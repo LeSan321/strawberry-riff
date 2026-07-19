@@ -1246,3 +1246,19 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] CTA button navigates to Generate tab and closes drawer
 - [x] Update onSelectInstrument signature to pass full InstrumentSample object
 - [x] Update Studio.tsx onSelectInstrument handler to match new signature
+
+## Instrument Bible + Bespoke UI Fix (Jul 18 2026)
+- [x] Compile server/instrumentBible.ts — 37 conditioning tags from full AI-authored bible (all families)
+- [x] Add buildBespokePrompt() helper — prepends conditioning tag to user prompt
+- [x] Add getInstrumentConditioningTag() helper — lookup by instrument ID
+- [x] Import buildBespokePrompt in routers.ts and inject conditioning tag into generateBespoke
+- [x] Add instrumentId field to generateBespoke tRPC input schema
+- [x] Fix strength override in Generate.tsx bespokeMutation call (0.7 → 0.35)
+- [x] Pass instrumentId to bespokeMutation so bible conditioning is applied per generation
+- [x] Fix sessionStorage remount bug: lift selectedInstrument into Studio.tsx React state
+- [x] Add GeneratePageProps interface with selectedInstrument and onClearInstrument props
+- [x] Add prop-driven useEffect in Generate.tsx that responds to selectedInstrument changes
+- [x] Wire onClearInstrument into instrument banner X button
+- [x] Fix App.tsx /generate route to use wrapper component (avoids RouteComponentProps conflict)
+- [x] All 345 tests passing (0 failures), TypeScript clean
+- [ ] Deploy to Railway (manual — user action required)

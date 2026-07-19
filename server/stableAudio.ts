@@ -23,8 +23,10 @@ export interface BespokeGenerationOptions {
   prompt: string;
   /** The instrument sample audio path (e.g. /manus-storage/violin_xxx.mp3) or full URL */
   instrumentAudioPath: string;
-  /** Influence strength of the reference audio (0.0–1.0). Default 0.7.
-   *  Higher = more like the reference instrument. Lower = more prompt-driven. */
+  /** Influence strength of the reference audio (0.0–1.0). Default 0.35.
+   *  Lower values preserve the instrument's genuine acoustic character.
+   *  Higher values allow more prompt-driven arrangement but risk synthetic artifacts.
+   *  0.35 was determined via A/B testing to be the sweet spot. */
   strength?: number;
   /** Output duration in seconds (10–190). Default 30. */
   duration?: number;
@@ -85,7 +87,7 @@ export async function generateBespokeInstrumental(
   const {
     prompt,
     instrumentAudioPath,
-    strength = 0.7,
+    strength = 0.35,
     duration = 30,
     outputFormat = "mp3",
   } = options;
