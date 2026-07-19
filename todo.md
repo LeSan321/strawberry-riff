@@ -1272,3 +1272,7 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Deploy to Railway and visit /admin/migrate-instruments to trigger migration (Forge CDN geo-blocked both Railway and sandbox; instead sourced files directly from Philharmonia S3 + Wikimedia Commons)
 - [x] Update instrumentPalette.ts with permanent Tigris S3 URLs (removes Forge CDN dependency) — all 37 instruments at https://t3.storageapi.dev/systematic-holder-7d6b-vj5e4e/instrument-samples/{id}.mp3
 - [x] Fix Generate page scroll cut-off bug (banner scrolls off-screen when returning from drawer)
+
+## Bug Fix: Bespoke 500 Error & Studio Container Cut-off (Post-Migration)
+- [x] Diagnose Bespoke Instrumental 500 error on Railway production — root cause is old instrumentPalette.ts with Forge CDN paths still deployed; fix is in checkpoint 6059ef2f awaiting publish
+- [x] Fix Studio page container cut-off at the bottom — changed h-screen (100vh) to 100dvh (dynamic viewport height) to handle browser chrome correctly
