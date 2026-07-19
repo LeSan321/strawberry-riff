@@ -1264,7 +1264,11 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Deploy to Railway (manual — user action required)
 
 ## Bespoke Generation Fix — Instrument Sample Migration (Jul 19 2026)
-- [ ] Build admin migration endpoint (trpc.admin.migrateInstrumentSamples) — fetches all 37 samples from Forge, uploads to Tigris S3
-- [ ] Deploy to Railway and trigger migration endpoint to capture permanent Tigris URLs
+- [x] Build admin migration endpoint (trpc.admin.migrateInstrumentSamples) — fetches all 37 samples from Forge, uploads to Tigris S3
+- [x] Build AdminMigrateSamples.tsx page at /admin/migrate-instruments — owner-only, shows Run Migration button and result JSON
+- [x] Fix useAuth import path in AdminMigrateSamples.tsx (@/_core/hooks/useAuth)
+- [x] Register /admin/migrate-instruments route in App.tsx
+- [x] Fix forgeGet() in storage.ts — add error handling so undefined URL is surfaced as a clear error message (root cause of "undefined" error in Bespoke generation)
+- [ ] Deploy to Railway and visit /admin/migrate-instruments to trigger migration
 - [ ] Update instrumentPalette.ts with permanent Tigris S3 URLs (removes Forge CDN dependency)
-- [ ] Fix Generate page scroll cut-off bug (banner scrolls off-screen when returning from drawer)
+- [x] Fix Generate page scroll cut-off bug (banner scrolls off-screen when returning from drawer)

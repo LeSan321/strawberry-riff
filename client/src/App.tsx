@@ -28,6 +28,7 @@ import { StemsStudio } from "./pages/StemsStudio";
 import TrackDetail from "./pages/TrackDetail";
 import MyStemsBrowser from "./pages/MyStemsBrowser";
 import { RiffAssistant } from "./components/RiffAssistant";
+import AdminMigrateSamples from "./pages/AdminMigrateSamples";
 import { useLocation } from "wouter";
 
 // Map URL path to page context key for the Riff Assistant
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/style-library" component={StyleLibrary} />
       <Route path="/preview/:token" component={PreviewPage} />
       <Route path="/shared/playlists/:token" component={SharedPlaylistPage} />
+      <Route path="/admin/migrate-instruments" component={AdminMigrateSamples} />
       <Route>
         <AppLayout>
           <Switch>

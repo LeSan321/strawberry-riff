@@ -223,7 +223,15 @@ async function forgeGet(relKey: string): Promise<{ key: string; url: string }> {
     method: 'GET',
     headers: buildAuthHeaders(apiKey),
   });
-  return { key, url: (await response.json()).url };
+  if (!response.ok) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(`Forge storage downloadUrl failed (${response.status}) for key "${key}": ${text}`);
+  }
+  const json = await response.json() as { url?: string };
+  if (!json.url) {
+    throw new Error(`Forge storage downloadUrl returned no URL for key "${key}". Response: ${JSON.stringify(json)}`);
+  }
+  return { key, url: json.url };
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
