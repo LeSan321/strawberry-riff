@@ -1269,6 +1269,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix useAuth import path in AdminMigrateSamples.tsx (@/_core/hooks/useAuth)
 - [x] Register /admin/migrate-instruments route in App.tsx
 - [x] Fix forgeGet() in storage.ts — add error handling so undefined URL is surfaced as a clear error message (root cause of "undefined" error in Bespoke generation)
-- [ ] Deploy to Railway and visit /admin/migrate-instruments to trigger migration
-- [ ] Update instrumentPalette.ts with permanent Tigris S3 URLs (removes Forge CDN dependency)
+- [x] Deploy to Railway and visit /admin/migrate-instruments to trigger migration (Forge CDN geo-blocked both Railway and sandbox; instead sourced files directly from Philharmonia S3 + Wikimedia Commons)
+- [x] Update instrumentPalette.ts with permanent Tigris S3 URLs (removes Forge CDN dependency) — all 37 instruments at https://t3.storageapi.dev/systematic-holder-7d6b-vj5e4e/instrument-samples/{id}.mp3
 - [x] Fix Generate page scroll cut-off bug (banner scrolls off-screen when returning from drawer)
