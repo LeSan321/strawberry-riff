@@ -1107,6 +1107,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
   const [pollingId, setPollingId] = useState<number | null>(null);
   const [newlyCompletedId, setNewlyCompletedId] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   // Reference audio state
   const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
@@ -1128,6 +1129,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
       setInstrumentDescription(selectedInstrument.description);
       setInstrumentFamily(selectedInstrument.family);
       setInstrumentTags(selectedInstrument.tags ?? []);
+      // Auto-switch to Bespoke mode — palette selection implies bespoke intent
+      setGenerationMode("bespoke");
       // Scroll to form so user sees the instrument banner
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
     }
@@ -1191,6 +1194,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
 
   // Generation mode — only relevant when an instrument palette item is selected
   const [generationMode, setGenerationMode] = useState<"quick" | "bespoke">("quick");
+  const [selectedStarterIdx, setSelectedStarterIdx] = useState<number | null>(null);
   // Full instrument context from Palette (from sessionStorage or prop)
   const [instrumentId, setInstrumentId] = useState<string | null>(null);
   const [instrumentDescription, setInstrumentDescription] = useState<string | null>(null);
@@ -1554,14 +1558,75 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setPrompt(starter)}
-                          className="text-left text-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-purple-500/15 hover:border-purple-500/30 hover:text-white transition-all leading-relaxed"
+                          onClick={() => {
+                            setPrompt(starter);
+                            setSelectedStarterIdx(i);
+                            setTimeout(() => {
+                              promptRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                              promptRef.current?.focus();
+                              setSelectedStarterIdx(null);
+                            }, 600);
+                          }}
+                          className={`text-left text-xs px-3 py-2 rounded-lg border transition-all leading-relaxed ${
+                            selectedStarterIdx === i
+                              ? "bg-green-500/20 border-green-400/50 text-green-200"
+                              : "bg-white/5 border-white/10 text-gray-300 hover:bg-purple-500/15 hover:border-purple-500/30 hover:text-white"
+                          }`}
                         >
-                          {starter}
+                          {selectedStarterIdx === i ? (
+                            <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-green-400" />Prompt filled — scroll down to edit</span>
+                          ) : starter}
                         </button>
                       ))}
                     </div>
                     <p className="text-[10px] text-gray-600 mt-2">Click any starter to fill the prompt — then customise it to make it yours.</p>
+                  </div>
+
+                  {/* Generation Mode Selector — immediately after banner so user sees it first */}
+                  <div className="rounded-lg border border-white/10 bg-white/3 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                      <p className="text-xs font-semibold text-purple-200">How do you want to generate?</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setGenerationMode("quick")}
+                        className={`rounded-lg border p-3 text-left transition-all ${
+                          generationMode === "quick"
+                            ? "border-purple-400 bg-purple-500/20 ring-1 ring-purple-400/50"
+                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Zap className="h-3.5 w-3.5 text-yellow-400" />
+                          <span className="text-xs font-semibold text-foreground">Quick Generate</span>
+                          {generationMode === "quick" && <span className="ml-auto text-[10px] text-purple-300">✓ selected</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">Full song with vocals. Uses instrument as a style hint. ~1–3 min.</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGenerationMode("bespoke")}
+                        className={`rounded-lg border p-3 text-left transition-all ${
+                          generationMode === "bespoke"
+                            ? "border-pink-400 bg-pink-500/20 ring-1 ring-pink-400/50"
+                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Music className="h-3.5 w-3.5 text-pink-400" />
+                          <span className="text-xs font-semibold text-foreground">Bespoke Instrumental</span>
+                          {generationMode === "bespoke" && <span className="ml-auto text-[10px] text-pink-300">✓ selected</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">Pure instrumental from the sonic DNA of your instrument. ~15 sec.</p>
+                      </button>
+                    </div>
+                    {generationMode === "bespoke" && (
+                      <p className="text-xs text-pink-300/80 bg-pink-500/10 rounded-md px-3 py-2 border border-pink-400/20">
+                        <strong>Bespoke mode:</strong> No lyrics needed — your prompt steers the mood, the {referenceAudioName} provides the sonic foundation.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1583,6 +1648,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
               <div>
                 <label className="mb-2 block text-sm font-medium">Music Style Prompt</label>
                 <Textarea
+                  ref={promptRef}
                   placeholder="What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -1748,61 +1814,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
                 </div>
               )}
 
-              {/* Generation Mode Selector — only shown when an instrument palette item is selected */}
-              {referenceAudioUrl && referenceAudioName && instrumentId && (
-                <div className="rounded-xl border border-purple-300/40 bg-purple-500/5 p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="h-4 w-4 text-purple-400" />
-                    <p className="text-sm font-semibold text-purple-200">How do you want to generate?</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {/* Quick Generate option */}
-                    <button
-                      type="button"
-                      onClick={() => setGenerationMode("quick")}
-                      className={`rounded-lg border p-3 text-left transition-all ${
-                        generationMode === "quick"
-                          ? "border-purple-400 bg-purple-500/20 ring-1 ring-purple-400/50"
-                          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Zap className="h-3.5 w-3.5 text-yellow-400" />
-                        <span className="text-xs font-semibold text-foreground">Quick Generate</span>
-                        {generationMode === "quick" && <span className="ml-auto text-xs text-purple-300">selected</span>}
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Full song with vocals and lyrics. Uses the instrument as a style hint. ~1–3 minutes.
-                      </p>
-                    </button>
-
-                    {/* Bespoke Instrumental option */}
-                    <button
-                      type="button"
-                      onClick={() => setGenerationMode("bespoke")}
-                      className={`rounded-lg border p-3 text-left transition-all ${
-                        generationMode === "bespoke"
-                          ? "border-pink-400 bg-pink-500/20 ring-1 ring-pink-400/50"
-                          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Music className="h-3.5 w-3.5 text-pink-400" />
-                        <span className="text-xs font-semibold text-foreground">Bespoke Instrumental</span>
-                        {generationMode === "bespoke" && <span className="ml-auto text-xs text-pink-300">selected</span>}
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Pure instrumental built from the sonic DNA of your chosen instrument. ~15 seconds.
-                      </p>
-                    </button>
-                  </div>
-                  {generationMode === "bespoke" && (
-                    <p className="text-xs text-pink-300/80 bg-pink-500/10 rounded-md px-3 py-2 border border-pink-400/20">
-                      <strong>Bespoke mode:</strong> No lyrics needed. Your style prompt steers the mood and texture — the {referenceAudioName} provides the sonic foundation. It’s not a lag, it’s bespoke.
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Generation Mode Selector moved into instrument banner above */}
 
               {/* Voice Reference Audio Panel — Premium only (visible-but-locked for free users) */}
               {!monthlyUsage?.isPremium ? (
