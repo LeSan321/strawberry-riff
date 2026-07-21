@@ -274,20 +274,35 @@ describe("Music Generation Router", () => {
   });
 
   describe("generateBespoke", () => {
-    it("should create a bespoke instrumental generation", async () => {
+    it("should create a bespoke instrumental generation via MiniMax instrumental_file", async () => {
+      // Bespoke now uses MiniMax music-2.6 with instrumental_file (instrument sample as acoustic reference)
+      // strength and duration are no longer applicable (MiniMax determines output length)
       const result = await caller.musicGeneration.generateBespoke({
         title: "Bespoke Violin Piece",
         prompt: "Melancholic, slow, cinematic, minor key",
         instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
         instrumentName: "Violin",
-        strength: 0.7,
-        duration: 30,
+        instrumentId: "violin",
       });
 
       expect(result).toBeDefined();
       expect(result.id).toBe(1);
       expect(result.status).toBe("complete");
-      expect(result.audioUrl).toContain("bespoke-generations");
+      // audioUrl is the S3 URL from storagePut, resolved via resolveAudioUrl
+      expect(result.audioUrl).toBeDefined();
+    });
+
+    it("should work without a user prompt (acoustic description alone is sufficient)", async () => {
+      const result = await caller.musicGeneration.generateBespoke({
+        title: "Pure Erhu",
+        prompt: "",  // empty prompt — bible description used alone
+        instrumentAudioPath: "/manus-storage/erhu_sample.mp3",
+        instrumentName: "Erhu",
+        instrumentId: "erhu",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.status).toBe("complete");
     });
 
     it("should reject when monthly limit is reached", async () => {
@@ -299,8 +314,6 @@ describe("Music Generation Router", () => {
           prompt: "test",
           instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
           instrumentName: "Violin",
-          strength: 0.7,
-          duration: 30,
         })
       ).rejects.toThrow(TRPCError);
     });
@@ -314,8 +327,6 @@ describe("Music Generation Router", () => {
           prompt: "test",
           instrumentAudioPath: "/manus-storage/violin_4f5f717f.mp3",
           instrumentName: "Violin",
-          strength: 0.7,
-          duration: 30,
         })
       ).rejects.toThrow(TRPCError);
     });

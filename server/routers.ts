@@ -1273,12 +1273,10 @@ const musicGenerationRouter = router({
     .input(
       z.object({
         title: z.string().min(1).max(200),
-        prompt: z.string().min(1).max(1000),
-        instrumentAudioPath: z.string().min(1),  // /manus-storage/ path or full URL
+        prompt: z.string().max(1000).optional(),
+        instrumentAudioPath: z.string().min(1),  // Tigris S3 URL for the instrument sample
         instrumentName: z.string().min(1).max(100),  // display name for the instrument
-        strength: z.number().min(0).max(1).default(0.35),
-        instrumentId: z.string().optional(),  // catalog ID for bible conditioning
-        duration: z.number().min(10).max(190).default(30),
+        instrumentId: z.string().optional(),  // catalog ID for bible acoustic description
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1292,29 +1290,35 @@ const musicGenerationRouter = router({
         });
       }
 
-      // Build conditioned prompt using the Instrument Bible
+      // Build the MiniMax prompt using the proven acoustic vocabulary formula
       const conditionedPrompt = input.instrumentId
-        ? buildBespokePrompt(input.instrumentId, input.prompt)
-        : input.prompt;
+        ? buildBespokePrompt(input.instrumentId, input.prompt ?? "")
+        : input.prompt || input.instrumentName;
 
-      console.log(`[Bespoke] Starting generation — instrument=${input.instrumentName} prompt="${conditionedPrompt.slice(0, 80)}..."`);
+      console.log(`[Bespoke] Starting MiniMax generation — instrument=${input.instrumentName}`);
+      console.log(`[Bespoke] Prompt: "${conditionedPrompt.slice(0, 120)}"`);
+      console.log(`[Bespoke] instrumental_file: ${input.instrumentAudioPath.slice(0, 80)}...`);
+
+      // Resolve the instrument sample URL (Tigris S3 is private — MiniMax needs a public URL)
+      const resolvedInstrumentUrl = resolveAudioUrl(input.instrumentAudioPath);
 
       // Create generation record immediately (status: generating)
       const generationId = await createMusicGeneration({
         userId: ctx.user.id,
         title: input.title,
-        prompt: input.prompt,
+        prompt: conditionedPrompt,
         lyrics: "",
-        duration: input.duration,
+        duration: 0,  // MiniMax determines output duration
         audioUrl: "",
         audioKey: "",
         status: "generating",
         metadata: JSON.stringify({
           mode: "bespoke-instrumental",
-          provider: "stable-audio-2.5",
+          provider: "minimax-2.6",
           instrumentName: input.instrumentName,
+          instrumentId: input.instrumentId,
           instrumentAudioPath: input.instrumentAudioPath,
-          strength: input.strength,
+          conditionedPrompt,
         }),
         aceStepTaskId: null,
         errorMessage: null,
@@ -1330,21 +1334,28 @@ const musicGenerationRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });
       }
 
-      // Stable Audio is synchronous (~10–15s) — run inline but handle errors gracefully
       try {
-        const result = await generateBespokeInstrumental({
+        // Start MiniMax generation with instrument sample as instrumental_file reference
+        const taskId = await startMusicGeneration({
           prompt: conditionedPrompt,
-          instrumentAudioPath: input.instrumentAudioPath,
-          strength: input.strength,
-          duration: input.duration,
-          outputFormat: "mp3",
+          lyrics: "",
+          instrumentalReferenceUrl: resolvedInstrumentUrl,
+          isInstrumental: true,
         });
+
+        // Poll until complete
+        const result = await pollMusicGeneration(taskId);
+
+        // Download audio and upload to S3
+        const audioBytes = await fetchAudioBytes(result.audioUrl);
+        const audioKey = `bespoke/${ctx.user.id}/${nanoid()}.mp3`;
+        const { url: s3Url } = await storagePut(audioKey, audioBytes, "audio/mpeg");
 
         // Generate visual brief (non-blocking)
         let visualBriefJson: string | null = null;
         try {
           const brief = await generateVisualBrief({
-            prompt: input.prompt,
+            prompt: conditionedPrompt,
             lyrics: "",
             title: input.title,
           });
@@ -1354,13 +1365,13 @@ const musicGenerationRouter = router({
         }
 
         await updateMusicGenerationStatus(generationId, "complete", {
-          audioUrl: result.url,
-          audioKey: result.key,
+          audioUrl: s3Url,
+          audioKey,
           metadata: JSON.stringify({
             mode: "bespoke-instrumental",
-            provider: "stable-audio-2.5",
+            provider: "minimax-2.6",
             instrumentName: input.instrumentName,
-            strength: input.strength,
+            conditionedPrompt,
           }),
           ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
         });
@@ -1369,17 +1380,17 @@ const musicGenerationRouter = router({
         if (!gen) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         return {
           ...gen,
-          audioUrl: resolveAudioUrl(result.url),
+          audioUrl: resolveAudioUrl(s3Url),
           status: "complete" as const,
         };
       } catch (error: unknown) {
         const raw = error instanceof Error ? error.message : String(error);
-        console.error(`[Bespoke] Generation failed for ID ${generationId}:`, raw);
+        console.error(`[Bespoke] MiniMax generation failed for ID ${generationId}:`, raw);
 
         let userMessage = "Bespoke generation failed — please try again.";
-        if (raw.toLowerCase().includes("insufficient credit") || raw.includes("402")) {
+        if (raw.toLowerCase().includes("insufficient") || raw.includes("402")) {
           userMessage = "Bespoke generation temporarily unavailable (credit limit reached). Please try again later.";
-        } else if (raw.toLowerCase().includes("stability_ai_api_key")) {
+        } else if (raw.toLowerCase().includes("minimax_api_key") || raw.toLowerCase().includes("api key")) {
           userMessage = "Bespoke generation is not configured on this server. Please contact support.";
         }
 

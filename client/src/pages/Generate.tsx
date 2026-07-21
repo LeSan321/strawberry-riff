@@ -1416,21 +1416,17 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
 
     setIsGenerating(true);
     try {
-      // ── Bespoke Instrumental mode (Stable Audio 2.5) ──────────────────────────
+      // ── Bespoke Instrumental mode (MiniMax music-2.6 with instrumental_file) ──
       if (generationMode === "bespoke" && referenceAudioUrl) {
-        if (!prompt.trim()) { setError("A style direction prompt is required for Bespoke generation"); setIsGenerating(false); return; }
         const result = await bespokeMutation.mutateAsync({
           title: title.trim(),
-          prompt: prompt.trim(),
+          prompt: prompt.trim() || undefined,
           instrumentAudioPath: referenceAudioUrl,
           instrumentName: referenceAudioName ?? "Instrument",
           instrumentId: instrumentId ?? undefined,
-          strength: 0.35,
-          duration: 30,
         });
         await utils.musicGeneration.myGenerations.invalidate();
         await utils.musicGeneration.monthlyUsage.invalidate();
-        // Bespoke is synchronous — result is immediately complete
         if (result.id) {
           setNewlyCompletedId(result.id);
           setTimeout(() => setNewlyCompletedId(null), 3000);
