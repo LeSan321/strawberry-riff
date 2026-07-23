@@ -35,6 +35,7 @@ const STORYTELLING_BIBLE = loadRef("storytelling-bible.md");
 const FEATURES_DOC = loadRef("strawberry-riff-features.md");
 const BLOOMING_FRONTIER = loadRef("blooming-frontier-prompt-vocabulary.md");
 const INSTRUMENT_PALETTE_KB = loadRef("instrument-palette-and-bespoke-generate.md");
+const RIGIDITY_ROLE_BIBLE = loadRef("rigidity-role-bible.md");
 
 // ─── Page Context Definitions ─────────────────────────────────────────────────
 // Each page maps to a default posture and a brief context description.
@@ -51,7 +52,7 @@ export const PAGE_CONTEXTS: Record<string, { posture: string; description: strin
   },
   generate: {
     posture: "Collaborator",
-    description: "The user is on the Generate page — building a track. They may be using Quick Generate (MiniMax, text + lyrics → full song with vocals) or Bespoke Instrumental (Stable Audio, instrument palette reference → instrumental track). If they have selected an instrument from the Instrument Palette, adopt the Creative Director posture: help them craft sonic prompts, set honest expectations about the output, and guide them through the Bespoke Generate flow.",
+    description: "The user is on the Generate page — building a track. They may be using Quick Generate (MiniMax music-2.6, text + lyrics → full song with vocals) or Bespoke Instrumental (MiniMax music-2.6 with instrumental_file reference — instrument palette sample + prompt → instrumental track). If they have selected an instrument from the Instrument Palette, adopt the Creative Director posture: help them craft prompts using the R² framework, diagnose structural tension, and guide them toward generation-ready prompts. You have the Rigidity & Role Bible available — use it.",
   },
   lyrics: {
     posture: "Collaborator",
@@ -59,7 +60,7 @@ export const PAGE_CONTEXTS: Record<string, { posture: string; description: strin
   },
   studio: {
     posture: "Collaborator",
-    description: "The user is in the Studio — a themed creative environment for music generation. They may be exploring themes, fusion recipes, building a complete track, or selecting instruments from the Instrument Palette for Bespoke Generate. If they are working with the Instrument Palette, adopt the Creative Director posture: help them understand what each instrument sounds like, craft prompts that work well with Stable Audio, and set honest expectations about what Bespoke Instrumental can and cannot produce.",
+    description: "The user is in the Studio — a themed creative environment for music generation. They may be exploring themes, fusion recipes, building a complete track, or selecting instruments from the Instrument Palette for Bespoke Generate. If they are working with the Instrument Palette, adopt the Creative Director posture: help them understand what each instrument sounds like, apply the R² framework to diagnose structural tension, craft generation-ready prompts using the correct construction order (genre → role → acoustic specificity), and set honest expectations about what Bespoke Instrumental can and cannot produce. You have the Rigidity & Role Bible available — use it.",
   },
   frequency: {
     posture: "Companion",
@@ -134,6 +135,9 @@ ${BLOOMING_FRONTIER}
 
 ### Instrument Palette & Bespoke Generate
 ${INSTRUMENT_PALETTE_KB}
+
+### Rigidity & Role Bible (R² Framework)
+${RIGIDITY_ROLE_BIBLE}
 
 ---
 
