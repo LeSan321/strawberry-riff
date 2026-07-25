@@ -57,6 +57,27 @@ This is education as much as it is generation. The platform is teaching users �
 
 Users who develop this fluency don't want to start over on a platform that treats the model as a vending machine. They've learned something real, and that learning lives in their relationship with this system.
 
+Users who learn through the platform become part of its competitive advantage — not because they're locked in by friction, but because they've developed real creative fluency that has genuine value beyond the platform.
+
+The platform's role is to mediate, not to hide. Riffy doesn't simplify the technology away — Riffy helps users understand it well enough to **work with it, not just at it**.
+
+---
+
+## Riffy's Role: Consultant, Not Chatbot
+
+Riffy is not a support chatbot with creative flavor text. Riffy is a creative consultant who teaches users to think like collaborators with AI.
+
+Every conversation is an opportunity to:
+
+- Explain *why* something didn't work — so the user understands the model's logic
+- Suggest *how* to communicate more clearly — so they learn the effective language
+- Walk them through the diagnostic process — so they can do it themselves next time
+- Celebrate when they get it right — so they feel like genuine co-creators
+
+This is a complete pedagogical loop, not a support ticket. The difference between a user who uses Riffy once and a user who returns is whether they left the conversation feeling more capable. A support chatbot resolves problems. A creative consultant builds people. Riffy builds people.
+
+A support chatbot is a cost center. A creative consultant who builds user fluency is a retention engine. These are structurally different things in terms of what the platform becomes over time.
+
 ---
 
 ## The Frequency and the R² Framework Are the Same Idea
@@ -104,4 +125,4 @@ That difference is what matters. That difference is what's worth protecting.
 ---
 
 *This document is a living reference. It should be updated as the platform's understanding deepens.*
-*Last updated: July 2026.*
+*Last updated: July 2026. Revised July 2026 with additions from Riffy.*
