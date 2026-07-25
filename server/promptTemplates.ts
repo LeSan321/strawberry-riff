@@ -32,11 +32,16 @@ export function buildPromptWithIntensity(
   intensity: IntensityLevel
 ): string {
   const prefix = INTENSITY_PREFIXES[intensity];
-  // NOTE: [genre-strict] tag temporarily removed for lyric fusion testing (Jul 2026).
-  // It was preventing folk/country drift but may be causing genre collapse when lyrics
-  // activate a different schema (e.g. hard rock). Restore after testing is complete:
-  //   return `${prefix}[genre-strict] ${userPrompt}`;
-  return `${prefix}${userPrompt}`;
+  // [genre-strict] is a confirmed load-bearing constraint (tested Jul 2026, 8 tests).
+  // Without it: MiniMax activates multiple competing genre schemas simultaneously,
+  // producing incoherent genre soup (50s rock, hard rock, circus sounds, etc.).
+  // With it: MiniMax commits to a single schema — quality stays high, but it locks
+  // onto the lyric-activated schema rather than the prompt-specified fusion.
+  // The lyric collapse problem is therefore NOT caused by this tag — it's caused by
+  // MiniMax treating lyrics as a separate, unmediated schema source that overrides
+  // the prompt schema when [genre-strict] forces a single-schema commitment.
+  // Solution path: lyric style header in the lyrics field itself, not prompt changes.
+  return `${prefix}[genre-strict] ${userPrompt}`;
 }
 
 /**
