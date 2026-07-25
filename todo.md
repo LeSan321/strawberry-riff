@@ -1277,3 +1277,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Diagnose Bespoke Instrumental 500 error on Railway production — root cause: Tigris S3 bucket is private; fetchInstrumentBytes was fetching direct URL without presigning
 - [x] Fix Bespoke 500 error: updated fetchInstrumentBytes in stableAudio.ts to call resolveAudioUrl() which generates a SigV4 presigned URL for Tigris/storageapi.dev URLs
 - [x] Fix Studio page container cut-off at the bottom — changed h-screen (100vh) to 100dvh (dynamic viewport height) to handle browser chrome correctly
+
+## Car Mode — Aggressive Pre-Buffering (Jul 2026)
+- [x] Add carMode state + toggleCarMode to AudioPlayerContext with localStorage persistence
+- [x] Implement 30-second pre-buffer gate in loadAndPlay — holds playback until 30s buffered before starting
+- [x] Add Car icon toggle button to PersistentPlayer bar (amber when active, dimmed when off)
+- [x] Toast notification on toggle ("Car mode on — buffering 30s ahead" / "Car mode off")
+- [x] carModeBufferingRef prevents false isBuffering flips during initial buffer phase

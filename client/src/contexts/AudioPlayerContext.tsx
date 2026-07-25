@@ -23,6 +23,11 @@ export function getProxyAudioUrl(track: Pick<PlayerTrack, 'audioUrl' | 'audioKey
 
 export type RepeatMode = "off" | "one" | "all";
 
+// Car mode: aggressive pre-buffering to prevent play/spin/spin on mobile connections.
+// When enabled, playback is held until CAR_MODE_BUFFER_SECONDS of audio is buffered.
+const CAR_MODE_BUFFER_SECONDS = 30;
+const CAR_MODE_STORAGE_KEY = "sr_car_mode";
+
 interface AudioPlayerState {
   currentTrack: PlayerTrack | null;
   isPlaying: boolean;
@@ -35,6 +40,7 @@ interface AudioPlayerState {
   queueIndex: number;             // index of currentTrack in queue (-1 if not in queue)
   shuffle: boolean;
   repeat: RepeatMode;
+  carMode: boolean;
 }
 
 interface AudioPlayerContextValue extends AudioPlayerState {
@@ -47,6 +53,7 @@ interface AudioPlayerContextValue extends AudioPlayerState {
   previous: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  toggleCarMode: () => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
@@ -63,6 +70,8 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track whether we're in the "waiting for car-mode buffer" phase
+  const carModeBufferingRef = useRef(false);
 
   const [state, setState] = useState<AudioPlayerState>({
     currentTrack: null,
@@ -76,6 +85,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     queueIndex: -1,
     shuffle: false,
     repeat: "off",
+    carMode: typeof window !== "undefined" && localStorage.getItem(CAR_MODE_STORAGE_KEY) === "true",
   });
 
   // Keep a stable ref to state for use inside audio event callbacks
@@ -159,12 +169,19 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
 
     // Buffering indicators
     audio.onwaiting = () => {
-      setState((s) => ({ ...s, isBuffering: true }));
+      // In car mode, brief stalls during the initial buffer phase are expected — don't
+      // flip isBuffering to true until we've confirmed we're past the pre-buffer gate.
+      if (!carModeBufferingRef.current) {
+        setState((s) => ({ ...s, isBuffering: true }));
+      }
     };
     audio.onstalled = () => {
-      setState((s) => ({ ...s, isBuffering: true }));
+      if (!carModeBufferingRef.current) {
+        setState((s) => ({ ...s, isBuffering: true }));
+      }
     };
     audio.onplaying = () => {
+      carModeBufferingRef.current = false;
       setState((s) => ({ ...s, isBuffering: false, isPlaying: true }));
     };
     audio.onerror = (e) => {
@@ -252,23 +269,48 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const loadAndPlay = useCallback((track: PlayerTrack) => {
     const audio = getOrCreateAudio();
     audio.pause();
-    // Use proxy URL if audioKey is available — this bypasses expired presigned URLs
     audio.src = getProxyAudioUrl(track);
-    // Always restore to user's volume level — fade-out may have left it at 0
     audio.volume = stateRef.current.volume;
-    // Call load() to reset the element and start buffering from the new src
     audio.load();
     attachEventHandlers(audio);
-    // Play — the browser will buffer and fire onplaying when ready
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        // AbortError is expected when src changes quickly; ignore it
-        if (err.name !== "AbortError") {
-          console.error("[AudioPlayer] play() failed:", err);
-          setState((s) => ({ ...s, isPlaying: false, isBuffering: false }));
+
+    const { carMode } = stateRef.current;
+
+    if (carMode) {
+      // Car mode: hold playback until CAR_MODE_BUFFER_SECONDS of audio is buffered.
+      // We show a buffering spinner while we wait, then auto-play once ready.
+      carModeBufferingRef.current = true;
+      setState((s) => ({ ...s, isBuffering: true }));
+
+      const checkBuffer = () => {
+        // buffered.end(0) gives the furthest buffered position in seconds
+        const bufferedEnd = audio.buffered.length > 0 ? audio.buffered.end(audio.buffered.length - 1) : 0;
+        if (bufferedEnd >= CAR_MODE_BUFFER_SECONDS || (audio.duration && bufferedEnd >= audio.duration)) {
+          audio.removeEventListener("progress", checkBuffer);
+          audio.removeEventListener("canplaythrough", checkBuffer);
+          carModeBufferingRef.current = false;
+          audio.play().catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("[AudioPlayer] car mode play() failed:", err);
+              setState((s) => ({ ...s, isPlaying: false, isBuffering: false }));
+            }
+          });
         }
-      });
+      };
+
+      audio.addEventListener("progress", checkBuffer);
+      audio.addEventListener("canplaythrough", checkBuffer);
+    } else {
+      // Normal mode: play immediately, browser buffers as it goes
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          if (err.name !== "AbortError") {
+            console.error("[AudioPlayer] play() failed:", err);
+            setState((s) => ({ ...s, isPlaying: false, isBuffering: false }));
+          }
+        });
+      }
     }
   }, [getOrCreateAudio, attachEventHandlers]);
 
@@ -413,6 +455,14 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     });
   }, []);
 
+  const toggleCarMode = useCallback(() => {
+    setState((s) => {
+      const next = !s.carMode;
+      localStorage.setItem(CAR_MODE_STORAGE_KEY, String(next));
+      return { ...s, carMode: next };
+    });
+  }, []);
+
   return (
     <AudioPlayerContext.Provider
       value={{
@@ -426,6 +476,7 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
         previous,
         toggleShuffle,
         toggleRepeat,
+        toggleCarMode,
         audioRef,
       }}
     >

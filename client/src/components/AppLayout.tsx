@@ -28,6 +28,7 @@ import {
   Repeat,
   Repeat1,
   Loader2,
+  Car,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -292,8 +293,8 @@ function PersistentPlayer() {
   const {
     currentTrack, isPlaying, isBuffering, progress, currentTime, duration, volume,
     pause, resume, seek, setVolume,
-    next, previous, toggleShuffle, toggleRepeat,
-    shuffle, repeat, queue, queueIndex,
+    next, previous, toggleShuffle, toggleRepeat, toggleCarMode,
+    shuffle, repeat, queue, queueIndex, carMode,
   } = useAudioPlayer();
 
   if (!currentTrack) return null;
@@ -424,6 +425,27 @@ function PersistentPlayer() {
               {queueIndex + 1} / {queue.length}
             </span>
           )}
+
+          {/* Car mode toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 w-8 p-0 flex-shrink-0 ${
+              carMode
+                ? "text-amber-400 hover:text-amber-300"
+                : "text-muted-foreground/40 hover:text-muted-foreground"
+            }`}
+            onClick={() => {
+              toggleCarMode();
+              toast(carMode ? "Car mode off" : "Car mode on — buffering 30s ahead", {
+                duration: 2500,
+                icon: carMode ? undefined : "🚗",
+              });
+            }}
+            title={carMode ? "Car mode on — tap to disable" : "Car mode off — tap to enable aggressive buffering"}
+          >
+            <Car className="w-4 h-4" />
+          </Button>
 
           {/* Volume */}
           <div className="items-center gap-2 hidden lg:flex">
