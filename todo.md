@@ -1284,3 +1284,25 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add Car icon toggle button to PersistentPlayer bar (amber when active, dimmed when off)
 - [x] Toast notification on toggle ("Car mode on — buffering 30s ahead" / "Car mode off")
 - [x] carModeBufferingRef prevents false isBuffering flips during initial buffer phase
+
+## Legal Documents — Finalization Required (before public launch)
+
+- [x] Terms of Service page live at /terms (Working Draft v0.2)
+- [x] Privacy Policy page live at /privacy (Working Draft v0.1)
+- [x] Footer with Terms/Privacy links added to Home page
+- [ ] ToS: Fill in legal entity name and registered address (Washington State)
+- [ ] ToS: Add contact emails (legal, security, child safety, DMCA agent)
+- [ ] ToS: Define refund policy (Section 7) — recommend 7-day cooling off for new subscriptions
+- [ ] ToS: Confirm platform fee percentage for tips (Section 8)
+- [ ] ToS: Add third-party policy URLs (Clerk, Anthropic, Flux Pro / Black Forest Labs)
+- [ ] Privacy: Fill in legal entity name and registered address
+- [ ] Privacy: Add privacy contact email and response time commitment (Section 13)
+- [ ] Privacy: Confirm data retention periods with technical team (server logs, generation logs, backups)
+- [ ] Privacy: Confirm Anthropic and Flux Pro API inputs are not used for training (Section 11)
+- [ ] Privacy: Add Clerk and Flux Pro privacy policy URLs (Section 4)
+- [ ] Privacy: Decide on analytics approach and update Section 6
+- [ ] Privacy: Add data export feature to development roadmap (Section 5)
+- [ ] Both: Send to legal counsel for review — especially PRO licensing position (ToS Section 10) and AI copyright section (ToS Section 4)
+- [ ] Both: Confirm Washington Privacy Act compliance requirements for current platform scale
+- [ ] Both: Remove "Working Draft — not yet legally effective" notice after legal review complete
+- [ ] Both: Add breach notification process documentation (Privacy Section 9)

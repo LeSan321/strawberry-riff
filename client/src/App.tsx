@@ -29,6 +29,8 @@ import TrackDetail from "./pages/TrackDetail";
 import MyStemsBrowser from "./pages/MyStemsBrowser";
 import { RiffAssistant } from "./components/RiffAssistant";
 import AdminMigrateSamples from "./pages/AdminMigrateSamples";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { useLocation } from "wouter";
 
 // Map URL path to page context key for the Riff Assistant
@@ -89,6 +91,8 @@ function Router() {
         <Route path="/premium/success" component={PremiumSuccess} />
         <Route path="/track/:id" component={TrackPage} />
         <Route path="/lyrics" component={LyricsGeneratorPage} />
+        <Route path="/terms" component={TermsOfService} />
+        <Route path="/privacy" component={PrivacyPolicy} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
         </Switch>
