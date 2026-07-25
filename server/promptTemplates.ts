@@ -32,7 +32,11 @@ export function buildPromptWithIntensity(
   intensity: IntensityLevel
 ): string {
   const prefix = INTENSITY_PREFIXES[intensity];
-  return `${prefix}[genre-strict] ${userPrompt}`;
+  // NOTE: [genre-strict] tag temporarily removed for lyric fusion testing (Jul 2026).
+  // It was preventing folk/country drift but may be causing genre collapse when lyrics
+  // activate a different schema (e.g. hard rock). Restore after testing is complete:
+  //   return `${prefix}[genre-strict] ${userPrompt}`;
+  return `${prefix}${userPrompt}`;
 }
 
 /**
