@@ -1332,6 +1332,56 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
   }, []);
 
   const uploadAudioMutation = trpc.tracks.getUploadUrl.useMutation();
+  const getUploadPresignedUrlMutation = trpc.tracks.getUploadPresignedUrl.useMutation();
+
+  /**
+   * Upload an audio file for use as a reference (style or voice).
+   *
+   * Strategy:
+   * 1. Ask the server for a presigned PUT URL (fast tRPC call, no file data).
+   * 2. If S3 is configured (Railway/production), upload the raw File directly to S3
+   *    using a plain fetch PUT — no base64, no JWT, no size limit.
+   * 3. If S3 is not configured (Forge/Manus-hosted), fall back to the original
+   *    base64-through-tRPC path so local dev and Manus-hosted deployments still work.
+   */
+  const uploadAudioFile = useCallback(async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop() || "mp3";
+    const presigned = await getUploadPresignedUrlMutation.mutateAsync({
+      mimeType: file.type,
+      fileExtension: ext,
+    });
+
+    if (presigned.useDirectUpload && presigned.uploadUrl && presigned.publicUrl) {
+      // Direct S3 upload — no base64, no JWT expiry risk
+      const res = await fetch(presigned.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => res.statusText);
+        throw new Error(`Direct S3 upload failed (${res.status}): ${text}`);
+      }
+      return presigned.publicUrl;
+    }
+
+    // Fallback: base64 through tRPC (Forge/Manus-hosted environments)
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const res = await uploadAudioMutation.mutateAsync({
+      base64,
+      mimeType: file.type,
+      fileName: file.name,
+    });
+    return res.url;
+  }, [getUploadPresignedUrlMutation, uploadAudioMutation]);
 
   const handleReferenceAudioSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith("audio/")) {
@@ -1344,21 +1394,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
     }
     setIsUploadingRef(true);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const res = await uploadAudioMutation.mutateAsync({
-        base64,
-        mimeType: file.type,
-        fileName: file.name,
-      });
-      setReferenceAudioUrl(res.url);
+      const url = await uploadAudioFile(file);
+      setReferenceAudioUrl(url);
       setReferenceAudioName(file.name);
       toast.success("Reference audio uploaded — style will guide your generation!");
     } catch (err) {
@@ -1367,7 +1404,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
     } finally {
       setIsUploadingRef(false);
     }
-  }, [uploadAudioMutation]);
+  }, [uploadAudioFile]);
 
   const handleVoiceReferenceSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith("audio/")) {
@@ -1380,21 +1417,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
     }
     setIsUploadingVoiceRef(true);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const res = await uploadAudioMutation.mutateAsync({
-        base64,
-        mimeType: file.type,
-        fileName: file.name,
-      });
-      setVoiceReferenceUrl(res.url);
+      const url = await uploadAudioFile(file);
+      setVoiceReferenceUrl(url);
       setVoiceReferenceName(file.name);
       toast.success("Voice reference uploaded — the AI will match the vocal style!");
     } catch (err) {
@@ -1403,7 +1427,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
     } finally {
       setIsUploadingVoiceRef(false);
     }
-  }, [uploadAudioMutation]);
+  }, [uploadAudioFile]);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -95,6 +95,53 @@ function s3PresignedGetUrl(key: string, expiresIn = 86400): string {
   return `${url}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
 }
 
+// ─── Presigned PUT URL ────────────────────────────────────────────────────────
+
+// Generate an AWS Signature V4 presigned PUT URL valid for `expiresIn` seconds.
+// The browser can use this to upload a file directly to S3 without routing through
+// the server, which avoids Clerk JWT expiry on large file uploads (base64 conversion
+// takes >60s for 7MB+ files, causing the JWT to expire before the request fires).
+function s3PresignedPutUrl(key: string, contentType: string, expiresIn = 3600): string {
+  const cleanKey = key.replace(/^\/+/, '');
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const dateStamp = amzDate.slice(0, 8);
+  const region = signingRegion();
+
+  const url = s3ObjectUrl(cleanKey);
+  const parsedUrl = new URL(url);
+  const host = parsedUrl.host;
+  const path = parsedUrl.pathname;
+
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  const credential = `${ENV.s3AccessKeyId}/${credentialScope}`;
+
+  // content-type must be a signed header so the browser cannot upload a different type
+  const signedHeaders = 'content-type;host';
+
+  // Build canonical query string (params must be sorted alphabetically per SigV4)
+  const queryParams = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': credential,
+    'X-Amz-Date': amzDate,
+    'X-Amz-Expires': String(expiresIn),
+    'X-Amz-SignedHeaders': signedHeaders,
+  });
+  queryParams.sort();
+  const canonicalQueryString = queryParams.toString();
+
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
+  const payloadHash = 'UNSIGNED-PAYLOAD';
+
+  const canonicalRequest = `PUT\n${path}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
+
+  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
+  const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
+
+  return `${url}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+}
+
 // ─── S3 PUT ───────────────────────────────────────────────────────────────────
 
 async function s3Put(
@@ -254,6 +301,27 @@ export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ k
     return { key, url };
   }
   return forgeGet(relKey);
+}
+
+/**
+ * Generate a presigned PUT URL so the browser can upload a file directly to S3,
+ * bypassing the tRPC server entirely. This eliminates the Clerk JWT expiry problem
+ * where base64 encoding of large files (7MB+) takes >60s before the request fires.
+ *
+ * Returns null when S3 is not configured (Forge/Manus-hosted environments).
+ * Callers must fall back to the base64-through-tRPC path when this returns null.
+ */
+export function storageGetPresignedPutUrl(
+  relKey: string,
+  contentType: string,
+  expiresIn = 3600
+): { uploadUrl: string; publicUrl: string } | null {
+  if (!hasS3Config()) return null;
+  const key = relKey.replace(/^\/+/, '');
+  const uploadUrl = s3PresignedPutUrl(key, contentType, expiresIn);
+  // publicUrl is the raw path-style URL — resolveAudioUrl() will presign it at read time
+  const publicUrl = s3ObjectUrl(key);
+  return { uploadUrl, publicUrl };
 }
 
 /**

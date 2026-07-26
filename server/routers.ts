@@ -84,7 +84,7 @@ import { coverArtRouter } from "./coverArt/router";
 import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { storagePut, storageGet, resolveAudioUrl } from "./storage";
+import { storagePut, storageGet, resolveAudioUrl, storageGetPresignedPutUrl } from "./storage";
 import { nanoid } from "nanoid";
 
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
@@ -174,6 +174,39 @@ const tracksRouter = router({
       const key = `audio/${ctx.user.id}/${nanoid(12)}.${ext}`;
       const { url } = await storagePut(key, buffer, input.mimeType);
       return { url, key };
+    }),
+
+  // Presigned PUT URL for direct browser-to-S3 uploads.
+  // Eliminates the Clerk JWT expiry problem caused by base64-encoding large files
+  // (7MB+ files take >60s to encode, causing the JWT to expire before the request fires).
+  // When S3 is not configured (Forge/Manus-hosted), useDirectUpload is false and the
+  // caller must fall back to the base64 getUploadUrl path.
+  getUploadPresignedUrl: protectedProcedure
+    .input(
+      z.object({
+        mimeType: z.string(),
+        fileExtension: z.string().max(10),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ext = input.fileExtension.replace(/^[.]+/, '').toLowerCase() || 'mp3';
+      const key = `audio/${ctx.user.id}/${nanoid(12)}.${ext}`;
+      const presigned = storageGetPresignedPutUrl(key, input.mimeType);
+      if (presigned) {
+        return {
+          uploadUrl: presigned.uploadUrl,
+          publicUrl: presigned.publicUrl,
+          key,
+          useDirectUpload: true as const,
+        };
+      }
+      // S3 not configured — caller will fall back to base64 path
+      return {
+        uploadUrl: null,
+        publicUrl: null,
+        key,
+        useDirectUpload: false as const,
+      };
     }),
 
   uploadCoverArt: protectedProcedure

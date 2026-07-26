@@ -1306,3 +1306,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Both: Confirm Washington Privacy Act compliance requirements for current platform scale
 - [ ] Both: Remove "Working Draft — not yet legally effective" notice after legal review complete
 - [ ] Both: Add breach notification process documentation (Privacy Section 9)
+
+## Bug Fix: JWT Expiry on Large File Uploads (Jul 2026)
+- [x] Add s3PresignedPutUrl() to server/storage.ts — generates SigV4 presigned PUT URL (content-type signed header, 1-hour expiry)
+- [x] Add storageGetPresignedPutUrl() public export — returns { uploadUrl, publicUrl } or null when S3 not configured
+- [x] Add getUploadPresignedUrl tRPC procedure to tracksRouter — returns { uploadUrl, publicUrl, key, useDirectUpload }
+- [x] Refactor handleReferenceAudioSelect and handleVoiceReferenceSelect in Generate.tsx into shared uploadAudioFile() helper
+- [x] uploadAudioFile: direct S3 PUT when useDirectUpload=true (no base64, no JWT, no size limit); falls back to base64 path for Forge/Manus-hosted environments
