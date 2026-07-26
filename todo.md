@@ -1313,3 +1313,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add getUploadPresignedUrl tRPC procedure to tracksRouter — returns { uploadUrl, publicUrl, key, useDirectUpload }
 - [x] Refactor handleReferenceAudioSelect and handleVoiceReferenceSelect in Generate.tsx into shared uploadAudioFile() helper
 - [x] uploadAudioFile: direct S3 PUT when useDirectUpload=true (no base64, no JWT, no size limit); falls back to base64 path for Forge/Manus-hosted environments
+
+## Sound DNA — Use Fusion Outputs as Bespoke Acoustic Anchors (Jul 2026)
+- [x] Add "Use as Sound DNA" button (emerald, Dna icon) to completed GenerationCard — appears below Download
+- [x] Add handleUseSoundDna callback in GeneratePage — loads track audioUrl as referenceAudioUrl, sets referenceAudioName to "🧬 {title}", clears palette instrument context, switches generationMode to "bespoke", scrolls to form
+- [x] No server changes needed — generateBespoke already accepts any URL as instrumentAudioPath
+- [ ] Test: does instrumental_file carry timbral identity of a fusion better than song_file?

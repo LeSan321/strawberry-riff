@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause, Download, Check, Piano, Lightbulb } from "lucide-react";
+import { Music, Loader2, AlertCircle, Upload, Clock, Sparkles, RefreshCw, Crown, Zap, Trash2, Dices, Mic2, X, FileAudio, Layers, GitFork, BookMarked, Pencil, Search, ImageIcon, Radio, RotateCcw, Play, Pause, Download, Check, Piano, Lightbulb, Dna } from "lucide-react";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import { VisualBriefPanel } from "@/components/VisualBriefPanel";
 import { StemSplitButton } from "@/components/StemSplitButton";
@@ -564,6 +564,7 @@ function GenerationCard({
   onDelete,
   onRefine,
   onToggleFavorite,
+  onUseSoundDna,
   isPremium,
   isNew,
 }: {
@@ -572,6 +573,7 @@ function GenerationCard({
   onDelete: (id: number) => void;
   onRefine: (generationId: number, refinement: "more_aggressive" | "less_busy" | "different_vibe") => void;
   onToggleFavorite: (id: number) => void;
+  onUseSoundDna: (audioUrl: string, title: string) => void;
   isPremium?: boolean;
   isNew?: boolean;
 }) {
@@ -861,6 +863,17 @@ function GenerationCard({
             >
               <Download className="mr-1.5 h-3 w-3" />
               Download
+            </Button>
+            {/* Sound DNA — use this track as instrumental_file anchor for a new Bespoke generation */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-xs col-span-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border border-emerald-200/60"
+              onClick={() => onUseSoundDna(gen.audioUrl!, gen.title)}
+              title="Use this track's sonic DNA as the acoustic anchor for a new Bespoke generation"
+            >
+              <Dna className="mr-1.5 h-3 w-3" />
+              Use as Sound DNA
             </Button>
           </div>
           {gen.visualBrief ? (
@@ -1329,6 +1342,28 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
     toast.success(`🎲 ${fusion.name} — ready to generate!`);
+  }, []);
+
+  /**
+   * Sound DNA — load a completed generation's audio URL as the Bespoke mode
+   * instrumental_file anchor. This lets users test whether instrumental_file
+   * preserves the timbral identity of a successful fusion better than song_file.
+   */
+  const handleUseSoundDna = useCallback((audioUrl: string, sourceTitle: string) => {
+    // Clear any existing instrument palette context (this is a fusion, not a palette item)
+    setInstrumentId(null);
+    setInstrumentDescription(null);
+    setInstrumentFamily(null);
+    setInstrumentTags([]);
+    // Load the track URL as the reference audio
+    setReferenceAudioUrl(audioUrl);
+    setReferenceAudioName(`🧬 ${sourceTitle}`);
+    // Switch to Bespoke mode so instrumental_file is used
+    setGenerationMode("bespoke");
+    setError(null);
+    // Scroll to the form so the user can add a title and optional steering prompt
+    setTimeout(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    toast.success(`Sound DNA loaded from “${sourceTitle}” — switch to Bespoke and generate!`);
   }, []);
 
   const uploadAudioMutation = trpc.tracks.getUploadUrl.useMutation();
@@ -2148,7 +2183,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
                     </p>
                   )}
                   {filteredGenerations.map((gen) => (
-                    <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} isNew={gen.id === newlyCompletedId} />
+                    <GenerationCard key={gen.id} gen={gen} onRegenerate={handleRegenerate} onDelete={handleDelete} onRefine={handleRefine} onToggleFavorite={handleToggleFavorite} onUseSoundDna={handleUseSoundDna} isPremium={user?.isPremium ?? monthlyUsage?.isPremium} isNew={gen.id === newlyCompletedId} />
                   ))}
                 </div>
               ) : (
