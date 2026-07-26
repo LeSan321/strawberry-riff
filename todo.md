@@ -1319,3 +1319,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add handleUseSoundDna callback in GeneratePage — loads track audioUrl as referenceAudioUrl, sets referenceAudioName to "🧬 {title}", clears palette instrument context, switches generationMode to "bespoke", scrolls to form
 - [x] No server changes needed — generateBespoke already accepts any URL as instrumentAudioPath
 - [ ] Test: does instrumental_file carry timbral identity of a fusion better than song_file?
+
+## Bug Fix: Sound DNA Banner Not Visible (Jul 2026)
+- [x] Decouple instrument banner visibility from instrumentId — show banner whenever referenceAudioUrl is set (palette item OR Sound DNA track)
+- [x] Add Sound DNA variant of the banner (emerald theme, Dna icon, "Sound DNA anchor" label) for non-palette sources (no instrumentId)
+- [x] Mode selector (Quick / Bespoke) always visible when banner is shown
+- [x] Clear button on Sound DNA banner resets referenceAudioUrl, referenceAudioName, and switches back to quick mode
