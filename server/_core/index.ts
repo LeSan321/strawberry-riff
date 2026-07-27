@@ -555,4 +555,4 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+await startServer();
