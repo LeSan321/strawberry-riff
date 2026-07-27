@@ -293,3 +293,45 @@ export const stemSplitUsage = mysqlTable("stem_split_usage", {
 
 export type StemSplitUsage = typeof stemSplitUsage.$inferSelect;
 export type InsertStemSplitUsage = typeof stemSplitUsage.$inferInsert;
+
+
+// ─── Vocal Projects (Platinum: Add Vocals to fusion instrumentals) ──────────────
+export const vocalProjects = mysqlTable("vocal_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  // Source fusion instrumental
+  fusionGenerationId: int("fusionGenerationId").notNull(), // links to music_generations
+  fusionAudioUrl: text("fusionAudioUrl").notNull(),        // S3 URL of the fusion instrumental
+  fusionTitle: varchar("fusionTitle", { length: 200 }).notNull(),
+  // Vocal character source (a vocal stem extracted from another generation)
+  vocalSourceGenerationId: int("vocalSourceGenerationId"), // optional: source generation for vocal stem
+  vocalStemUrl: text("vocalStemUrl"),                      // URL of the vocal stem used as voice_file
+  // Vocal generation inputs
+  lyrics: text("lyrics").notNull(),
+  styleAnchor: varchar("styleAnchor", { length: 100 }).notNull(), // e.g. "Celtic", "Appalachian", "Blues"
+  // Pipeline state
+  status: mysqlEnum("status", [
+    "pending",          // just created
+    "generating_vocal", // MiniMax generating vocal track
+    "splitting_stems",  // StemSplit extracting vocal stem from MiniMax output
+    "mixing",           // ffmpeg mixing vocal stem onto fusion instrumental
+    "complete",         // final mix ready
+    "failed",
+  ]).default("pending").notNull(),
+  // Intermediate artifacts
+  miniMaxGenerationId: varchar("miniMaxGenerationId", { length: 100 }), // MiniMax task_id
+  miniMaxAudioUrl: text("miniMaxAudioUrl"),   // raw MiniMax output (full track with backing)
+  stemSplitJobId: varchar("stemSplitJobId", { length: 128 }), // StemSplit job ID
+  extractedVocalUrl: text("extractedVocalUrl"), // vocal stem extracted from MiniMax output
+  // Final result
+  resultAudioUrl: text("resultAudioUrl"),  // S3 URL of the final mixed track
+  resultAudioKey: text("resultAudioKey"),  // S3 key
+  errorMessage: text("errorMessage"),
+  // Timestamps
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VocalProject = typeof vocalProjects.$inferSelect;
+export type InsertVocalProject = typeof vocalProjects.$inferInsert;
