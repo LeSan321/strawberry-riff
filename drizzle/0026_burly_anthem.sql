@@ -1,4 +1,4 @@
-CREATE TABLE `vocal_projects` (
+CREATE TABLE IF NOT EXISTS `vocal_projects` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
 	`fusionGenerationId` int NOT NULL,
