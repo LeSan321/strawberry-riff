@@ -538,13 +538,7 @@ async function startServer() {
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
-  // In production (Railway/Cloud Run), skip port probing and bind directly to PORT.
-  // Platform proxies reserve the port at the routing layer before the app starts,
-  // so isPortAvailable() returns false for all 20 candidates and throws.
-  // In development, probing is still useful to avoid conflicts with other local services.
-  const port = process.env.NODE_ENV === "production"
-    ? preferredPort
-    : await findAvailablePort(preferredPort);
+  const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
@@ -555,4 +549,4 @@ async function startServer() {
   });
 }
 
-await startServer();
+startServer().catch(console.error);

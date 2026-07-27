@@ -183,13 +183,6 @@
       "when": 1784075850656,
       "tag": "0025_worried_selene",
       "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "5",
-      "when": 1785116896104,
-      "tag": "0026_burly_anthem",
-      "breakpoints": true
     }
   ]
 }
