@@ -80,6 +80,7 @@ import { mixerRouter } from "./routers/mixer";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { ogImageRouter } from "./routers/ogImage";
 import { adminMigrationRouter } from "./routers/adminMigration";
+import { vocalProjectsRouter } from "./routers/vocalProjects";
 import { coverArtRouter } from "./coverArt/router";
 import { frequencyRouter } from "./frequency/router";
 import { COOKIE_NAME } from "@shared/const";
@@ -1782,6 +1783,7 @@ export const appRouter = router({
   assistant: assistantRouter,
   instrumentPalette: instrumentPaletteRouter,
   admin: adminMigrationRouter,
+  vocalProjects: vocalProjectsRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,0 +1,23 @@
+CREATE TABLE `vocal_projects` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`fusionGenerationId` int NOT NULL,
+	`fusionAudioUrl` text NOT NULL,
+	`fusionTitle` varchar(200) NOT NULL,
+	`vocalSourceGenerationId` int,
+	`vocalStemUrl` text,
+	`lyrics` text NOT NULL,
+	`styleAnchor` varchar(100) NOT NULL,
+	`status` enum('pending','generating_vocal','splitting_stems','mixing','complete','failed') NOT NULL DEFAULT 'pending',
+	`miniMaxGenerationId` varchar(100),
+	`miniMaxAudioUrl` text,
+	`stemSplitJobId` varchar(128),
+	`extractedVocalUrl` text,
+	`resultAudioUrl` text,
+	`resultAudioKey` text,
+	`errorMessage` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`completedAt` timestamp,
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `vocal_projects_id` PRIMARY KEY(`id`)
+);

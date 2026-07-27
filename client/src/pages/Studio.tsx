@@ -23,6 +23,7 @@ import {
   Home,
   Download,
   Piano,
+  Mic2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
 import { FrequencyModal } from "@/components/FrequencyModal";
 import { StyleLibrary } from "./StyleLibrary";
 import { MyStemsPanel } from "@/components/MyStemsPanel";
+import { AddVocalsPanel } from "@/components/AddVocalsPanel";
 
 // ─── Studio Theme Definitions ─────────────────────────────────────────────────
 const STUDIO_THEMES = [
@@ -191,8 +193,8 @@ function StudioSidebar({
   onOpenFrequency,
   onOpenInstrumentPalette,
 }: {
-  activeTool: "generate" | "lyrics" | "styles" | "stems";
-  onToolChange: (t: "generate" | "lyrics" | "styles" | "stems") => void;
+  activeTool: "generate" | "lyrics" | "styles" | "stems" | "vocals";
+  onToolChange: (t: "generate" | "lyrics" | "styles" | "stems" | "vocals") => void;
   theme: typeof STUDIO_THEMES[0];
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
@@ -209,6 +211,7 @@ function StudioSidebar({
     { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Writer's Bible" },
     { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
     { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
+    { id: "vocals" as const, label: "Add Vocals", icon: Mic2, desc: "Platinum vocal mix" },
   ];
 
   return (
@@ -366,7 +369,7 @@ function StudioContextPanel({
   onClose,
 }: {
   theme: typeof STUDIO_THEMES[0];
-  activeTool: "generate" | "lyrics" | "styles" | "stems";
+  activeTool: "generate" | "lyrics" | "styles" | "stems" | "vocals";
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -571,7 +574,7 @@ function StudioHeader({
 // ─── Main Studio Page ──────────────────────────────────────────────────────────
 export default function Studio() {
   const { user, isAuthenticated } = useAuth();
-  const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles" | "stems">("generate");
+  const [activeTool, setActiveTool] = useState<"generate" | "lyrics" | "styles" | "stems" | "vocals">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
@@ -719,8 +722,13 @@ export default function Studio() {
                 <LyricsGeneratorPage />
               ) : activeTool === "styles" ? (
                 <StyleLibrary />
-              ) : (
+              ) : activeTool === "stems" ? (
                 <MyStemsPanel
+                  textAccent={theme.textAccent}
+                  buttonAccent={theme.buttonAccent}
+                />
+              ) : (
+                <AddVocalsPanel
                   textAccent={theme.textAccent}
                   buttonAccent={theme.buttonAccent}
                 />
