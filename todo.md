@@ -1336,3 +1336,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Wire Add Vocals tool to Studio.tsx sidebar (Mic2 icon) and content switch
 - [x] TypeScript clean, 345/346 tests passing (1 pre-existing flaky timeout)
 - [x] Save checkpoint
+
+## Bug Fix: Production Crash — ffmpeg Not Available in Default Build Image (Jul 2026)
+- [x] Root cause: Autoscale (Cloud Run) default Node image has no ffmpeg binary; mixer.ts throws on startup
+- [x] Fix: Add custom Dockerfile at project root — installs ffmpeg via apt-get on node:22-slim, sets FFMPEG_BIN=/usr/bin/ffmpeg
+- [x] Save checkpoint so Dockerfile is committed and included in next deploy
