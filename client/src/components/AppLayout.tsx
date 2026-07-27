@@ -29,6 +29,7 @@ import {
   Repeat1,
   Loader2,
   Car,
+  Mic,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -139,6 +140,21 @@ function AppHeader() {
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Studio</span>
+              </motion.div>
+            </Link>
+            {/* The Session CTA */}
+            <Link href="/session">
+              <motion.div
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ml-1 ${
+                  location === "/session"
+                    ? "bg-gradient-to-r from-violet-700 to-purple-700 text-white shadow-md shadow-violet-900/40"
+                    : "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-sm shadow-violet-900/30"
+                }`}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <Mic className="w-4 h-4" />
+                <span>Session</span>
               </motion.div>
             </Link>
           </nav>
@@ -252,6 +268,20 @@ function AppHeader() {
                 >
                   <Sparkles className="w-4 h-4" />
                   Enter Studio
+                </div>
+              </Link>
+              {/* The Session CTA in mobile nav */}
+              <Link href="/session">
+                <div
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg mx-1 mt-1 text-sm font-semibold cursor-pointer ${
+                    location === "/session"
+                      ? "bg-gradient-to-r from-violet-700 to-purple-700 text-white"
+                      : "bg-gradient-to-r from-violet-600/15 to-purple-600/15 text-violet-400"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Mic className="w-4 h-4" />
+                  Enter Session
                 </div>
               </Link>
               {/* Auth buttons in mobile nav */}

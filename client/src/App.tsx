@@ -21,6 +21,7 @@ import TrackPage from "./pages/TrackPage";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { LyricsGeneratorPage } from "./pages/LyricsGenerator";
 import Studio from "./pages/Studio";
+import TheSession from "./pages/TheSession";
 import { StyleLibrary } from "./pages/StyleLibrary";
 import PreviewPage from "./pages/PreviewPage";
 import SharedPlaylistPage from "./pages/SharedPlaylistPage";
@@ -49,6 +50,7 @@ function getPageContext(path: string): string {
   if (path.startsWith("/track")) return "track";
   if (path.startsWith("/lyrics")) return "lyrics";
   if (path.startsWith("/studio")) return "studio";
+  if (path.startsWith("/session")) return "session";
   if (path.startsWith("/style-library")) return "studio";
   if (path.startsWith("/stems") || path.startsWith("/my-stems") || path.startsWith("/track-detail")) return "myriffs";
   return "general";
@@ -67,6 +69,7 @@ function Router() {
     <Switch>
       {/* Studio, Style Library, Preview, Shared Playlist, Stems Studio, and Track Detail are full-screen — outside AppLayout */}
       <Route path="/studio" component={Studio} />
+      <Route path="/session" component={TheSession} />
       <Route path="/stems/:generationId" component={StemsStudio} />
       <Route path="/track-detail/:generationId" component={TrackDetail} />
       <Route path="/my-stems" component={MyStemsBrowser} />
