@@ -1325,3 +1325,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add Sound DNA variant of the banner (emerald theme, Dna icon, "Sound DNA anchor" label) for non-palette sources (no instrumentId)
 - [x] Mode selector (Quick / Bespoke) always visible when banner is shown
 - [x] Clear button on Sound DNA banner resets referenceAudioUrl, referenceAudioName, and switches back to quick mode
+
+## Bug Fix: Generate.tsx Voice Reference JSX Syntax Error (Jul 2026)
+- [x] Add sessionMode prop to GeneratePageProps and GeneratePage function signature
+- [x] Wrap Style Reference panel in {!sessionMode && ...} to hide in session mode
+- [x] Wrap Voice Reference panel in {!sessionMode && ...} to hide in session mode
+- [x] Fix malformed JSX ternary in Voice Reference block — remove duplicate premium-locked div, clean up closing syntax to ))}
+- [x] TypeScript clean (0 errors), production build passes

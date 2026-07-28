@@ -1103,9 +1103,10 @@ interface GeneratePageProps {
     tags: string[];
   } | null;
   onClearInstrument?: () => void;
+  sessionMode?: boolean;
 }
 
-export function GeneratePage({ selectedInstrument, onClearInstrument }: GeneratePageProps = {}) {
+export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMode = false }: GeneratePageProps = {}) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -1812,7 +1813,75 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
               </div>
 
               {/* Reference Audio Panel — Premium only (visible-but-locked for free users) */}
-              {!monthlyUsage?.isPremium ? (
+              {sessionMode ? (
+                /* Session Mode: compact square tile */
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Style Reference Tile */}
+                  <div
+                    className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 cursor-pointer transition-all min-h-[100px] ${
+                      referenceAudioUrl
+                        ? 'border-pink-400 bg-pink-500/10'
+                        : !monthlyUsage?.isPremium
+                        ? 'border-pink-200 bg-pink-50/30 opacity-70'
+                        : 'border-pink-300 bg-pink-500/5 hover:bg-pink-500/10'
+                    }`}
+                    onClick={() => {
+                      if (!monthlyUsage?.isPremium) {
+                        toast(<div className="flex items-start gap-2"><Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" /><div><p className="font-semibold text-sm">Style Reference is Premium</p><a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a></div></div>, { duration: 5000 });
+                      } else if (!referenceAudioUrl) {
+                        refAudioInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    {referenceAudioUrl ? (
+                      <>
+                        <FileAudio className="h-6 w-6 text-pink-500" />
+                        <p className="text-xs text-pink-700 font-medium text-center truncate w-full px-1">{referenceAudioName}</p>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setReferenceAudioUrl(null); setReferenceAudioName(null); }} className="absolute top-1.5 right-1.5 text-pink-400 hover:text-pink-600"><X className="h-3 w-3" /></button>
+                      </>
+                    ) : (
+                      <>
+                        {!monthlyUsage?.isPremium ? <Crown className="h-5 w-5 text-amber-400" /> : <Upload className="h-5 w-5 text-pink-400" />}
+                        <p className="text-xs font-medium text-center leading-tight" style={{color: !monthlyUsage?.isPremium ? '#f472b6' : '#be185d'}}>Style Reference</p>
+                        {!monthlyUsage?.isPremium && <p className="text-[10px] text-pink-400">Premium</p>}
+                      </>
+                    )}
+                    <input ref={refAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleReferenceAudioSelect(file); e.target.value = ""; }} />
+                  </div>
+                  {/* Voice Reference Tile */}
+                  <div
+                    className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 cursor-pointer transition-all min-h-[100px] ${
+                      voiceReferenceUrl
+                        ? 'border-teal-400 bg-teal-500/10'
+                        : !monthlyUsage?.isPremium
+                        ? 'border-teal-200 bg-teal-50/30 opacity-70'
+                        : 'border-teal-300 bg-teal-500/5 hover:bg-teal-500/10'
+                    }`}
+                    onClick={() => {
+                      if (!monthlyUsage?.isPremium) {
+                        toast(<div className="flex items-start gap-2"><Crown className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" /><div><p className="font-semibold text-sm">Voice Reference is Premium</p><a href="/pricing" className="text-xs text-purple-600 font-medium mt-1 inline-block hover:underline">Upgrade →</a></div></div>, { duration: 5000 });
+                      } else if (!voiceReferenceUrl) {
+                        voiceRefAudioInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    {voiceReferenceUrl ? (
+                      <>
+                        <FileAudio className="h-6 w-6 text-teal-500" />
+                        <p className="text-xs text-teal-700 font-medium text-center truncate w-full px-1">{voiceReferenceName}</p>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setVoiceReferenceUrl(null); setVoiceReferenceName(null); }} className="absolute top-1.5 right-1.5 text-teal-400 hover:text-teal-600"><X className="h-3 w-3" /></button>
+                      </>
+                    ) : (
+                      <>
+                        {!monthlyUsage?.isPremium ? <Crown className="h-5 w-5 text-amber-400" /> : <Mic2 className="h-5 w-5 text-teal-400" />}
+                        <p className="text-xs font-medium text-center leading-tight" style={{color: !monthlyUsage?.isPremium ? '#5eead4' : '#0f766e'}}>Voice Reference</p>
+                        {!monthlyUsage?.isPremium && <p className="text-[10px] text-teal-400">Premium</p>}
+                      </>
+                    )}
+                    <input ref={voiceRefAudioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleVoiceReferenceSelect(file); e.target.value = ""; }} />
+                  </div>
+                </div>
+              ) : !monthlyUsage?.isPremium ? (
                 <div
                   className="rounded-lg border border-dashed border-pink-200 bg-pink-50/50 p-4 cursor-pointer"
                   onClick={() => {
@@ -1892,8 +1961,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
 
               {/* Generation Mode Selector moved into instrument banner above */}
 
-              {/* Voice Reference Audio Panel — Premium only (visible-but-locked for free users) */}
-              {!monthlyUsage?.isPremium ? (
+              {/* Voice Reference Audio Panel — standard mode only (session mode uses tile grid above) */}
+              {!sessionMode && (!monthlyUsage?.isPremium ? (
                 <div
                   className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-4 cursor-pointer"
                   onClick={() => {
@@ -1969,7 +2038,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument }: Generate
                     Supported: MP3, WAV, FLAC, M4A — max 50MB — min 15 seconds of clear vocals
                   </p>
                 </div>
-              )}
+              ))}
 
               {/* Surprise Me + Fusion Recipes Buttons */}
               <div className="rounded-lg border border-dashed border-purple-300 bg-purple-500/5 p-4">
