@@ -1,698 +1,582 @@
 /**
  * The Session — Platinum creative space
  *
- * A standalone full-screen page at /session.
- * v1 scope:
- *   - Hero "Enter the Session" moment
- *   - Add Vocals workflow (live feature)
- *   - Placeholder sections for future features
- *   - Platinum gating
- *
- * Designed to be structurally loose — each section is its own component
- * so layout can be rearranged freely as the space evolves.
+ * Studio-derived layout: left sidebar + cinematic header + central canvas.
+ * Full Generate controls, Add Vocals workflow, Lyrics, Styles, Stems.
+ * Structurally loose — each section is its own component for easy rearrangement.
  */
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import {
   Mic,
   Music,
-  Sparkles,
-  Crown,
-  Lock,
-  ChevronLeft,
+  Pen,
+  Library,
+  Download,
+  Layers,
+  Zap,
+  Piano,
+  Home,
+  Palette,
+  Check,
+  X,
   Play,
   Pause,
   Loader2,
-  Check,
-  X,
-  Sliders,
-  BookOpen,
-  Palette,
   Radio,
   Calendar,
-  Layers,
-  Volume2,
-  Download,
+  BookOpen,
+  Star,
+  Crown,
+  Lock,
+  Sparkles,
   RefreshCw,
-  Home,
-  ArrowRight,
-  Wand2,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
+import { GeneratePage } from "./Generate";
+import { LyricsGeneratorPage } from "./LyricsGenerator";
+import { StyleLibrary } from "./StyleLibrary";
+import { MyStemsPanel } from "@/components/MyStemsPanel";
+import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
+import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
+import { FrequencyModal } from "@/components/FrequencyModal";
 
-// ─── Vocal Archetype Definitions ──────────────────────────────────────────────
+// ─── Session Theme Definitions ─────────────────────────────────────────────────
+const SESSION_THEMES = [
+  {
+    id: "midnight-studio",
+    name: "Midnight Studio",
+    description: "Late-night recording session under violet neon glow",
+    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663331665311/BBbXFyizKgRlbAeq.jpg",
+    accent: "from-violet-600 to-purple-700",
+    headerGradient: "from-transparent via-transparent to-violet-950/80",
+    sidebarBg: "bg-[#0e0a1f]",
+    canvasBg: "bg-[#0e0a1f]",
+    textAccent: "text-violet-400",
+    raspberryAccent: "text-violet-300",
+    borderAccent: "border-violet-900/50",
+    buttonAccent: "bg-violet-700 hover:bg-violet-600",
+    borderColor: "border-violet-500/40",
+  },
+  {
+    id: "golden-hour",
+    name: "Golden Hour",
+    description: "Warm afternoon session with amber light flooding the room",
+    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663331665311/NwjbIweBYggJWMoR.jpg",
+    accent: "from-amber-500 to-orange-600",
+    headerGradient: "from-transparent via-transparent to-amber-950/80",
+    sidebarBg: "bg-[#1a1005]",
+    canvasBg: "bg-[#1a1005]",
+    textAccent: "text-amber-400",
+    raspberryAccent: "text-amber-300",
+    borderAccent: "border-amber-900/50",
+    buttonAccent: "bg-amber-600 hover:bg-amber-500",
+    borderColor: "border-amber-500/40",
+  },
+  {
+    id: "deep-indigo",
+    name: "Deep Indigo",
+    description: "Immersive late-night session in a deep indigo haze",
+    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663331665311/nxFyDCcRkUYCAOFl.jpg",
+    accent: "from-indigo-600 to-blue-700",
+    headerGradient: "from-transparent via-transparent to-indigo-950/80",
+    sidebarBg: "bg-[#080a1f]",
+    canvasBg: "bg-[#080a1f]",
+    textAccent: "text-indigo-400",
+    raspberryAccent: "text-indigo-300",
+    borderAccent: "border-indigo-900/50",
+    buttonAccent: "bg-indigo-700 hover:bg-indigo-600",
+    borderColor: "border-indigo-500/40",
+  },
+  {
+    id: "crimson-room",
+    name: "Crimson Room",
+    description: "Intense creative energy in a crimson-lit recording space",
+    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663331665311/HKkIKXLJPpTZQHEh.jpg",
+    accent: "from-rose-600 to-red-700",
+    headerGradient: "from-transparent via-transparent to-rose-950/80",
+    sidebarBg: "bg-[#1a0808]",
+    canvasBg: "bg-[#1a0808]",
+    textAccent: "text-rose-400",
+    raspberryAccent: "text-rose-300",
+    borderAccent: "border-rose-900/50",
+    buttonAccent: "bg-rose-700 hover:bg-rose-600",
+    borderColor: "border-rose-500/40",
+  },
+];
+
+type SessionTheme = typeof SESSION_THEMES[0];
+
+// ─── Vocal Archetypes ──────────────────────────────────────────────────────────
 const VOCAL_ARCHETYPES = [
-  {
-    id: "intimate-bedroom",
-    name: "Intimate Bedroom",
-    description: "Breathy, warm, close-mic'd. Vulnerable and lo-fi.",
-    emoji: "🌙",
-    color: "from-indigo-600 to-purple-700",
-    border: "border-indigo-500/30",
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-300",
-  },
-  {
-    id: "raw-emotional",
-    name: "Raw Emotional",
-    description: "Imperfect, human, emotional cracks. Feeling over polish.",
-    emoji: "💧",
-    color: "from-blue-600 to-cyan-700",
-    border: "border-blue-500/30",
-    bg: "bg-blue-500/10",
-    text: "text-blue-300",
-  },
-  {
-    id: "soulful-belter",
-    name: "Soulful Belter",
-    description: "Rich, resonant, dynamic runs. Powerful and warm.",
-    emoji: "🔥",
-    color: "from-orange-600 to-amber-700",
-    border: "border-orange-500/30",
-    bg: "bg-orange-500/10",
-    text: "text-orange-300",
-  },
-  {
-    id: "gritty-rock",
-    name: "Gritty Rock",
-    description: "Rasp, grit, strain. Live energy that cuts through.",
-    emoji: "⚡",
-    color: "from-red-600 to-rose-700",
-    border: "border-red-500/30",
-    bg: "bg-red-500/10",
-    text: "text-red-300",
-  },
-  {
-    id: "confident-pop",
-    name: "Confident Pop",
-    description: "Bright, clear, polished-but-human. Strong presence.",
-    emoji: "✨",
-    color: "from-pink-600 to-rose-600",
-    border: "border-pink-500/30",
-    bg: "bg-pink-500/10",
-    text: "text-pink-300",
-  },
-  {
-    id: "lo-fi-whisper",
-    name: "Lo-fi Whisper",
-    description: "Soft, hazy, conversational. Tape warmth and room tone.",
-    emoji: "🌫️",
-    color: "from-slate-600 to-zinc-700",
-    border: "border-slate-500/30",
-    bg: "bg-slate-500/10",
-    text: "text-slate-300",
-  },
-  {
-    id: "powerful-anthem",
-    name: "Powerful Anthem",
-    description: "Soaring, confident, epic build. Human but massive.",
-    emoji: "🏔️",
-    color: "from-violet-600 to-purple-700",
-    border: "border-violet-500/30",
-    bg: "bg-violet-500/10",
-    text: "text-violet-300",
-  },
-  {
-    id: "storyteller-folk",
-    name: "Storyteller Folk",
-    description: "Honest, clear, organic. Lyric-first with natural warmth.",
-    emoji: "📖",
-    color: "from-emerald-600 to-teal-700",
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-300",
-  },
+  { id: "intimate-bedroom", name: "Intimate Bedroom", desc: "Breathy, warm, close-mic'd. Vulnerable and lo-fi.", icon: "🌙" },
+  { id: "raw-emotional", name: "Raw Emotional", desc: "Imperfect, human. Emotional cracks and feeling over polish.", icon: "💔" },
+  { id: "soulful-belter", name: "Soulful Belter", desc: "Rich, resonant. Dynamic range with controlled runs.", icon: "🎤" },
+  { id: "gritty-rock", name: "Gritty Rock", desc: "Powerful midrange with rasp and grit. Cuts through a band.", icon: "🎸" },
+  { id: "confident-pop", name: "Confident Pop", desc: "Bright, clear, polished-but-human with excellent presence.", icon: "✨" },
+  { id: "lo-fi-whisper", name: "Lo-fi Whisper", desc: "Soft, hazy, conversational. Room tone and tape warmth.", icon: "🌫️" },
+  { id: "powerful-anthem", name: "Powerful Anthem", desc: "Soaring, confident. Strong projection and emotional build.", icon: "🔥" },
+  { id: "storyteller-folk", name: "Storyteller Folk", desc: "Honest, clear, organic. Focused on lyrical delivery.", icon: "📖" },
 ] as const;
 
 type VocalArchetypeId = typeof VOCAL_ARCHETYPES[number]["id"];
 
-// ─── Coming Soon Section ───────────────────────────────────────────────────────
-function ComingSoonSection({
-  icon: Icon,
-  title,
-  description,
-  accent,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  accent: string;
-}) {
+// ─── Theme Picker Modal ────────────────────────────────────────────────────────
+function ThemePickerModal({
+  currentTheme, onSelect, onClose,
+}: { currentTheme: string; onSelect: (id: string) => void; onClose: () => void }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 flex items-start gap-4 opacity-60 hover:opacity-80 transition-opacity">
-      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center flex-shrink-0`}>
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-white/80">{title}</span>
-          <Badge variant="outline" className="text-[10px] border-white/20 text-white/40 py-0">
-            Coming Soon
-          </Badge>
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-xl font-bold text-white">Choose Your Session</h2>
+            <p className="text-sm text-gray-400 mt-0.5">Set the atmosphere for your creative space</p>
+          </div>
+          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </Button>
         </div>
-        <p className="text-xs text-white/40 leading-relaxed">{description}</p>
+        <div className="grid grid-cols-2 gap-4">
+          {SESSION_THEMES.map((theme) => (
+            <motion.button
+              key={theme.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              onClick={() => { onSelect(theme.id); onClose(); }}
+              className={`relative rounded-xl overflow-hidden aspect-video border-2 transition-all ${
+                currentTheme === theme.id ? "border-white shadow-lg shadow-white/20" : "border-gray-700 hover:border-gray-500"
+              }`}
+            >
+              <img src={theme.image} alt={theme.name} className="w-full h-full object-cover" />
+              <div className={`absolute inset-0 bg-gradient-to-t ${theme.headerGradient}`} />
+              <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
+                <p className="text-white font-semibold text-sm">{theme.name}</p>
+                <p className="text-white/70 text-xs line-clamp-1">{theme.description}</p>
+              </div>
+              {currentTheme === theme.id && (
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white flex items-center justify-center">
+                  <Check className="w-4 h-4 text-gray-900" />
+                </div>
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Session Sidebar ───────────────────────────────────────────────────────────
+function SessionSidebar({
+  activeTool, onToolChange, theme, onOpenThemePicker, onOpenFusions, onOpenFrequency, onOpenInstrumentPalette,
+}: {
+  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems";
+  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems") => void;
+  theme: SessionTheme;
+  onOpenThemePicker: () => void;
+  onOpenFusions: () => void;
+  onOpenFrequency: () => void;
+  onOpenInstrumentPalette: () => void;
+}) {
+  const tools = [
+    { id: "generate" as const, label: "Generate", icon: Music, desc: "Create new fusion" },
+    { id: "vocals" as const, label: "Add Vocals", icon: Mic, desc: "Vocal generation" },
+    { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Lyrics editor" },
+    { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
+    { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
+  ];
+
+  return (
+    <div className={`flex flex-col h-full ${theme.sidebarBg} border-r ${theme.borderAccent} w-[72px] md:w-[200px] flex-shrink-0`}>
+      <div className={`px-3 md:px-4 py-4 border-b ${theme.borderAccent}`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0`}>
+            <Radio className="w-4 h-4 text-white" />
+          </div>
+          <span className={`hidden md:block text-sm font-bold ${theme.textAccent}`}>The Session</span>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+        <p className={`hidden md:block text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-60 px-2 py-1`}>Tools</p>
+        {tools.map((tool) => {
+          const Icon = tool.icon;
+          const isActive = activeTool === tool.id;
+          return (
+            <button
+              key={tool.id} onClick={() => onToolChange(tool.id)}
+              className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left transition-all ${
+                isActive ? `bg-gradient-to-r ${theme.accent} text-white shadow-md` : `text-gray-400 hover:text-white hover:bg-white/10`
+              }`}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <div className="hidden md:block">
+                <p className="text-sm font-medium leading-none">{tool.label}</p>
+                <p className={`text-xs mt-0.5 ${isActive ? "text-white/70" : "text-gray-500"}`}>{tool.desc}</p>
+              </div>
+            </button>
+          );
+        })}
+
+        <div className={`border-t ${theme.borderAccent} my-2`} />
+        <p className={`hidden md:block text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-60 px-2 py-1`}>Resources</p>
+
+        <button onClick={onOpenFusions} className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}>
+          <Layers className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none">Fusions</p>
+            <p className="text-xs mt-0.5 opacity-60">47 recipes</p>
+          </div>
+        </button>
+
+        <button onClick={onOpenFrequency} className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}>
+          <Zap className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none">Your Frequency</p>
+            <p className="text-xs mt-0.5 opacity-60">Visual universe</p>
+          </div>
+        </button>
+
+        <button onClick={onOpenInstrumentPalette} className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}>
+          <Piano className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none">Instrument Palette</p>
+            <p className="text-xs mt-0.5 opacity-60">36 sonic references</p>
+          </div>
+        </button>
+
+        <div className={`border-t ${theme.borderAccent} my-2`} />
+        <p className={`hidden md:block text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-40 px-2 py-1`}>Coming Soon</p>
+        {[
+          { icon: Star, label: "Saved Sessions", desc: "Your fusions" },
+          { icon: Calendar, label: "Concerts", desc: "Live events" },
+          { icon: BookOpen, label: "Lyrics Vault", desc: "Saved lyrics" },
+        ].map(({ icon: Icon, label, desc }) => (
+          <button key={label} onClick={() => toast(`${label} — coming soon`)}
+            className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left text-gray-600 hover:text-gray-400 hover:bg-white/5 transition-all"
+          >
+            <Icon className="w-4 h-4 flex-shrink-0" />
+            <div className="hidden md:block">
+              <p className="text-sm font-medium leading-none">{label}</p>
+              <p className="text-xs mt-0.5 opacity-60">{desc}</p>
+            </div>
+          </button>
+        ))}
+      </nav>
+
+      <div className={`p-2 border-t ${theme.borderAccent}`}>
+        <Link href="/">
+          <button className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+            <Home className="w-4 h-4 flex-shrink-0" />
+            <div className="hidden md:block">
+              <p className="text-sm font-medium leading-none text-left">Home</p>
+              <p className="text-xs mt-0.5 text-gray-500 text-left">Back to app</p>
+            </div>
+          </button>
+        </Link>
+      </div>
+
+      <div className={`p-2 border-t ${theme.borderAccent}`}>
+        <button onClick={onOpenThemePicker} className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+          <Palette className="w-4 h-4 flex-shrink-0" />
+          <div className="hidden md:block">
+            <p className="text-sm font-medium leading-none text-left">Change Scene</p>
+            <p className="text-xs mt-0.5 text-gray-500 text-left">{SESSION_THEMES.find(t => t.id === theme.id)?.name}</p>
+          </div>
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── Instrumental Picker ───────────────────────────────────────────────────────
-function InstrumentalPicker({
-  selectedId,
-  selectedUrl,
-  onSelect,
-}: {
-  selectedId: number | null;
-  selectedUrl: string | null;
-  onSelect: (id: number, url: string, title: string) => void;
-}) {
-  const { data: generations, isLoading } = trpc.musicGeneration.myGenerations.useQuery();
-  const [playing, setPlaying] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const completed = (generations ?? []).filter(
-    (g) => g.status === "complete" && g.audioUrl
-  );
-
-  function togglePlay(id: number, url: string) {
-    if (playing === id) {
-      audioRef.current?.pause();
-      setPlaying(null);
-    } else {
-      if (audioRef.current) audioRef.current.pause();
-      const audio = new Audio(url);
-      audio.onended = () => setPlaying(null);
-      audio.play();
-      audioRef.current = audio;
-      setPlaying(id);
-    }
-  }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { audioRef.current?.pause(); };
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-5 h-5 animate-spin text-white/40" />
-      </div>
-    );
-  }
-
-  if (completed.length === 0) {
-    return (
-      <div className="text-center py-8 text-white/40">
-        <Music className="w-8 h-8 mx-auto mb-2 opacity-40" />
-        <p className="text-sm">No completed generations yet.</p>
-        <p className="text-xs mt-1">Generate an instrumental first, then come back.</p>
-      </div>
-    );
-  }
-
+// ─── Session Header ────────────────────────────────────────────────────────────
+function SessionHeader({ theme }: { theme: SessionTheme }) {
   return (
-    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-      {completed.map((gen) => (
-        <motion.div
-          key={gen.id}
-          whileHover={{ scale: 1.01 }}
-          onClick={() => onSelect(gen.id, gen.audioUrl!, gen.title)}
-          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-            selectedId === gen.id
-              ? "border-violet-500/60 bg-violet-500/10"
-              : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]"
-          }`}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlay(gen.id, gen.audioUrl!);
-            }}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0 transition-colors"
-          >
-            {playing === gen.id ? (
-              <Pause className="w-3.5 h-3.5 text-white" />
-            ) : (
-              <Play className="w-3.5 h-3.5 text-white ml-0.5" />
-            )}
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-white truncate">{gen.title}</p>
-          </div>
-          {selectedId === gen.id && (
-            <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-          )}
-        </motion.div>
-      ))}
+    <div className={`relative h-36 md:h-48 flex-shrink-0 overflow-hidden border-b-2 ${theme.borderColor}`}>
+      <img src={theme.image} alt={theme.name} className="absolute inset-0 w-full h-full object-cover object-center" />
+      <div className={`absolute inset-0 bg-gradient-to-b ${theme.headerGradient}`} />
+      <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
+        <div className="flex items-center gap-2">
+          <Badge className="text-xs bg-black/40 text-white border-white/20 backdrop-blur-sm">
+            <Radio className="w-3 h-3 mr-1" />The Session
+          </Badge>
+          <Badge className="text-xs bg-violet-500/30 text-violet-200 border-violet-400/30 backdrop-blur-sm">
+            <Crown className="w-3 h-3 mr-1" />Platinum
+          </Badge>
+        </div>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+            Riff Session
+          </h1>
+          <p className="text-white/60 text-sm mt-0.5 hidden md:block">{theme.description}</p>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ─── Add Vocals Panel ──────────────────────────────────────────────────────────
-function AddVocalsPanel() {
-  const [step, setStep] = useState<"pick" | "configure" | "generating" | "done">("pick");
-  const [selectedGenId, setSelectedGenId] = useState<number | null>(null);
-  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
-  const [selectedTitle, setSelectedTitle] = useState<string>("");
-  const [lyrics, setLyrics] = useState("");
-  const [archetype, setArchetype] = useState<VocalArchetypeId | "">("");
+function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
+  const { user } = useAuth();
+  const [selectedArchetype, setSelectedArchetype] = useState<VocalArchetypeId | null>(null);
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [spectrumValue, setSpectrumValue] = useState(50);
+  const [lyrics, setLyrics] = useState("");
   const [styleNotes, setStyleNotes] = useState("");
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const resultAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
+  const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const { data: myGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
+  const completedTracks = myGenerations?.filter(g => g.status === "complete" && g.audioUrl) ?? [];
 
   const startMutation = trpc.vocalProjects.start.useMutation();
   const pollMutation = trpc.vocalProjects.poll.useMutation();
 
-  function handleSelectInstrumental(id: number, url: string, title: string) {
-    setSelectedGenId(id);
-    setSelectedUrl(url);
-    setSelectedTitle(title);
-  }
-
-  async function handleGenerate() {
-    if (!selectedUrl || !lyrics.trim() || !archetype) {
-      toast.error("Please complete all required fields");
-      return;
-    }
-    setStep("generating");
-    setErrorMsg(null);
+  const handleGenerate = async () => {
+    setError(null);
+    if (!selectedTrackUrl) { setError("Please select an instrumental track"); return; }
+    if (!selectedArchetype) { setError("Please choose a vocal archetype"); return; }
+    if (!lyrics.trim()) { setError("Please enter lyrics for the vocals"); return; }
+    setIsGenerating(true);
+    setResultUrl(null);
     try {
       const job = await startMutation.mutateAsync({
-        instrumentalUrl: selectedUrl,
+        instrumentalUrl: selectedTrackUrl,
         lyrics: lyrics.trim(),
-        vocalArchetype: archetype as VocalArchetypeId,
+        vocalArchetype: selectedArchetype,
         vocalGender,
         vocalSpectrumValue: spectrumValue,
         styleNotes: styleNotes.trim() || undefined,
-        trackId: selectedGenId ?? undefined,
       });
-      setTaskId(job.taskId);
-      // Poll for result (blocks server-side up to 10 min)
       const result = await pollMutation.mutateAsync({ taskId: job.taskId });
       if (result.audioUrl) {
         setResultUrl(result.audioUrl);
-        setStep("done");
-      } else {
-        throw new Error("No audio URL returned");
+        toast.success("Vocals generated — ready to play!");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed";
-      setErrorMsg(msg);
-      setStep("configure");
-      toast.error("Vocal generation failed — " + msg);
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsGenerating(false);
     }
-  }
+  };
 
-  function toggleResultPlay() {
-    if (!resultUrl) return;
-    if (isPlaying) {
-      resultAudioRef.current?.pause();
-      setIsPlaying(false);
-    } else {
-      if (!resultAudioRef.current) {
-        resultAudioRef.current = new Audio(resultUrl);
-        resultAudioRef.current.onended = () => setIsPlaying(false);
-      }
-      resultAudioRef.current.play();
-      setIsPlaying(true);
-    }
-  }
-
-  function handleReset() {
-    resultAudioRef.current?.pause();
-    resultAudioRef.current = null;
-    setStep("pick");
-    setSelectedGenId(null);
-    setSelectedUrl(null);
-    setSelectedTitle("");
-    setLyrics("");
-    setArchetype("");
-    setVocalGender("neutral");
-    setSpectrumValue(50);
-    setStyleNotes("");
-    setTaskId(null);
-    setResultUrl(null);
-    setErrorMsg(null);
-    setIsPlaying(false);
-  }
-
-  const selectedArchetypeData = VOCAL_ARCHETYPES.find((a) => a.id === archetype);
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
+    else { audioRef.current.play(); setIsPlaying(true); }
+  };
 
   return (
-    <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/40 to-purple-950/30 overflow-hidden">
-      {/* Panel header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-          <Mic className="w-4.5 h-4.5 text-white" />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-white">Add Vocals</h3>
-          <p className="text-xs text-white/40">Layer AI vocals onto your instrumental</p>
-        </div>
-        {/* Step indicator */}
-        <div className="ml-auto flex items-center gap-1.5">
-          {(["pick", "configure", "generating", "done"] as const).map((s, i) => (
-            <div
-              key={s}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${
-                s === step
-                  ? "bg-violet-400 w-4"
-                  : i < ["pick", "configure", "generating", "done"].indexOf(step)
-                  ? "bg-violet-600"
-                  : "bg-white/10"
+    <div className="p-4 md:p-6 space-y-6 max-w-2xl">
+      {/* Step 1: Pick Instrumental */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 — Select Instrumental</h3>
+        {completedTracks.length === 0 ? (
+          <div className={`rounded-xl border border-dashed ${theme.borderAccent} p-4 text-center`}>
+            <Music className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">No completed tracks yet — generate some music first</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
+            {completedTracks.map((track) => (
+              <button
+                key={track.id}
+                onClick={() => { setSelectedTrackUrl(track.audioUrl!); setSelectedTrackTitle(track.title); }}
+                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                  selectedTrackUrl === track.audioUrl
+                    ? `border-violet-500 bg-violet-500/10 text-white`
+                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white`
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedTrackUrl === track.audioUrl ? "bg-violet-600" : "bg-white/10"}`}>
+                  {selectedTrackUrl === track.audioUrl ? <Check className="w-4 h-4 text-white" /> : <Music className="w-4 h-4 text-gray-400" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{track.title}</p>
+                  <p className="text-xs text-gray-500 truncate">{track.prompt?.slice(0, 60)}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Step 2: Lyrics */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>2 — Lyrics</h3>
+        <Textarea
+          value={lyrics}
+          onChange={(e) => setLyrics(e.target.value)}
+          placeholder="Enter the lyrics to be sung over your instrumental..."
+          className={`min-h-[120px] bg-white/5 border ${theme.borderAccent} text-white placeholder:text-gray-600 resize-none`}
+          maxLength={3500}
+        />
+        <p className="text-xs text-gray-600 mt-1 text-right">{lyrics.length}/3500</p>
+      </div>
+
+      {/* Step 3: Vocal Archetype */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 — Vocal Character</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {VOCAL_ARCHETYPES.map((arch) => (
+            <button
+              key={arch.id}
+              onClick={() => setSelectedArchetype(arch.id)}
+              className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
+                selectedArchetype === arch.id
+                  ? `border-violet-500 bg-violet-500/15 text-white`
+                  : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white`
               }`}
-            />
+            >
+              <span className="text-lg mb-1">{arch.icon}</span>
+              <p className="text-xs font-semibold leading-tight">{arch.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-tight line-clamp-2">{arch.desc}</p>
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="p-5">
-        <AnimatePresence mode="wait">
-          {/* ── Step 1: Pick Instrumental ── */}
-          {step === "pick" && (
-            <motion.div
-              key="pick"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="space-y-4"
-            >
-              <div>
-                <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-3">
-                  1 — Choose your instrumental
-                </p>
-                <InstrumentalPicker
-                  selectedId={selectedGenId}
-                  selectedUrl={selectedUrl}
-                  onSelect={handleSelectInstrumental}
-                />
-              </div>
-              <Button
-                onClick={() => setStep("configure")}
-                disabled={!selectedGenId}
-                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </motion.div>
-          )}
-
-          {/* ── Step 2: Configure ── */}
-          {step === "configure" && (
-            <motion.div
-              key="configure"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="space-y-5"
-            >
-              {/* Selected track */}
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-                <Music className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                <span className="text-sm text-white/80 truncate">{selectedTitle}</span>
+      {/* Step 4: Voice Controls */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 — Voice Controls</h3>
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs text-gray-400 mb-2">Voice Gender</p>
+            <div className="flex gap-2">
+              {(["female", "male", "neutral"] as const).map((g) => (
                 <button
-                  onClick={() => setStep("pick")}
-                  className="ml-auto text-white/30 hover:text-white/60 transition-colors"
+                  key={g}
+                  onClick={() => setVocalGender(g)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition-all border ${
+                    vocalGender === g
+                      ? `bg-gradient-to-r ${theme.accent} text-white border-transparent`
+                      : `${theme.borderAccent} text-gray-400 hover:text-white bg-white/5`
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  {g}
                 </button>
-              </div>
-
-              {/* Lyrics */}
-              <div>
-                <label className="text-xs font-medium text-white/60 uppercase tracking-wider block mb-2">
-                  Lyrics
-                </label>
-                <Textarea
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  placeholder="Paste or write your lyrics here..."
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/20 resize-none h-32 text-sm"
-                />
-                <p className="text-xs text-white/30 mt-1 text-right">{lyrics.length}/3500</p>
-              </div>
-
-              {/* Vocal Archetype */}
-              <div>
-                <label className="text-xs font-medium text-white/60 uppercase tracking-wider block mb-2">
-                  Vocal Character
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {VOCAL_ARCHETYPES.map((a) => (
-                    <motion.button
-                      key={a.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setArchetype(a.id)}
-                      className={`text-left p-3 rounded-xl border transition-all ${
-                        archetype === a.id
-                          ? `${a.border} ${a.bg}`
-                          : "border-white/10 bg-white/[0.02] hover:border-white/20"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base">{a.emoji}</span>
-                        <span className={`text-xs font-semibold ${archetype === a.id ? a.text : "text-white/70"}`}>
-                          {a.name}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-white/30 leading-relaxed">{a.description}</p>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Gender + Spectrum */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-white/60 uppercase tracking-wider block mb-2">
-                    Voice
-                  </label>
-                  <Select value={vocalGender} onValueChange={(v) => setVocalGender(v as typeof vocalGender)}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="neutral">Neutral</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-white/60 uppercase tracking-wider block mb-2">
-                    Spectrum — {spectrumValue}
-                  </label>
-                  <div className="pt-2">
-                    <Slider
-                      value={[spectrumValue]}
-                      onValueChange={([v]) => setSpectrumValue(v)}
-                      min={0}
-                      max={100}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-white/30">Subtle</span>
-                      <span className="text-[10px] text-white/30">Intense</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Optional style notes */}
-              <div>
-                <label className="text-xs font-medium text-white/60 uppercase tracking-wider block mb-2">
-                  Style Notes <span className="text-white/20 normal-case font-normal">(optional)</span>
-                </label>
-                <Textarea
-                  value={styleNotes}
-                  onChange={(e) => setStyleNotes(e.target.value)}
-                  placeholder="Any additional direction for the vocal performance..."
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/20 resize-none h-16 text-sm"
-                />
-              </div>
-
-              {errorMsg && (
-                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-red-300">{errorMsg}</p>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep("pick")}
-                  className="border-white/10 text-white/60 hover:text-white bg-transparent"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleGenerate}
-                  disabled={!lyrics.trim() || !archetype}
-                  className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white"
-                >
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Generate Vocals
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Step 3: Generating ── */}
-          {step === "generating" && (
-            <motion.div
-              key="generating"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="py-12 flex flex-col items-center gap-5 text-center"
-            >
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-                  <Mic className="w-7 h-7 text-white" />
-                </div>
-                <div className="absolute inset-0 rounded-full border-2 border-violet-400/40 animate-ping" />
-              </div>
-              <div>
-                <p className="text-white font-semibold mb-1">The Session is recording...</p>
-                <p className="text-sm text-white/40">
-                  {selectedArchetypeData
-                    ? `${selectedArchetypeData.emoji} ${selectedArchetypeData.name} vocal generating`
-                    : "Vocal generation in progress"}
-                </p>
-                <p className="text-xs text-white/25 mt-2">This takes 2–5 minutes. Don't close this tab.</p>
-              </div>
-              <div className="flex gap-1">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1 bg-violet-400 rounded-full"
-                    animate={{ height: [4, 20, 4] }}
-                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Step 4: Done ── */}
-          {step === "done" && resultUrl && (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-5"
-            >
-              <div className="text-center py-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-3">
-                  <Check className="w-7 h-7 text-white" />
-                </div>
-                <p className="text-white font-semibold">Vocals added</p>
-                <p className="text-sm text-white/40 mt-1">Your track is ready to play</p>
-              </div>
-
-              {/* Player */}
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-                <button
-                  onClick={toggleResultPlay}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 hover:from-violet-500 hover:to-purple-500 transition-all"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-4 h-4 text-white" />
-                  ) : (
-                    <Play className="w-4 h-4 text-white ml-0.5" />
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{selectedTitle} (with vocals)</p>
-                  <p className="text-xs text-white/40">
-                    {selectedArchetypeData?.name} · {vocalGender}
-                  </p>
-                </div>
-                <a
-                  href={resultUrl}
-                  download
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5 text-white/60" />
-                </a>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleReset}
-                  className="flex-1 border-white/10 text-white/60 hover:text-white bg-transparent"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  New Session
-                </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-gray-400">Vocal Intensity</p>
+              <span className={`text-xs font-medium ${theme.textAccent}`}>{spectrumValue}%</span>
+            </div>
+            <Slider value={[spectrumValue]} onValueChange={([v]) => setSpectrumValue(v)} min={0} max={100} step={1} className="w-full" />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-gray-600">Subtle</span>
+              <span className="text-xs text-gray-600">Intense</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-2">Style Notes <span className="text-gray-600">(optional)</span></p>
+            <Input
+              value={styleNotes}
+              onChange={(e) => setStyleNotes(e.target.value)}
+              placeholder="e.g. slightly raspy, melancholic, slow vibrato..."
+              className={`bg-white/5 border ${theme.borderAccent} text-white placeholder:text-gray-600`}
+              maxLength={500}
+            />
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}
 
-// ─── Platinum Gate ─────────────────────────────────────────────────────────────
-function PlatinumGate({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const isPlatinum = (user as { isPlatinum?: boolean } | null)?.isPlatinum ?? false;
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/30 p-3">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-300">{error}</p>
+        </div>
+      )}
 
-  if (isPlatinum) return <>{children}</>;
-
-  return (
-    <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-yellow-950/20 p-8 text-center">
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center mx-auto mb-4">
-        <Crown className="w-7 h-7 text-white" />
-      </div>
-      <h3 className="text-lg font-semibold text-white mb-2">Platinum Access Required</h3>
-      <p className="text-sm text-white/50 mb-5 max-w-sm mx-auto">
-        The Session is a Platinum feature. Upgrade to unlock Add Vocals, the Fusion Studio, and more.
-      </p>
-      <Link href="/pricing">
-        <Button className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-semibold">
-          <Crown className="w-4 h-4 mr-2" />
-          Upgrade to Platinum
+      {!resultUrl && (
+        <Button
+          onClick={handleGenerate}
+          disabled={isGenerating || !selectedTrackUrl || !selectedArchetype || !lyrics.trim()}
+          className={`w-full bg-gradient-to-r ${theme.accent} text-white font-semibold py-3 rounded-xl border-0 disabled:opacity-50`}
+          size="lg"
+        >
+          {isGenerating
+            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Vocals — 2–5 min...</>
+            : <><Mic className="w-4 h-4 mr-2" />Generate Vocals</>
+          }
         </Button>
-      </Link>
+      )}
+
+      {resultUrl && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}
+        >
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center`}>
+              <Check className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Vocals Ready</p>
+              <p className="text-xs text-gray-400">{selectedTrackTitle}</p>
+            </div>
+          </div>
+          <audio ref={audioRef} src={resultUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
+          <div className="flex gap-2">
+            <Button onClick={togglePlay} variant="outline" size="sm" className={`flex-1 border ${theme.borderAccent} text-white bg-white/5`}>
+              {isPlaying ? <><Pause className="w-4 h-4 mr-2" />Pause</> : <><Play className="w-4 h-4 mr-2" />Play</>}
+            </Button>
+            <a href={resultUrl} download="session-vocals.mp3" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}>
+                <Download className="w-4 h-4" />
+              </Button>
+            </a>
+            <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}
+              onClick={() => { setResultUrl(null); }}>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Main Session Page ─────────────────────────────────────────────────────────
 export default function TheSession() {
-  const { user, isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
+  const [activeTool, setActiveTool] = useState<"generate" | "vocals" | "lyrics" | "styles" | "stems">("generate");
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
+  const [fusionsOpen, setFusionsOpen] = useState(false);
+  const [frequencyOpen, setFrequencyOpen] = useState(false);
+  const [instrumentPaletteOpen, setInstrumentPaletteOpen] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState("midnight-studio");
+  const [selectedInstrument, setSelectedInstrument] = useState<{
+    id: string; name: string; family: string; description: string; audioPath: string; tags: string[];
+  } | null>(null);
 
-  // Lock body scroll
+  const theme = SESSION_THEMES.find((t) => t.id === selectedThemeId) ?? SESSION_THEMES[0];
+
   useEffect(() => {
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
@@ -703,18 +587,45 @@ export default function TheSession() {
     };
   }, []);
 
+  const darkVars = {
+    "--background": "oklch(0.10 0.02 280)",
+    "--foreground": "oklch(0.95 0.01 300)",
+    "--card": "oklch(0.14 0.02 280)",
+    "--card-foreground": "oklch(0.95 0.01 300)",
+    "--popover": "oklch(0.14 0.02 280)",
+    "--popover-foreground": "oklch(0.95 0.01 300)",
+    "--secondary": "oklch(0.20 0.03 280)",
+    "--secondary-foreground": "oklch(0.90 0.01 300)",
+    "--muted": "oklch(0.20 0.02 280)",
+    "--muted-foreground": "oklch(0.65 0.03 300)",
+    "--accent": "oklch(0.22 0.05 280)",
+    "--accent-foreground": "oklch(0.90 0.01 300)",
+    "--border": "oklch(0.22 0.02 280)",
+    "--input": "oklch(0.22 0.02 280)",
+    "--ring": "oklch(0.70 0.22 300)",
+  } as React.CSSProperties;
+
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0a0514] flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-7 h-7 text-white" />
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <Radio className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Sign in to enter The Session</h2>
-          <p className="text-sm text-white/40 mb-5">A Platinum creative space for Strawberry Riff members.</p>
+          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+            The Session
+          </h1>
+          <p className="text-gray-400 mb-6 leading-relaxed">
+            A Platinum creative space for generating and steering AI vocals over your instrumentals.
+          </p>
+          <div className="flex items-center gap-2 justify-center mb-4">
+            <Lock className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-500">Sign in to enter The Session</span>
+          </div>
           <a href={getLoginUrl()}>
-            <Button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white">
-              Sign In
+            <Button size="lg" className="w-full rounded-full font-semibold text-white border-0"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}>
+              Sign In to Enter The Session
             </Button>
           </a>
         </div>
@@ -723,140 +634,82 @@ export default function TheSession() {
   }
 
   return (
-    <div
-      className="flex flex-col overflow-hidden bg-[#0a0514]"
-      style={{ height: "100dvh" }}
-    >
-      {/* ── Accent strip ── */}
-      <div className="h-[2px] bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 flex-shrink-0" />
+    <div className={`flex overflow-hidden ${theme.canvasBg}`} style={{ ...darkVars, height: "100dvh" }}>
+      <div className="hidden md:flex">
+        <SessionSidebar
+          activeTool={activeTool} onToolChange={setActiveTool} theme={theme}
+          onOpenThemePicker={() => setThemePickerOpen(true)}
+          onOpenFusions={() => setFusionsOpen(true)}
+          onOpenFrequency={() => setFrequencyOpen(true)}
+          onOpenInstrumentPalette={() => setInstrumentPaletteOpen(true)}
+        />
+      </div>
 
-      {/* ── Top nav bar ── */}
-      <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-white/5 flex-shrink-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden min-h-0">
+        <SessionHeader theme={theme} />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 min-h-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTool}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }} className="w-full max-w-full"
+            >
+              {activeTool === "generate" ? (
+                <GeneratePage selectedInstrument={selectedInstrument} onClearInstrument={() => setSelectedInstrument(null)} />
+              ) : activeTool === "vocals" ? (
+                <AddVocalsPanel theme={theme} />
+              ) : activeTool === "lyrics" ? (
+                <LyricsGeneratorPage />
+              ) : activeTool === "styles" ? (
+                <StyleLibrary />
+              ) : (
+                <MyStemsPanel textAccent={theme.textAccent} buttonAccent={theme.buttonAccent} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Mobile bottom toolbar */}
+      <div className={`md:hidden fixed bottom-0 inset-x-0 z-30 ${theme.sidebarBg} border-t ${theme.borderAccent} flex items-center justify-around px-2 py-2 safe-area-pb`}>
+        {[
+          { id: "generate" as const, icon: Music, label: "Generate" },
+          { id: "vocals" as const, icon: Mic, label: "Vocals" },
+          { id: "lyrics" as const, icon: Pen, label: "Lyrics" },
+          { id: "styles" as const, icon: Library, label: "Styles" },
+          { id: "stems" as const, icon: Download, label: "Stems" },
+        ].map(({ id, icon: Icon, label }) => (
+          <button key={id} onClick={() => setActiveTool(id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ${activeTool === id ? `bg-gradient-to-r ${theme.accent} text-white` : "text-gray-400"}`}
+          >
+            <Icon className="w-5 h-5" />
+            <span className="text-[10px] font-medium">{label}</span>
+          </button>
+        ))}
         <Link href="/">
-          <button className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors text-sm">
-            <ChevronLeft className="w-4 h-4" />
-            <Home className="w-3.5 h-3.5" />
+          <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
           </button>
         </Link>
-        <div className="w-px h-4 bg-white/10" />
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="text-sm font-semibold text-white">The Session</span>
-          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] py-0">
-            Platinum
-          </Badge>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Link href="/studio">
-            <Button variant="ghost" size="sm" className="text-white/40 hover:text-white/70 text-xs h-7">
-              Studio
-            </Button>
-          </Link>
-          <Link href="/generate">
-            <Button variant="ghost" size="sm" className="text-white/40 hover:text-white/70 text-xs h-7">
-              Generate
-            </Button>
-          </Link>
-        </div>
+        <button onClick={() => setThemePickerOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-gray-400">
+          <Palette className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Scene</span>
+        </button>
       </div>
 
-      {/* ── Main scrollable area ── */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-8">
+      <AnimatePresence>
+        {themePickerOpen && (
+          <ThemePickerModal currentTheme={selectedThemeId} onSelect={setSelectedThemeId} onClose={() => setThemePickerOpen(false)} />
+        )}
+      </AnimatePresence>
 
-          {/* ── Hero ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center py-6"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium mb-5">
-              <Radio className="w-3 h-3" />
-              Early Access
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
-              Enter the Session
-            </h1>
-            <p className="text-white/50 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-              Where your instrumentals find their voice. Layer AI vocals with archetype-driven character onto your fusions.
-            </p>
-          </motion.div>
-
-          {/* ── Main content grid ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* ── Left: Add Vocals (live feature) ── */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <PlatinumGate>
-                  <AddVocalsPanel />
-                </PlatinumGate>
-              </motion.div>
-            </div>
-
-            {/* ── Right: Coming soon sections ── */}
-            <div className="space-y-3">
-              <motion.div
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <p className="text-xs font-medium text-white/30 uppercase tracking-wider mb-3 px-1">
-                  Coming to The Session
-                </p>
-                <div className="space-y-3">
-                  <ComingSoonSection
-                    icon={Layers}
-                    title="Saved Sessions"
-                    description="Your library of completed vocal fusions, ready to revisit and share."
-                    accent="from-violet-600 to-purple-700"
-                  />
-                  <ComingSoonSection
-                    icon={Sliders}
-                    title="Instrument Palette"
-                    description="Fine-tune the instrumental texture before adding vocals."
-                    accent="from-blue-600 to-cyan-700"
-                  />
-                  <ComingSoonSection
-                    icon={BookOpen}
-                    title="Lyrics Vault"
-                    description="Your saved lyrics, ready to drop into any session."
-                    accent="from-emerald-600 to-teal-700"
-                  />
-                  <ComingSoonSection
-                    icon={Palette}
-                    title="Cover Art"
-                    description="Generate artwork that matches the mood of your fusion."
-                    accent="from-pink-600 to-rose-700"
-                  />
-                  <ComingSoonSection
-                    icon={Radio}
-                    title="My Frequency"
-                    description="Your sonic identity — the DNA that shapes every generation."
-                    accent="from-amber-600 to-orange-700"
-                  />
-                  <ComingSoonSection
-                    icon={Calendar}
-                    title="Venues Studio"
-                    description="Bridge your sessions to live performance and concert booking."
-                    accent="from-rose-600 to-red-700"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* ── Bottom spacer ── */}
-          <div className="h-8" />
-        </div>
-      </div>
+      <FusionRecipesDrawer open={fusionsOpen} onClose={() => setFusionsOpen(false)} />
+      <FrequencyModal open={frequencyOpen} onClose={() => setFrequencyOpen(false)} />
+      <InstrumentPaletteDrawer
+        open={instrumentPaletteOpen} onClose={() => setInstrumentPaletteOpen(false)}
+        onSelectInstrument={(instrument) => { setSelectedInstrument(instrument); setActiveTool("generate"); }}
+      />
     </div>
   );
 }

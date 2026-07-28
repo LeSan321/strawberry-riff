@@ -206,7 +206,7 @@ function StudioSidebar({
   );
   const tools = [
     { id: "generate" as const, label: "Generate", icon: Music, desc: "AI music creation" },
-    { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Writer's Bible" },
+    { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Lyrics editor" },
     { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
     { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
   ];
@@ -265,17 +265,6 @@ function StudioSidebar({
           <div className="hidden md:block">
             <p className="text-sm font-medium leading-none">Fusions</p>
             <p className="text-xs mt-0.5 opacity-60">47 recipes</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => {}}
-          className="w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-        >
-          <BookOpen className="w-4 h-4 flex-shrink-0" />
-          <div className="hidden md:block">
-            <p className="text-sm font-medium leading-none">Writer's Bible</p>
-            <p className="text-xs mt-0.5 text-gray-500">Craft guide</p>
           </div>
         </button>
 
