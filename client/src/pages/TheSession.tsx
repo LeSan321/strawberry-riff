@@ -396,32 +396,51 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
       <div>
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 — Select Instrumental</h3>
         {completedTracks.length === 0 ? (
-          <div className={`rounded-xl border border-dashed ${theme.borderAccent} p-4 text-center`}>
+          <div className={`rounded-xl border border-dashed ${theme.borderAccent} p-6 text-center`}>
             <Music className="w-8 h-8 text-gray-600 mx-auto mb-2" />
             <p className="text-sm text-gray-400">No completed tracks yet — generate some music first</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
-            {completedTracks.map((track) => (
-              <button
-                key={track.id}
-                onClick={() => { setSelectedTrackUrl(track.audioUrl!); setSelectedTrackTitle(track.title); }}
-                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                  selectedTrackUrl === track.audioUrl
-                    ? `border-violet-500 bg-violet-500/10 text-white`
-                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white`
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedTrackUrl === track.audioUrl ? "bg-violet-600" : "bg-white/10"}`}>
-                  {selectedTrackUrl === track.audioUrl ? <Check className="w-4 h-4 text-white" /> : <Music className="w-4 h-4 text-gray-400" />}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{track.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{track.prompt?.slice(0, 60)}</p>
-                </div>
-              </button>
-            ))}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {completedTracks.map((track) => {
+              const isSelected = selectedTrackUrl === track.audioUrl;
+              return (
+                <button
+                  key={track.id}
+                  onClick={() => { setSelectedTrackUrl(track.audioUrl!); setSelectedTrackTitle(track.title); }}
+                  className={`group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border transition-all aspect-square text-center ${
+                    isSelected
+                      ? `border-violet-500 bg-violet-500/15 text-white shadow-lg shadow-violet-500/20`
+                      : `${theme.borderAccent} bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/30`
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                    isSelected ? `bg-gradient-to-br ${theme.accent}` : "bg-white/10 group-hover:bg-white/20"
+                  }`}>
+                    {isSelected ? <Check className="w-4 h-4 text-white" /> : <Music className="w-4 h-4" />}
+                  </div>
+                  <p className="text-[10px] font-medium leading-tight line-clamp-2 w-full">{track.title}</p>
+                  {isSelected && (
+                    <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-gradient-to-br ${theme.accent}`} />
+                  )}
+                </button>
+              );
+            })}
           </div>
+        )}
+        {selectedTrackTitle && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className={`mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border ${theme.borderAccent} bg-white/5`}
+          >
+            <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0`}>
+              <Check className="w-3 h-3 text-white" />
+            </div>
+            <p className="text-xs text-white truncate flex-1">{selectedTrackTitle}</p>
+            <button onClick={() => { setSelectedTrackUrl(null); setSelectedTrackTitle(null); }} className="text-gray-600 hover:text-gray-400 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
         )}
       </div>
 
@@ -441,23 +460,44 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
       {/* Step 3: Vocal Archetype */}
       <div>
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 — Vocal Character</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {VOCAL_ARCHETYPES.map((arch) => (
-            <button
-              key={arch.id}
-              onClick={() => setSelectedArchetype(arch.id)}
-              className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
-                selectedArchetype === arch.id
-                  ? `border-violet-500 bg-violet-500/15 text-white`
-                  : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white`
-              }`}
-            >
-              <span className="text-lg mb-1">{arch.icon}</span>
-              <p className="text-xs font-semibold leading-tight">{arch.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5 leading-tight line-clamp-2">{arch.desc}</p>
-            </button>
-          ))}
+        <div className="grid grid-cols-4 gap-2">
+          {VOCAL_ARCHETYPES.map((arch) => {
+            const isSelected = selectedArchetype === arch.id;
+            return (
+              <button
+                key={arch.id}
+                onClick={() => setSelectedArchetype(arch.id)}
+                className={`group relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border transition-all aspect-square text-center ${
+                  isSelected
+                    ? `border-violet-500 bg-violet-500/15 text-white shadow-lg shadow-violet-500/20`
+                    : `${theme.borderAccent} bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/30`
+                }`}
+              >
+                <span className="text-xl leading-none">{arch.icon}</span>
+                <p className="text-[10px] font-semibold leading-tight">{arch.name.split(" ")[0]}</p>
+                {isSelected && (
+                  <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-gradient-to-br ${theme.accent}`} />
+                )}
+              </button>
+            );
+          })}
         </div>
+        {selectedArchetype && (() => {
+          const arch = VOCAL_ARCHETYPES.find(a => a.id === selectedArchetype);
+          return arch ? (
+            <motion.div
+              key={selectedArchetype}
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+              className={`mt-2 flex items-start gap-3 px-3 py-2.5 rounded-xl border ${theme.borderAccent} bg-white/5`}
+            >
+              <span className="text-xl flex-shrink-0 mt-0.5">{arch.icon}</span>
+              <div>
+                <p className="text-xs font-semibold text-white">{arch.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{arch.desc}</p>
+              </div>
+            </motion.div>
+          ) : null;
+        })()}
       </div>
 
       {/* Step 4: Voice Controls */}
