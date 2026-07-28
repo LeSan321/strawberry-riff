@@ -839,6 +839,12 @@ const musicGenerationRouter = router({
         ] as const).optional(),
         vocalGender: z.enum(["male", "female", "neutral"] as const).default("neutral"),
         vocalSpectrumValue: z.number().min(0).max(100).default(50).optional(),
+        /** Vocal Take mode: steer generation toward vocal character over an instrumental reference */
+        vocalMode: z.boolean().default(false),
+        /** ID of the instrumental generation used as reference in vocal mode */
+        instrumentalSourceId: z.number().int().positive().optional(),
+        /** Direct URL of the instrumental to use as instrumental_file reference in vocal mode */
+        instrumentalSourceUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -850,13 +856,28 @@ const musicGenerationRouter = router({
         vocalSpectrumValue: input.vocalSpectrumValue,
         intensity: input.intensity,
         referenceAudioUrl: input.referenceAudioUrl ? "[URL present]" : "[none]",
+        vocalMode: input.vocalMode,
+        instrumentalSourceId: input.instrumentalSourceId,
       });
 
-      // Validate: either prompt or reference audio must be provided
-      if (!input.prompt && !input.referenceAudioUrl) {
+      // Validate: either prompt, reference audio, or vocalMode+archetype must be provided
+      if (!input.prompt && !input.referenceAudioUrl && !input.vocalMode) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Either a music style prompt or reference audio is required",
+        });
+      }
+      // Vocal mode requires an archetype and an instrumental source
+      if (input.vocalMode && !input.vocalArchetype) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A vocal archetype is required for Vocal Take mode",
+        });
+      }
+      if (input.vocalMode && !input.instrumentalSourceUrl && !input.instrumentalSourceId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An instrumental track is required for Vocal Take mode",
         });
       }
 
@@ -869,6 +890,10 @@ const musicGenerationRouter = router({
           message: "Monthly generation limit reached. Upgrade to Premium for unlimited generations.",
         });
       }
+
+      // In vocal mode, the instrumental source URL is the reference — resolve it
+      // instrumentalSourceUrl is already a full URL (passed directly from the client)
+      const resolvedInstrumentalSourceUrl = input.vocalMode ? (input.instrumentalSourceUrl ?? null) : null;
 
       // Resolve /manus-storage/ paths to full presigned URLs before passing to MiniMax
       let resolvedReferenceAudioUrl = input.referenceAudioUrl;
@@ -906,7 +931,23 @@ const musicGenerationRouter = router({
       // (reference audio IS the style instruction — text prompt would override it)
       let promptWithIntensity: string;
       
-      if (resolvedReferenceAudioUrl) {
+      if (input.vocalMode) {
+        // Vocal Take mode: prompt is ENTIRELY vocal-character-driven
+        // The instrumental_file handles tempo/key matching — no music style text needed
+        // Build from gender + archetype only
+        const genderGuide = input.vocalGender !== "neutral" ? `${input.vocalGender} vocalist` : "vocalist";
+        const spectrumGuidance = input.vocalArchetype && input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50
+          ? mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue)
+          : null;
+        const vocalBasePrompt = [genderGuide, spectrumGuidance].filter(Boolean).join(", ");
+        // buildVocalPrompt puts archetype core first, then user prompt
+        promptWithIntensity = buildVocalPrompt(
+          vocalBasePrompt,
+          input.vocalArchetype as VocalArchetype,
+          true // include negative prompts
+        );
+        console.log(`[Generate/VocalMode] Vocal-steered prompt: ${promptWithIntensity.substring(0, 120)}...`);
+      } else if (resolvedReferenceAudioUrl) {
         // Reference audio mode: MINIMAL prompt (just intensity + vocal gender)
         // MiniMax will analyze the song_file and match its style automatically
         // We only add intensity and vocal gender as structural guides, not style overrides
@@ -918,27 +959,37 @@ const musicGenerationRouter = router({
           basePrompt,
           input.intensity as IntensityLevel
         );
+        // If vocal archetype is specified, enhance prompt with vocal guidance
+        if (input.vocalArchetype) {
+          promptWithIntensity = buildVocalPrompt(
+            promptWithIntensity,
+            input.vocalArchetype as VocalArchetype,
+            true
+          );
+          if (input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50) {
+            const spectrumGuidance = mapSpectrumToGuidance(
+              input.vocalArchetype as VocalArchetype,
+              input.vocalSpectrumValue
+            );
+            if (spectrumGuidance) promptWithIntensity = `${promptWithIntensity} ${spectrumGuidance}`;
+          }
+        }
       } else {
         // Normal mode: use full music style prompt
         promptWithIntensity = buildPromptWithIntensity(input.prompt ?? "", input.intensity as IntensityLevel);
-      }
-      
-      // If vocal archetype is specified, enhance prompt with vocal guidance
-      if (input.vocalArchetype) {
-        promptWithIntensity = buildVocalPrompt(
-          promptWithIntensity,
-          input.vocalArchetype as VocalArchetype,
-          true // include negative prompts
-        );
-        
-        // Add spectrum guidance if spectrum value is provided
-        if (input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50) {
-          const spectrumGuidance = mapSpectrumToGuidance(
+        // If vocal archetype is specified, enhance prompt with vocal guidance
+        if (input.vocalArchetype) {
+          promptWithIntensity = buildVocalPrompt(
+            promptWithIntensity,
             input.vocalArchetype as VocalArchetype,
-            input.vocalSpectrumValue
+            true
           );
-          if (spectrumGuidance) {
-            promptWithIntensity = `${promptWithIntensity} ${spectrumGuidance}`;
+          if (input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50) {
+            const spectrumGuidance = mapSpectrumToGuidance(
+              input.vocalArchetype as VocalArchetype,
+              input.vocalSpectrumValue
+            );
+            if (spectrumGuidance) promptWithIntensity = `${promptWithIntensity} ${spectrumGuidance}`;
           }
         }
       }
@@ -950,20 +1001,30 @@ const musicGenerationRouter = router({
       }
 
       // Create generation record (store original prompt, intensity is in prefixed version sent to API)
+      // In vocal mode, store generationType + instrumentalSourceId in metadata for UI filtering
+      const initialMetadata = input.vocalMode
+        ? JSON.stringify({
+            generationType: "vocal-take",
+            instrumentalSourceId: input.instrumentalSourceId ?? null,
+            instrumentalSourceUrl: resolvedInstrumentalSourceUrl ?? null,
+            vocalArchetype: input.vocalArchetype ?? null,
+            vocalGender: input.vocalGender,
+          })
+        : null;
       const generationId = await createMusicGeneration({
         userId: ctx.user.id,
         title: input.title,
-        prompt: input.prompt ?? "",
+        prompt: input.vocalMode ? (input.vocalArchetype ?? "vocal-take") : (input.prompt ?? ""),
         lyrics: input.lyrics ?? "",
         duration: 0,
         audioUrl: "",
         audioKey: "",
         status: "generating",
-        metadata: null,
+        metadata: initialMetadata,
         aceStepTaskId: null,
         errorMessage: null,
         isFavorited: false,
-        referenceAudioUrl: input.referenceAudioUrl ?? null,
+        referenceAudioUrl: input.vocalMode ? null : (input.referenceAudioUrl ?? null),
         voiceReferenceUrl: input.voiceReferenceUrl ?? null,
         vocalSpectrumValue: input.vocalSpectrumValue ?? 50,
         visualBrief: null,
@@ -974,14 +1035,19 @@ const musicGenerationRouter = router({
       }
 
       // Start generation in background (fire-and-forget)
-      // Use prompt with intensity prefix, pass reference audio if provided
+      // In vocal mode: use instrumentalReferenceUrl so MiniMax matches tempo/key without copying style
+      // In normal mode: use referenceAudioUrl as song_file (style reference)
       console.log('[Generate] Starting MiniMax generation with prompt:', promptWithIntensity.substring(0, 100));
+      if (input.vocalMode) {
+        console.log(`[Generate/VocalMode] Using instrumental_file: ${resolvedInstrumentalSourceUrl?.substring(0, 80)}...`);
+      }
       startMusicGeneration({
         prompt: promptWithIntensity,
         lyrics: input.instrumental ? "" : (input.lyrics ?? ""),
         isInstrumental: input.instrumental,
-        referenceAudioUrl: resolvedReferenceAudioUrl,
+        referenceAudioUrl: input.vocalMode ? undefined : resolvedReferenceAudioUrl,
         voiceReferenceUrl: input.voiceReferenceUrl,
+        instrumentalReferenceUrl: input.vocalMode ? (resolvedInstrumentalSourceUrl ?? undefined) : undefined,
       })
         .then(async (predictionId) => {
           console.log('[Generate] Got prediction ID:', predictionId);
@@ -1006,7 +1072,9 @@ const musicGenerationRouter = router({
           await updateMusicGenerationStatus(generationId, "complete", {
             audioUrl: url,
             audioKey: audioKey,
-            metadata: JSON.stringify({ predictionId }),
+            metadata: input.vocalMode
+              ? JSON.stringify({ predictionId, generationType: "vocal-take", instrumentalSourceId: input.instrumentalSourceId ?? null, vocalArchetype: input.vocalArchetype ?? null, vocalGender: input.vocalGender })
+              : JSON.stringify({ predictionId }),
             ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
           });
         })

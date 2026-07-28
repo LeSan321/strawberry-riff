@@ -18,8 +18,10 @@ import { getDb } from "../db";
 import { stemSplits, tracks } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { storagePut } from "../storage";
-import { createTrack } from "../db";
+import { createTrack, createMusicGeneration } from "../db";
 import { nanoid } from "nanoid";
+import * as fs from "fs";
+import { mixStems, cleanupFile } from "../mixer/mixer";
 
 export const mixerRouter = router({
   /**
@@ -110,5 +112,125 @@ export const mixerRouter = router({
 
       console.log(`[Mixer] Track created: id=${trackId}`);
       return { success: true, trackId, audioUrl };
+    }),
+
+  /**
+   * Server-side vocal overlay mix.
+   * Takes a vocal stem URL + an instrumental URL, runs ffmpeg to combine them,
+   * uploads the result to S3, and saves it as a music_generation record so it
+   * appears in the user's My Riffs library.
+   *
+   * The vocal stem typically comes from a StemSplit job on a vocal-take generation.
+   * The instrumental is any completed music_generation with audioUrl.
+   */
+  vocalOverlay: protectedProcedure
+    .input(
+      z.object({
+        /** URL of the extracted vocal stem (from StemSplit) */
+        vocalStemUrl: z.string().url(),
+        /** URL of the instrumental track */
+        instrumentalUrl: z.string().url(),
+        /** Volume for the vocal stem (0.0–2.0, default 1.0) */
+        vocalVolume: z.number().min(0).max(2).default(1.0),
+        /** Volume for the instrumental (0.0–2.0, default 0.9 to let vocals sit on top) */
+        instrumentalVolume: z.number().min(0).max(2).default(0.9),
+        /** Title for the resulting track */
+        title: z.string().min(1).max(200),
+        /** Optional: ID of the vocal-take generation (for metadata) */
+        vocalGenerationId: z.number().int().positive().optional(),
+        /** Optional: ID of the instrumental generation (for metadata) */
+        instrumentalGenerationId: z.number().int().positive().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.id;
+      console.log(`[Mixer/VocalOverlay] Starting mix for user ${userId}: "${input.title}"`);
+      console.log(`[Mixer/VocalOverlay] Vocal: ${input.vocalStemUrl.substring(0, 80)}...`);
+      console.log(`[Mixer/VocalOverlay] Instrumental: ${input.instrumentalUrl.substring(0, 80)}...`);
+
+      // Create a placeholder generation record so the UI can poll for status
+      const generationId = await createMusicGeneration({
+        userId,
+        title: input.title,
+        prompt: "vocal-overlay",
+        lyrics: "",
+        duration: 0,
+        audioUrl: "",
+        audioKey: "",
+        status: "generating",
+        metadata: JSON.stringify({
+          generationType: "vocal-overlay",
+          vocalGenerationId: input.vocalGenerationId ?? null,
+          instrumentalGenerationId: input.instrumentalGenerationId ?? null,
+          vocalVolume: input.vocalVolume,
+          instrumentalVolume: input.instrumentalVolume,
+        }),
+        aceStepTaskId: null,
+        errorMessage: null,
+        isFavorited: false,
+        referenceAudioUrl: null,
+        voiceReferenceUrl: null,
+        vocalSpectrumValue: 50,
+        visualBrief: null,
+        isSplit: false,
+      });
+
+      if (!generationId) {
+        throw new Error("Failed to create generation record for vocal overlay");
+      }
+
+      // Run the mix in the background (fire-and-forget)
+      (async () => {
+        let outputPath: string | null = null;
+        try {
+          // Mix: vocal stem + instrumental (drums/bass/other set to 0)
+          outputPath = await mixStems(
+            {
+              vocalUrl: input.vocalStemUrl,
+              drumsUrl: input.instrumentalUrl, // use instrumental as the "drums" slot — it's the full backing track
+              bassUrl: null,
+              otherUrl: null,
+            },
+            {
+              vocals: input.vocalVolume,
+              drums: input.instrumentalVolume,
+              bass: 0,
+              other: 0,
+            }
+          );
+
+          // Upload to S3
+          const audioBuffer = fs.readFileSync(outputPath);
+          const audioKey = `vocal-overlays/${userId}/${generationId}-${nanoid(8)}.mp3`;
+          const { url: audioUrl } = await storagePut(audioKey, audioBuffer, "audio/mpeg");
+
+          // Update generation record to complete
+          const { updateMusicGenerationStatus } = await import("../db");
+          await updateMusicGenerationStatus(generationId, "complete", {
+            audioUrl,
+            audioKey,
+            metadata: JSON.stringify({
+              generationType: "vocal-overlay",
+              vocalGenerationId: input.vocalGenerationId ?? null,
+              instrumentalGenerationId: input.instrumentalGenerationId ?? null,
+              vocalVolume: input.vocalVolume,
+              instrumentalVolume: input.instrumentalVolume,
+            }),
+          });
+
+          console.log(`[Mixer/VocalOverlay] Mix complete for generation ${generationId}: ${audioUrl}`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[Mixer/VocalOverlay] Mix failed for generation ${generationId}:`, message);
+          const { updateMusicGenerationStatus } = await import("../db");
+          await updateMusicGenerationStatus(generationId, "failed", {
+            errorMessage: `Mix failed: ${message}`,
+          });
+        } finally {
+          if (outputPath) cleanupFile(outputPath);
+        }
+      })();
+
+      return { id: generationId, status: "generating" as const };
     }),
 });

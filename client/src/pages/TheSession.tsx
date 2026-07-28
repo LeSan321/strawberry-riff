@@ -187,8 +187,8 @@ function ThemePickerModal({
 function SessionSidebar({
   activeTool, onToolChange, theme, onOpenThemePicker, onOpenFusions, onOpenFrequency, onOpenInstrumentPalette,
 }: {
-  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems";
-  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems") => void;
+  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
   theme: SessionTheme;
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
@@ -198,6 +198,7 @@ function SessionSidebar({
   const tools = [
     { id: "generate" as const, label: "Generate", icon: Music, desc: "Create new fusion" },
     { id: "vocals" as const, label: "Add Vocals", icon: Mic, desc: "Vocal generation" },
+    { id: "mixer" as const, label: "Blend", icon: Layers, desc: "Vocal overlay mix" },
     { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Lyrics editor" },
     { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
     { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
@@ -348,11 +349,38 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
   const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const { data: myGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
-  const completedTracks = myGenerations?.filter(g => g.status === "complete" && g.audioUrl) ?? [];
+  const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
+  // Show completed non-vocal-take tracks as instrumental sources
+  const completedTracks = myGenerations?.filter(g => {
+    if (g.status !== "complete" || !g.audioUrl) return false;
+    try { const m = g.metadata ? JSON.parse(g.metadata) : {}; return m.generationType !== "vocal-take"; }
+    catch { return true; }
+  }) ?? [];
 
-  const startMutation = trpc.vocalProjects.start.useMutation();
-  const pollMutation = trpc.vocalProjects.poll.useMutation();
+  const [pendingGenerationId, setPendingGenerationId] = useState<number | null>(null);
+  const generateMutation = trpc.musicGeneration.generate.useMutation();
+  const { data: pendingGeneration } = trpc.musicGeneration.getById.useQuery(
+    { id: pendingGenerationId! },
+    { enabled: !!pendingGenerationId, refetchInterval: (query) => (query.state.data?.status === "generating" ? 4000 : false) }
+  );
+
+  // When a pending generation completes, surface the result
+  useEffect(() => {
+    if (!pendingGeneration) return;
+    if (pendingGeneration.status === "complete" && pendingGeneration.audioUrl) {
+      setResultUrl(pendingGeneration.audioUrl);
+      setIsGenerating(false);
+      setPendingGenerationId(null);
+      refetchGenerations();
+      toast.success("Vocal take ready — it's in your library too!");
+    } else if (pendingGeneration.status === "failed") {
+      const msg = pendingGeneration.errorMessage ?? "Vocal generation failed";
+      setError(msg);
+      setIsGenerating(false);
+      setPendingGenerationId(null);
+      toast.error(msg);
+    }
+  }, [pendingGeneration?.status, pendingGeneration?.audioUrl]);
 
   const handleGenerate = async () => {
     setError(null);
@@ -361,25 +389,26 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
     if (!lyrics.trim()) { setError("Please enter lyrics for the vocals"); return; }
     setIsGenerating(true);
     setResultUrl(null);
+    const selectedTrack = completedTracks.find(t => t.audioUrl === selectedTrackUrl);
+    const archName = VOCAL_ARCHETYPES.find(a => a.id === selectedArchetype)?.name ?? selectedArchetype;
     try {
-      const job = await startMutation.mutateAsync({
-        instrumentalUrl: selectedTrackUrl,
+      const job = await generateMutation.mutateAsync({
+        title: `Vocal Take — ${archName} over ${selectedTrackTitle ?? "instrumental"}`,
         lyrics: lyrics.trim(),
+        vocalMode: true,
         vocalArchetype: selectedArchetype,
         vocalGender,
         vocalSpectrumValue: spectrumValue,
-        styleNotes: styleNotes.trim() || undefined,
+        instrumentalSourceId: selectedTrack?.id,
+        instrumentalSourceUrl: selectedTrackUrl,
+        intensity: "balanced",
       });
-      const result = await pollMutation.mutateAsync({ taskId: job.taskId });
-      if (result.audioUrl) {
-        setResultUrl(result.audioUrl);
-        toast.success("Vocals generated — ready to play!");
-      }
+      // Poll via getById — the useQuery above will pick this up
+      setPendingGenerationId(job.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed";
       setError(msg);
       toast.error(msg);
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -570,6 +599,279 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
       {resultUrl && (
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          {/* Result playback card */}
+          <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center`}>
+                <Check className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Vocal Take Ready</p>
+                <p className="text-xs text-gray-400">Saved to your library</p>
+              </div>
+            </div>
+            <audio ref={audioRef} src={resultUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
+            <div className="flex gap-2">
+              <Button onClick={togglePlay} variant="outline" size="sm" className={`flex-1 border ${theme.borderAccent} text-white bg-white/5`}>
+                {isPlaying ? <><Pause className="w-4 h-4 mr-2" />Pause</> : <><Play className="w-4 h-4 mr-2" />Play</>}
+              </Button>
+              <a href={resultUrl} download="session-vocals.mp3" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}>
+                  <Download className="w-4 h-4" />
+                </Button>
+              </a>
+              <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}
+                onClick={() => { setResultUrl(null); }}>
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Pipeline next-step guide */}
+          <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-2`}>
+            <p className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>Next Steps</p>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                  <span className="text-white text-xs font-bold">1</span>
+                </div>
+                <div>
+                  <p className="text-sm text-white font-medium">Split the stems</p>
+                  <p className="text-xs text-gray-400">Go to <span className={`font-semibold ${theme.textAccent}`}>My Stems</span> and split this vocal take to extract the pure vocal stem.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                  <span className="text-white text-xs font-bold">2</span>
+                </div>
+                <div>
+                  <p className="text-sm text-white font-medium">Blend with your instrumental</p>
+                  <p className="text-xs text-gray-400">Go to <span className={`font-semibold ${theme.textAccent}`}>Blend</span> and overlay the vocal stem on your original instrumental track.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mixer Panel ──────────────────────────────────────────────────────────────
+function MixerPanel({ theme }: { theme: SessionTheme }) {
+  const { user } = useAuth();
+  const [vocalStemUrl, setVocalStemUrl] = useState<string | null>(null);
+  const [vocalStemLabel, setVocalStemLabel] = useState<string | null>(null);
+  const [instrumentalUrl, setInstrumentalUrl] = useState<string | null>(null);
+  const [instrumentalLabel, setInstrumentalLabel] = useState<string | null>(null);
+  const [vocalVolume, setVocalVolume] = useState(1.0);
+  const [instrumentalVolume, setInstrumentalVolume] = useState(0.9);
+  const [title, setTitle] = useState("");
+  const [isMixing, setIsMixing] = useState(false);
+  const [pendingMixId, setPendingMixId] = useState<number | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Fetch user's completed stem splits (for vocal stem picker)
+  const { data: stemSplits } = trpc.stemsplit.getUserStemSplits.useQuery(undefined, { enabled: !!user });
+  const completedSplits = stemSplits?.filter(s => s.status === "completed" && s.stems?.vocalUrl) ?? [];
+
+  // Fetch user's completed generations (for instrumental picker)
+  const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
+  const instrumentalTracks = myGenerations?.filter(g => {
+    if (g.status !== "complete" || !g.audioUrl) return false;
+    try { const m = g.metadata ? JSON.parse(g.metadata) : {}; return m.generationType !== "vocal-overlay"; }
+    catch { return true; }
+  }) ?? [];
+
+  const mixMutation = trpc.mixer.vocalOverlay.useMutation();
+
+  // Poll for mix completion
+  const { data: pendingMix } = trpc.musicGeneration.getById.useQuery(
+    { id: pendingMixId! },
+    { enabled: !!pendingMixId, refetchInterval: (query) => (query.state.data?.status === "generating" ? 4000 : false) }
+  );
+
+  useEffect(() => {
+    if (!pendingMix) return;
+    if (pendingMix.status === "complete" && pendingMix.audioUrl) {
+      setResultUrl(pendingMix.audioUrl);
+      setIsMixing(false);
+      setPendingMixId(null);
+      refetchGenerations();
+      toast.success("Mix complete — saved to your library!");
+    } else if (pendingMix.status === "failed") {
+      const msg = pendingMix.errorMessage ?? "Mix failed";
+      setError(msg);
+      setIsMixing(false);
+      setPendingMixId(null);
+      toast.error(msg);
+    }
+  }, [pendingMix?.status, pendingMix?.audioUrl]);
+
+  const handleMix = async () => {
+    setError(null);
+    if (!vocalStemUrl) { setError("Please select a vocal stem"); return; }
+    if (!instrumentalUrl) { setError("Please select an instrumental track"); return; }
+    if (!title.trim()) { setError("Please enter a title for the mix"); return; }
+    setIsMixing(true);
+    setResultUrl(null);
+    const selectedInst = instrumentalTracks.find(t => t.audioUrl === instrumentalUrl);
+    try {
+      const job = await mixMutation.mutateAsync({
+        vocalStemUrl,
+        instrumentalUrl,
+        vocalVolume,
+        instrumentalVolume,
+        title: title.trim(),
+        instrumentalGenerationId: selectedInst?.id,
+      });
+      setPendingMixId(job.id);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Mix failed";
+      setError(msg);
+      toast.error(msg);
+      setIsMixing(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
+    else { audioRef.current.play(); setIsPlaying(true); }
+  };
+
+  return (
+    <div className="p-4 md:p-6 space-y-6 max-w-2xl">
+      <div>
+        <h2 className={`text-lg font-bold ${theme.textAccent} mb-1`}>Vocal Overlay Mix</h2>
+        <p className="text-xs text-gray-400">Blend a vocal stem with an instrumental track using server-side ffmpeg mixing.</p>
+      </div>
+
+      {/* Step 1: Pick Vocal Stem */}
+      <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>1. Pick a Vocal Stem</p>
+        <p className="text-xs text-gray-400">Select from your completed stem splits. The vocal stem is the isolated voice track.</p>
+        {completedSplits.length === 0 ? (
+          <p className="text-xs text-gray-500 italic">No completed stem splits yet. Split a vocal-take generation in My Stems first.</p>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {completedSplits.map((split) => (
+              <button key={split.id}
+                onClick={() => { setVocalStemUrl(split.stems!.vocalUrl!); setVocalStemLabel(`Split #${split.id} — generation ${split.generationId}`); }}
+                className={`w-full text-left px-3 py-2 rounded-lg border transition-all text-sm ${
+                  vocalStemUrl === split.stems?.vocalUrl
+                    ? `border-transparent bg-gradient-to-r ${theme.accent} text-white`
+                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10`
+                }`}
+              >
+                <span className="font-medium">Split #{split.id}</span>
+                <span className="text-xs ml-2 opacity-60">Generation {split.generationId}</span>
+                {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 inline ml-2" />}
+              </button>
+            ))}
+          </div>
+        )}
+        {vocalStemLabel && (
+          <p className="text-xs text-green-400">Selected: {vocalStemLabel}</p>
+        )}
+      </div>
+
+      {/* Step 2: Pick Instrumental */}
+      <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>2. Pick an Instrumental</p>
+        <p className="text-xs text-gray-400">Choose the backing track to mix the vocals over.</p>
+        {instrumentalTracks.length === 0 ? (
+          <p className="text-xs text-gray-500 italic">No completed tracks yet. Generate one in the Generate tab first.</p>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {instrumentalTracks.map((track) => (
+              <button key={track.id}
+                onClick={() => { setInstrumentalUrl(track.audioUrl); setInstrumentalLabel(track.title); }}
+                className={`w-full text-left px-3 py-2 rounded-lg border transition-all text-sm ${
+                  instrumentalUrl === track.audioUrl
+                    ? `border-transparent bg-gradient-to-r ${theme.accent} text-white`
+                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10`
+                }`}
+              >
+                <span className="font-medium line-clamp-1">{track.title}</span>
+                {instrumentalUrl === track.audioUrl && <Check className="w-3.5 h-3.5 inline ml-2" />}
+              </button>
+            ))}
+          </div>
+        )}
+        {instrumentalLabel && (
+          <p className="text-xs text-green-400">Selected: {instrumentalLabel}</p>
+        )}
+      </div>
+
+      {/* Step 3: Volume Controls */}
+      <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-4`}>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>3. Volume Balance</p>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-gray-300">Vocals</span>
+              <span className="text-xs text-gray-400">{(vocalVolume * 100).toFixed(0)}%</span>
+            </div>
+            <Slider value={[vocalVolume * 100]} min={0} max={200} step={5}
+              onValueChange={([v]) => setVocalVolume(v / 100)}
+              className="w-full" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-gray-300">Instrumental</span>
+              <span className="text-xs text-gray-400">{(instrumentalVolume * 100).toFixed(0)}%</span>
+            </div>
+            <Slider value={[instrumentalVolume * 100]} min={0} max={200} step={5}
+              onValueChange={([v]) => setInstrumentalVolume(v / 100)}
+              className="w-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Step 4: Title + Mix */}
+      <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>4. Name Your Mix</p>
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Rockabilly Samba — Soulful Belter Mix"
+          className={`bg-white/5 border ${theme.borderAccent} text-white placeholder:text-gray-500 text-sm`}
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+        </div>
+      )}
+
+      <Button
+        onClick={handleMix}
+        disabled={isMixing || !vocalStemUrl || !instrumentalUrl || !title.trim()}
+        className={`w-full bg-gradient-to-r ${theme.accent} text-white font-semibold rounded-xl py-3 disabled:opacity-50`}
+      >
+        {isMixing ? (
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Mixing…</>
+        ) : (
+          <><Sparkles className="w-4 h-4 mr-2" />Mix Vocals + Instrumental</>
+        )}
+      </Button>
+
+      {isMixing && (
+        <div className="text-center text-xs text-gray-400 animate-pulse">
+          ffmpeg is combining your tracks — this takes 30–90 seconds…
+        </div>
+      )}
+
+      {resultUrl && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}
         >
           <div className="flex items-center gap-2">
@@ -577,8 +879,8 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
               <Check className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Vocals Ready</p>
-              <p className="text-xs text-gray-400">{selectedTrackTitle}</p>
+              <p className="text-sm font-semibold text-white">Mix Complete</p>
+              <p className="text-xs text-gray-400">Saved to your library</p>
             </div>
           </div>
           <audio ref={audioRef} src={resultUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
@@ -586,13 +888,13 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
             <Button onClick={togglePlay} variant="outline" size="sm" className={`flex-1 border ${theme.borderAccent} text-white bg-white/5`}>
               {isPlaying ? <><Pause className="w-4 h-4 mr-2" />Pause</> : <><Play className="w-4 h-4 mr-2" />Play</>}
             </Button>
-            <a href={resultUrl} download="session-vocals.mp3" target="_blank" rel="noopener noreferrer">
+            <a href={resultUrl} download="vocal-mix.mp3" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}>
                 <Download className="w-4 h-4" />
               </Button>
             </a>
             <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}
-              onClick={() => { setResultUrl(null); }}>
+              onClick={() => { setResultUrl(null); setTitle(""); }}>
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
@@ -605,7 +907,7 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
 // ─── Main Session Page ─────────────────────────────────────────────────────────
 export default function TheSession() {
   const { isAuthenticated } = useAuth();
-  const [activeTool, setActiveTool] = useState<"generate" | "vocals" | "lyrics" | "styles" | "stems">("generate");
+  const [activeTool, setActiveTool] = useState<"generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
@@ -698,6 +1000,8 @@ export default function TheSession() {
                 <GeneratePage selectedInstrument={selectedInstrument} onClearInstrument={() => setSelectedInstrument(null)} />
               ) : activeTool === "vocals" ? (
                 <AddVocalsPanel theme={theme} />
+              ) : activeTool === "mixer" ? (
+                <MixerPanel theme={theme} />
               ) : activeTool === "lyrics" ? (
                 <LyricsGeneratorPage />
               ) : activeTool === "styles" ? (
@@ -715,8 +1019,8 @@ export default function TheSession() {
         {[
           { id: "generate" as const, icon: Music, label: "Generate" },
           { id: "vocals" as const, icon: Mic, label: "Vocals" },
+          { id: "mixer" as const, icon: Layers, label: "Blend" },
           { id: "lyrics" as const, icon: Pen, label: "Lyrics" },
-          { id: "styles" as const, icon: Library, label: "Styles" },
           { id: "stems" as const, icon: Download, label: "Stems" },
         ].map(({ id, icon: Icon, label }) => (
           <button key={id} onClick={() => setActiveTool(id)}

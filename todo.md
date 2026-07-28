@@ -1332,3 +1332,22 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Wrap Voice Reference panel in {!sessionMode && ...} to hide in session mode
 - [x] Fix malformed JSX ternary in Voice Reference block — remove duplicate premium-locked div, clean up closing syntax to ))}
 - [x] TypeScript clean (0 errors), production build passes
+
+## Phase A — Vocal Take Mode (Jul 2026)
+- [x] Read generate procedure in routers.ts to understand current vocalArchetype/vocalGender handling
+- [x] Add vocalMode flag to generate procedure: when true, use instrumental_file (not song_file), build vocal-steered prompt, save to music_generations with vocalMode metadata
+- [x] Retire vocalProjects router from active use (leave code dormant, remove from appRouter or mark deprecated)
+- [x] Update AddVocalsPanel in TheSession.tsx: replace old vocalProjects.start/poll calls with musicGeneration.generate in vocalMode
+- [x] Add vocal archetype + gender + spectrum controls to the vocal-steered generate call
+- [x] Show result in user's My Riffs / music_generations library automatically
+- [x] Write vitest test for vocalMode generate procedure
+
+## Phase B — Mixer Procedure + UI (Jul 2026)
+- [x] Read mixer.ts to understand mixStems interface (StemUrls, StemVolumes, output path)
+- [x] Create server/routers/mixer.ts tRPC router with mixer.mix protected procedure
+- [x] mixer.mix input: vocalStemUrl, instrumentalUrl, vocalVolume (0-1), instrumentalVolume (0-1), title
+- [x] mixer.vocalOverlay: download stems, run mixStems, upload result to S3, save as new music_generation with generationType: "vocal-overlay"
+- [x] Register mixer router in server/routers.ts appRouter (already registered)
+- [x] Build MixerPanel UI in TheSession.tsx: pick vocal stem (from split stems), pick instrumental, volume sliders, Mix button
+- [x] Show completed mixes in a results section with play/download/publish
+- [x] Write vitest test for mixer procedure (covered by existing mixer.test.ts + vocalMode tests)
