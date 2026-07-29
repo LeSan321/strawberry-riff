@@ -16,6 +16,7 @@ import {
   markGenerationAsSplit,
 } from "../stemsplit/db";
 import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
+import { resolveAudioUrl } from "../storage";
 
 
 export const stemsplitRouter = router({
@@ -78,8 +79,14 @@ export const stemsplitRouter = router({
       }
 
       try {
+        // The StemSplit API must be able to fetch the audio file.
+        // Our S3 bucket is private, so we must pass a presigned GET URL
+        // (valid 24h) rather than the raw storage path.
+        const publicAudioUrl = resolveAudioUrl(generation.audioUrl);
+        console.log(`[StemSplit] Resolved audio URL for generationId=${generationId}: ${publicAudioUrl.slice(0, 120)}...`);
+
         // Start the stem split via StemSplit API
-        const stemSplitJob = await startStemSplit(generation.audioUrl);
+        const stemSplitJob = await startStemSplit(publicAudioUrl);
 
         // Create database record (use generationId as trackId for now)
         const dbRecord = await createStemSplit(userId, generationId, stemSplitJob.jobId);

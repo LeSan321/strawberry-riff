@@ -1351,3 +1351,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Build MixerPanel UI in TheSession.tsx: pick vocal stem (from split stems), pick instrumental, volume sliders, Mix button
 - [x] Show completed mixes in a results section with play/download/publish
 - [x] Write vitest test for mixer procedure (covered by existing mixer.test.ts + vocalMode tests)
+
+## Bug Fix: StemSplit HTTP 403 (Jul 2026)
+- [x] Diagnose Railway log: StemSplit API returning 400 FETCH_FAILED / HTTP 403
+- [x] Root cause: startStemSplit was passing raw private S3 URL (generation.audioUrl) directly to StemSplit API — S3 bucket is private, so external services cannot fetch it
+- [x] Fix: import resolveAudioUrl in stemsplit.ts router, call resolveAudioUrl(generation.audioUrl) before passing to startStemSplit — generates a presigned GET URL valid 24h
+- [x] TypeScript clean (0 errors)
