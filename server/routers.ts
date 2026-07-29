@@ -99,8 +99,8 @@ import { createLyricsDraft, getLyricsDraftsByUserId, getLyricsDraftById, deleteL
 // Apply presigned URL resolution to any track object's audioUrl.
 // For Railway S3 (private bucket), generates a 24-hour presigned GET URL.
 // For Forge CDN URLs, returns them unchanged (already publicly accessible).
-function withPlayableUrl<T extends { audioUrl: string }>(track: T): T {
-  return { ...track, audioUrl: resolveAudioUrl(track.audioUrl) };
+async function withPlayableUrl<T extends { audioUrl: string }>(track: T): Promise<T> {
+  return { ...track, audioUrl: await resolveAudioUrl(track.audioUrl) };
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -192,7 +192,7 @@ const tracksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ext = input.fileExtension.replace(/^[.]+/, '').toLowerCase() || 'mp3';
       const key = `audio/${ctx.user.id}/${nanoid(12)}.${ext}`;
-      const presigned = storageGetPresignedPutUrl(key, input.mimeType);
+      const presigned = await storageGetPresignedPutUrl(key, input.mimeType);
       if (presigned) {
         return {
           uploadUrl: presigned.uploadUrl,
@@ -265,10 +265,10 @@ const tracksRouter = router({
 
   myTracks: protectedProcedure.query(async ({ ctx }) => {
     const trackList = await getTracksByUserId(ctx.user.id);
-    return trackList.map((t) => withPlayableUrl({
+    return Promise.all(trackList.map(async (t) => withPlayableUrl({
       ...t,
       moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-    }));
+    })));
   }),
 
   getById: publicProcedure
@@ -296,7 +296,7 @@ const tracksRouter = router({
           }
         }
       }
-      return withPlayableUrl({
+      return await withPlayableUrl({
         accessDenied: false as const,
         ...track,
         moodTags: track.moodTags ? (JSON.parse(track.moodTags) as string[]) : [],
@@ -315,7 +315,7 @@ const tracksRouter = router({
         trackList.map(async (t) => {
           const profile = await getProfileByUserId(t.userId);
           const creator = await getUserById(t.userId);
-          return withPlayableUrl({
+          return await withPlayableUrl({
             ...t,
             moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
             creatorUsername: profile?.displayName ?? null,
@@ -327,10 +327,10 @@ const tracksRouter = router({
 
   friendFeed: protectedProcedure.query(async ({ ctx }) => {
     const trackList = await getInnerCircleTracks(ctx.user.id);
-    return trackList.map((t) => withPlayableUrl({
+    return Promise.all(trackList.map(async (t) => withPlayableUrl({
       ...t,
       moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-    }));
+    })));
   }),
 
   update: protectedProcedure
@@ -570,10 +570,10 @@ const playlistsRouter = router({
       const pl = await getPlaylistById(input.playlistId);
       if (!pl || pl.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       const trackList = await getPlaylistTracks(input.playlistId);
-      return trackList.map((t) => withPlayableUrl({
+      return Promise.all(trackList.map(async (t) => withPlayableUrl({
         ...t,
         moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-      }));
+      })));
     }),
 
   create: protectedProcedure
@@ -710,10 +710,10 @@ const playlistsRouter = router({
 
       return {
         playlist: pl,
-        tracks: trackList.map((t) => withPlayableUrl({
+        tracks: await Promise.all(trackList.map(async (t) => withPlayableUrl({
           ...t,
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-        })),
+        }))),
         owner: { id: owner?.id, name: owner?.name, displayName: ownerProfile?.displayName, avatarUrl: ownerProfile?.avatarUrl },
       };
     }),
@@ -754,10 +754,10 @@ const creatorsRouter = router({
         trackCount: visibleTracks.length,
         isOwnProfile,
         viewerIsFollowing,
-        tracks: visibleTracks.map((t) => withPlayableUrl({
+        tracks: await Promise.all(visibleTracks.map(async (t) => withPlayableUrl({
           ...t,
           moodTags: t.moodTags ? (JSON.parse(t.moodTags) as string[]) : [],
-        })),
+        }))),
       };
     }),
 
@@ -1112,12 +1112,12 @@ const musicGenerationRouter = router({
     .query(async ({ input }) => {
       const gen = await getMusicGenerationById(input.id);
       if (!gen) return null;
-      return gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen;
+      return gen.audioUrl ? { ...gen, audioUrl: await resolveAudioUrl(gen.audioUrl) } : gen;
     }),
 
   myGenerations: protectedProcedure.query(async ({ ctx }) => {
     const gens = await getMusicGenerationsByUserId(ctx.user.id);
-    return gens.map((gen) => gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen);
+    return Promise.all(gens.map(async (gen) => gen.audioUrl ? { ...gen, audioUrl: await resolveAudioUrl(gen.audioUrl) } : gen));
   }),
 
   delete: protectedProcedure
@@ -1253,7 +1253,7 @@ const musicGenerationRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
       const history = await getMusicGenerationHistory(input.generationId);
-      return history.map((h) => h.audioUrl ? { ...h, audioUrl: resolveAudioUrl(h.audioUrl) } : h);
+      return Promise.all(history.map(async (h) => h.audioUrl ? { ...h, audioUrl: await resolveAudioUrl(h.audioUrl) } : h));
     }),
 
   publish: protectedProcedure
@@ -1356,10 +1356,10 @@ const musicGenerationRouter = router({
     .query(async ({ ctx, input }) => {
       const generations = await getMusicGenerationsByUserId(ctx.user.id, input?.search);
       // Filter to only splits that are complete and have isSplit=true, sorted by most recent first
-      return generations
+      const filtered = generations
         .filter((gen) => gen.isSplit === true && gen.status === "complete")
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .map((gen) => gen.audioUrl ? { ...gen, audioUrl: resolveAudioUrl(gen.audioUrl) } : gen);
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return Promise.all(filtered.map(async (gen) => gen.audioUrl ? { ...gen, audioUrl: await resolveAudioUrl(gen.audioUrl) } : gen));
     }),
 
   /**
@@ -1402,7 +1402,7 @@ const musicGenerationRouter = router({
       console.log(`[Bespoke] instrumental_file: ${input.instrumentAudioPath.slice(0, 80)}...`);
 
       // Resolve the instrument sample URL (Tigris S3 is private — MiniMax needs a public URL)
-      const resolvedInstrumentUrl = resolveAudioUrl(input.instrumentAudioPath);
+      const resolvedInstrumentUrl = await resolveAudioUrl(input.instrumentAudioPath);
 
       // Create generation record immediately (status: generating)
       const generationId = await createMusicGeneration({
@@ -1482,7 +1482,7 @@ const musicGenerationRouter = router({
         if (!gen) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         return {
           ...gen,
-          audioUrl: resolveAudioUrl(s3Url),
+          audioUrl: await resolveAudioUrl(s3Url),
           status: "complete" as const,
         };
       } catch (error: unknown) {
@@ -1750,7 +1750,7 @@ const previewLinksRouter = router({
           id: track.id,
           title: track.title,
           artist: track.artist,
-          audioUrl: resolveAudioUrl(track.audioUrl),
+          audioUrl: await resolveAudioUrl(track.audioUrl),
           audioKey: track.audioKey,
           duration: track.duration,
           gradient: track.gradient,

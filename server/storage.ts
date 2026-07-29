@@ -2,11 +2,13 @@
 // Priority: Railway S3/Tigris (when AWS_S3_BUCKET_NAME + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY are set)
 //           → Manus Forge proxy (fallback for local dev / Manus-hosted deployment)
 //
-// S3 path uses AWS Signature V4 via Node.js crypto — no SDK required.
+// Presigned URLs use the official @aws-sdk/s3-request-presigner — no hand-rolled SigV4.
 // Railway Object Storage (Tigris) is private-only; presigned URLs are used for GET access.
 
 import { ENV } from './_core/env';
 import { createHmac, createHash } from 'crypto';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,27 @@ function signingRegion(): string {
   return ENV.s3Region || 'auto';
 }
 
+// Lazy-initialised S3 client — only created when S3 config is present
+let _s3Client: S3Client | null = null;
+function getS3Client(): S3Client {
+  if (!_s3Client) {
+    _s3Client = new S3Client({
+      region: signingRegion(),
+      endpoint: ENV.s3Endpoint || undefined,
+      credentials: {
+        accessKeyId: ENV.s3AccessKeyId,
+        secretAccessKey: ENV.s3SecretAccessKey,
+      },
+      // Tigris requires virtual-hosted-style addressing for presigned GET URLs.
+      // Path-style presigned URLs return HTTP 403 from Tigris even when correctly signed.
+      forcePathStyle: false,
+    });
+  }
+  return _s3Client;
+}
+
+// ─── Helpers for hand-rolled PUT (kept for direct server-side uploads) ────────
+
 function sha256hex(data: string | Buffer): string {
   return createHash('sha256').update(data).digest('hex');
 }
@@ -43,19 +66,7 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, 'aws4_request');
 }
 
-// Virtual-hosted-style URL: https://bucket.host/key
-// Tigris requires virtual-hosted-style for presigned URLs; path-style returns 403.
-function s3VirtualHostedUrl(key: string): string {
-  if (ENV.s3Endpoint) {
-    // Convert https://t3.storageapi.dev → https://bucket.t3.storageapi.dev
-    const endpoint = ENV.s3Endpoint.replace(/\/+$/, '');
-    const parsed = new URL(endpoint);
-    return `${parsed.protocol}//${ENV.s3Bucket}.${parsed.host}/${key}`;
-  }
-  return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
-}
-
-// Path-style URL: https://endpoint/bucket/key (used for PUT uploads only)
+// Path-style URL: https://endpoint/bucket/key (used for PUT uploads)
 function s3ObjectUrl(key: string): string {
   if (ENV.s3Endpoint) {
     return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/${key}`;
@@ -63,100 +74,32 @@ function s3ObjectUrl(key: string): string {
   return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
 }
 
-// ─── Presigned GET URL ────────────────────────────────────────────────────────
+// ─── Presigned GET URL (via AWS SDK) ─────────────────────────────────────────
 
-// Generate an AWS Signature V4 presigned GET URL valid for `expiresIn` seconds.
-// This is the correct way to serve files from Railway's private-only S3 buckets.
-function s3PresignedGetUrl(key: string, expiresIn = 86400): string {
+// Uses the official @aws-sdk/s3-request-presigner — eliminates hand-rolled SigV4 bugs.
+// Tigris requires virtual-hosted-style (forcePathStyle: false) for presigned GET to work.
+async function s3PresignedGetUrl(key: string, expiresIn = 86400): Promise<string> {
   const cleanKey = key.replace(/^\/+/, '');
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:\-]|\..\d{3}/g, '').slice(0, 15) + 'Z';
-  const dateStamp = amzDate.slice(0, 8);
-  const region = signingRegion();
-
-  // Use virtual-hosted-style URL for presigned GET — Tigris requires this format.
-  // Path-style presigned URLs (https://endpoint/bucket/key) return HTTP 403 from Tigris.
-  const url = s3VirtualHostedUrl(cleanKey);
-  const parsedUrl = new URL(url);
-  const host = parsedUrl.host;
-  const path = parsedUrl.pathname;
-
-  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const credential = `${ENV.s3AccessKeyId}/${credentialScope}`;
-
-  // Build canonical query string (params must be sorted)
-  const queryParams = new URLSearchParams({
-    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-    'X-Amz-Credential': credential,
-    'X-Amz-Date': amzDate,
-    'X-Amz-Expires': String(expiresIn),
-    'X-Amz-SignedHeaders': 'host',
+  const command = new GetObjectCommand({
+    Bucket: ENV.s3Bucket,
+    Key: cleanKey,
   });
-  // Sort params alphabetically as required by SigV4
-  queryParams.sort();
-  const canonicalQueryString = queryParams.toString();
-
-  const canonicalHeaders = `host:${host}\n`;
-  const signedHeaders = 'host';
-  const payloadHash = 'UNSIGNED-PAYLOAD';
-
-  const canonicalRequest = `GET\n${path}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
-
-  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
-  const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
-
-  return `${url}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+  return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
-// ─── Presigned PUT URL ────────────────────────────────────────────────────────
+// ─── Presigned PUT URL (via AWS SDK) ─────────────────────────────────────────
 
-// Generate an AWS Signature V4 presigned PUT URL valid for `expiresIn` seconds.
-// The browser can use this to upload a file directly to S3 without routing through
-// the server, which avoids Clerk JWT expiry on large file uploads (base64 conversion
-// takes >60s for 7MB+ files, causing the JWT to expire before the request fires).
-function s3PresignedPutUrl(key: string, contentType: string, expiresIn = 3600): string {
+async function s3PresignedPutUrl(key: string, contentType: string, expiresIn = 3600): Promise<string> {
   const cleanKey = key.replace(/^\/+/, '');
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
-  const dateStamp = amzDate.slice(0, 8);
-  const region = signingRegion();
-
-  const url = s3ObjectUrl(cleanKey);
-  const parsedUrl = new URL(url);
-  const host = parsedUrl.host;
-  const path = parsedUrl.pathname;
-
-  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const credential = `${ENV.s3AccessKeyId}/${credentialScope}`;
-
-  // content-type must be a signed header so the browser cannot upload a different type
-  const signedHeaders = 'content-type;host';
-
-  // Build canonical query string (params must be sorted alphabetically per SigV4)
-  const queryParams = new URLSearchParams({
-    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-    'X-Amz-Credential': credential,
-    'X-Amz-Date': amzDate,
-    'X-Amz-Expires': String(expiresIn),
-    'X-Amz-SignedHeaders': signedHeaders,
+  const command = new PutObjectCommand({
+    Bucket: ENV.s3Bucket,
+    Key: cleanKey,
+    ContentType: contentType,
   });
-  queryParams.sort();
-  const canonicalQueryString = queryParams.toString();
-
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
-  const payloadHash = 'UNSIGNED-PAYLOAD';
-
-  const canonicalRequest = `PUT\n${path}\n${canonicalQueryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
-
-  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
-  const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
-
-  return `${url}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+  return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
-// ─── S3 PUT ───────────────────────────────────────────────────────────────────
+// ─── S3 PUT (direct server-side upload, hand-rolled for performance) ──────────
 
 async function s3Put(
   relKey: string,
@@ -311,7 +254,7 @@ export async function storagePut(
 export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ key: string; url: string }> {
   if (hasS3Config()) {
     const key = relKey.replace(/^\/+/, '');
-    const url = s3PresignedGetUrl(key, expiresIn);
+    const url = await s3PresignedGetUrl(key, expiresIn);
     return { key, url };
   }
   return forgeGet(relKey);
@@ -325,14 +268,14 @@ export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ k
  * Returns null when S3 is not configured (Forge/Manus-hosted environments).
  * Callers must fall back to the base64-through-tRPC path when this returns null.
  */
-export function storageGetPresignedPutUrl(
+export async function storageGetPresignedPutUrl(
   relKey: string,
   contentType: string,
   expiresIn = 3600
-): { uploadUrl: string; publicUrl: string } | null {
+): Promise<{ uploadUrl: string; publicUrl: string } | null> {
   if (!hasS3Config()) return null;
   const key = relKey.replace(/^\/+/, '');
-  const uploadUrl = s3PresignedPutUrl(key, contentType, expiresIn);
+  const uploadUrl = await s3PresignedPutUrl(key, contentType, expiresIn);
   // publicUrl is the raw path-style URL — resolveAudioUrl() will presign it at read time
   const publicUrl = s3ObjectUrl(key);
   return { uploadUrl, publicUrl };
@@ -349,7 +292,7 @@ export function storageGetPresignedPutUrl(
  * 3. URL contains known Tigris/Railway S3 domain (t3.storageapi.dev)
  * 4. Anything else (Forge CDN, fal.ai, etc.) → return as-is
  */
-export function resolveAudioUrl(storedUrl: string, expiresIn = 86400): string {
+export async function resolveAudioUrl(storedUrl: string, expiresIn = 86400): Promise<string> {
   if (!storedUrl || !hasS3Config()) return storedUrl;
 
   // Helper: extract key from a path-style URL given a known prefix

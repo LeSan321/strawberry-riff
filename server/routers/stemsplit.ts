@@ -82,7 +82,7 @@ export const stemsplitRouter = router({
         // The StemSplit API must be able to fetch the audio file.
         // Our S3 bucket is private, so we must pass a presigned GET URL
         // (valid 24h) rather than the raw storage path.
-        const publicAudioUrl = resolveAudioUrl(generation.audioUrl);
+        const publicAudioUrl = await resolveAudioUrl(generation.audioUrl);
         console.log(`[StemSplit] Resolved audio URL for generationId=${generationId}: ${publicAudioUrl.slice(0, 120)}...`);
 
         // Start the stem split via StemSplit API

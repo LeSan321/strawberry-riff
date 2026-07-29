@@ -62,7 +62,7 @@ async function fetchInstrumentBytes(audioPath: string): Promise<Buffer> {
     // For Tigris/S3 URLs the bucket is private — generate a presigned URL.
     // resolveAudioUrl detects storageapi.dev / tigrisdata.com and signs the request;
     // for other public URLs it returns the URL unchanged.
-    fetchUrl = resolveAudioUrl(audioPath, 900); // 15-minute presigned URL
+    fetchUrl = await resolveAudioUrl(audioPath, 900); // 15-minute presigned URL
     console.log(`[StableAudio] Resolved instrument URL → ${fetchUrl.slice(0, 80)}...`);
   } else {
     throw new Error(`Unsupported instrument audio path format: ${audioPath}`);
