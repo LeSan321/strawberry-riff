@@ -43,7 +43,19 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, 'aws4_request');
 }
 
-// Path-style URL: https://endpoint/bucket/key
+// Virtual-hosted-style URL: https://bucket.host/key
+// Tigris requires virtual-hosted-style for presigned URLs; path-style returns 403.
+function s3VirtualHostedUrl(key: string): string {
+  if (ENV.s3Endpoint) {
+    // Convert https://t3.storageapi.dev → https://bucket.t3.storageapi.dev
+    const endpoint = ENV.s3Endpoint.replace(/\/+$/, '');
+    const parsed = new URL(endpoint);
+    return `${parsed.protocol}//${ENV.s3Bucket}.${parsed.host}/${key}`;
+  }
+  return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
+}
+
+// Path-style URL: https://endpoint/bucket/key (used for PUT uploads only)
 function s3ObjectUrl(key: string): string {
   if (ENV.s3Endpoint) {
     return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/${key}`;
@@ -58,11 +70,13 @@ function s3ObjectUrl(key: string): string {
 function s3PresignedGetUrl(key: string, expiresIn = 86400): string {
   const cleanKey = key.replace(/^\/+/, '');
   const now = new Date();
-  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const amzDate = now.toISOString().replace(/[:\-]|\..\d{3}/g, '').slice(0, 15) + 'Z';
   const dateStamp = amzDate.slice(0, 8);
   const region = signingRegion();
 
-  const url = s3ObjectUrl(cleanKey);
+  // Use virtual-hosted-style URL for presigned GET — Tigris requires this format.
+  // Path-style presigned URLs (https://endpoint/bucket/key) return HTTP 403 from Tigris.
+  const url = s3VirtualHostedUrl(cleanKey);
   const parsedUrl = new URL(url);
   const host = parsedUrl.host;
   const path = parsedUrl.pathname;

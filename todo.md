@@ -1357,3 +1357,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Root cause: startStemSplit was passing raw private S3 URL (generation.audioUrl) directly to StemSplit API — S3 bucket is private, so external services cannot fetch it
 - [x] Fix: import resolveAudioUrl in stemsplit.ts router, call resolveAudioUrl(generation.audioUrl) before passing to startStemSplit — generates a presigned GET URL valid 24h
 - [x] TypeScript clean (0 errors)
+
+## Bug Fix: StemSplit HTTP 403 — Tigris Virtual-Hosted URL (Jul 2026)
+- [x] Second diagnosis: presigned URL was being generated but still returning 403
+- [x] Root cause: Tigris requires virtual-hosted-style URLs (https://bucket.t3.storageapi.dev/key) for presigned GET access; our code was generating path-style (https://t3.storageapi.dev/bucket/key) which Tigris rejects with 403 even when signed
+- [x] Fix: added s3VirtualHostedUrl() helper that converts endpoint to virtual-hosted format; s3PresignedGetUrl now uses this instead of s3ObjectUrl; s3ObjectUrl (path-style) retained for PUT uploads only
+- [x] TypeScript clean (0 errors)
