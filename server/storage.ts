@@ -1,26 +1,27 @@
 // Storage helpers for Strawberry Riff
-// Priority: Railway S3/Tigris (when AWS_S3_BUCKET_NAME + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY are set)
+// Priority: Cloudflare R2 (when AWS_S3_BUCKET_NAME + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY are set)
 //           → Manus Forge proxy (fallback for local dev / Manus-hosted deployment)
 //
-// Presigned URLs use the official @aws-sdk/s3-request-presigner — no hand-rolled SigV4.
-// Railway Object Storage (Tigris) is private-only; presigned URLs are used for GET access.
+// R2 bucket is configured as PUBLIC — files are served directly via the R2 public URL
+// (https://pub-*.r2.dev/<key>). No presigning required for reads.
+// Writes use the AWS SDK PutObjectCommand via the S3-compatible R2 endpoint.
 
 import { ENV } from './_core/env';
-import { createHmac, createHash } from 'crypto';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Startup diagnostics ──────────────────────────────────────────────────────
 
-// Log S3 config status at startup so Railway logs show what's available
 console.log(
   '[Storage] Config check — BUCKET:',
   ENV.s3Bucket ? `"${ENV.s3Bucket}"` : 'EMPTY',
-  '| REGION:', ENV.s3Region || 'EMPTY',
   '| ENDPOINT:', ENV.s3Endpoint || 'EMPTY',
   '| ACCESS_KEY_ID:', ENV.s3AccessKeyId ? `set (${ENV.s3AccessKeyId.slice(0, 8)}...)` : 'EMPTY',
-  '| SECRET:', ENV.s3SecretAccessKey ? 'set' : 'EMPTY'
+  '| SECRET:', ENV.s3SecretAccessKey ? 'set' : 'EMPTY',
+  '| R2_PUBLIC_URL:', ENV.r2PublicUrl || 'EMPTY'
 );
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function hasS3Config(): boolean {
   return !!(ENV.s3Bucket && ENV.s3AccessKeyId && ENV.s3SecretAccessKey);
@@ -30,7 +31,7 @@ function signingRegion(): string {
   return ENV.s3Region || 'auto';
 }
 
-// Lazy-initialised S3 client — only created when S3 config is present
+// Lazy-initialised S3 client
 let _s3Client: S3Client | null = null;
 function getS3Client(): S3Client {
   if (!_s3Client) {
@@ -41,53 +42,49 @@ function getS3Client(): S3Client {
         accessKeyId: ENV.s3AccessKeyId,
         secretAccessKey: ENV.s3SecretAccessKey,
       },
-      // Tigris requires virtual-hosted-style addressing for presigned GET URLs.
-      // Path-style presigned URLs return HTTP 403 from Tigris even when correctly signed.
       forcePathStyle: false,
     });
   }
   return _s3Client;
 }
 
-// ─── Helpers for hand-rolled PUT (kept for direct server-side uploads) ────────
-
-function sha256hex(data: string | Buffer): string {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-function hmacSha256(key: Buffer | string, data: string): Buffer {
-  return createHmac('sha256', key).update(data).digest();
-}
-
-function getSigningKey(secretKey: string, dateStamp: string, region: string, service: string): Buffer {
-  const kDate = hmacSha256(`AWS4${secretKey}`, dateStamp);
-  const kRegion = hmacSha256(kDate, region);
-  const kService = hmacSha256(kRegion, service);
-  return hmacSha256(kService, 'aws4_request');
-}
-
-// Path-style URL: https://endpoint/bucket/key (used for PUT uploads)
-function s3ObjectUrl(key: string): string {
-  if (ENV.s3Endpoint) {
-    return `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/${key}`;
-  }
-  return `https://${ENV.s3Bucket}.s3.${signingRegion()}.amazonaws.com/${key}`;
-}
-
-// ─── Presigned GET URL (via AWS SDK) ─────────────────────────────────────────
-
-// Uses the official @aws-sdk/s3-request-presigner — eliminates hand-rolled SigV4 bugs.
-// Tigris requires virtual-hosted-style (forcePathStyle: false) for presigned GET to work.
-async function s3PresignedGetUrl(key: string, expiresIn = 86400): Promise<string> {
+/**
+ * Public URL for a stored key via the R2 public bucket domain.
+ * Format: https://pub-<hash>.r2.dev/<key>
+ * Always publicly accessible — no signing required.
+ */
+function r2PublicUrl(key: string): string {
   const cleanKey = key.replace(/^\/+/, '');
-  const command = new GetObjectCommand({
-    Bucket: ENV.s3Bucket,
-    Key: cleanKey,
-  });
-  return getSignedUrl(getS3Client(), command, { expiresIn });
+  const base = (ENV.r2PublicUrl || '').replace(/\/+$/, '');
+  return `${base}/${cleanKey}`;
 }
 
-// ─── Presigned PUT URL (via AWS SDK) ─────────────────────────────────────────
+// ─── S3 PUT (AWS SDK) ─────────────────────────────────────────────────────────
+
+async function s3Put(
+  relKey: string,
+  data: Buffer | Uint8Array | string,
+  contentType: string
+): Promise<{ key: string; url: string }> {
+  const key = relKey.replace(/^\/+/, '');
+  const body = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data as Uint8Array);
+
+  const command = new PutObjectCommand({
+    Bucket: ENV.s3Bucket,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  });
+
+  console.log(`[Storage R2] Uploading ${key} (${body.length} bytes, ${contentType})`);
+  await getS3Client().send(command);
+
+  const url = r2PublicUrl(key);
+  console.log(`[Storage R2] Uploaded ${key} → ${url}`);
+  return { key, url };
+}
+
+// ─── Presigned PUT URL (for direct browser → R2 uploads) ─────────────────────
 
 async function s3PresignedPutUrl(key: string, contentType: string, expiresIn = 3600): Promise<string> {
   const cleanKey = key.replace(/^\/+/, '');
@@ -99,64 +96,6 @@ async function s3PresignedPutUrl(key: string, contentType: string, expiresIn = 3
   return getSignedUrl(getS3Client(), command, { expiresIn });
 }
 
-// ─── S3 PUT (direct server-side upload, hand-rolled for performance) ──────────
-
-async function s3Put(
-  relKey: string,
-  data: Buffer | Uint8Array | string,
-  contentType: string
-): Promise<{ key: string; url: string }> {
-  const key = relKey.replace(/^\/+/, '');
-  const body = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data as any);
-
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
-  const dateStamp = amzDate.slice(0, 8);
-  const region = signingRegion();
-
-  const url = s3ObjectUrl(key);
-  const parsedUrl = new URL(url);
-  const host = parsedUrl.host;
-  const path = parsedUrl.pathname;
-
-  const payloadHash = sha256hex(body);
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
-  const canonicalRequest = `PUT\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-
-  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
-
-  const signingKey = getSigningKey(ENV.s3SecretAccessKey, dateStamp, region, 's3');
-  const signature = createHmac('sha256', signingKey).update(stringToSign).digest('hex');
-
-  const authHeader = `AWS4-HMAC-SHA256 Credential=${ENV.s3AccessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-  console.log(`[Storage S3] Uploading ${key} to ${url} (region=${region})`);
-
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType,
-      'Host': host,
-      'x-amz-content-sha256': payloadHash,
-      'x-amz-date': amzDate,
-      'Authorization': authHeader,
-    },
-    body,
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => response.statusText);
-    console.error(`[Storage S3] Upload failed (${response.status}): ${text}`);
-    throw new Error(`S3 upload failed (${response.status}): ${text}`);
-  }
-
-  // Store the raw object URL as the key — presigned URLs are generated at read time
-  console.log(`[Storage S3] Uploaded ${key} → ${url}`);
-  return { key, url };
-}
-
 // ─── Forge proxy path ─────────────────────────────────────────────────────────
 
 type StorageConfig = { baseUrl: string; apiKey: string };
@@ -166,7 +105,7 @@ function getForgeConfig(): StorageConfig {
   const apiKey = ENV.forgeApiKey;
   if (!baseUrl || !apiKey) {
     throw new Error(
-      'Storage credentials missing: set BUCKET/ACCESS_KEY_ID/SECRET_ACCESS_KEY for S3, or BUILT_IN_FORGE_API_URL/BUILT_IN_FORGE_API_KEY for Forge proxy'
+      'Storage credentials missing: set BUCKET/ACCESS_KEY_ID/SECRET_ACCESS_KEY for R2, or BUILT_IN_FORGE_API_URL/BUILT_IN_FORGE_API_KEY for Forge proxy'
     );
   }
   return { baseUrl: baseUrl.replace(/\/+$/, ''), apiKey };
@@ -184,7 +123,7 @@ function toFormData(data: Buffer | Uint8Array | string, contentType: string, fil
   const blob =
     typeof data === 'string'
       ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
+      : new Blob([data instanceof Buffer ? data : Buffer.from(data as Uint8Array)], { type: contentType });
   const form = new FormData();
   form.append('file', blob, fileName || 'file');
   return form;
@@ -251,22 +190,18 @@ export async function storagePut(
   return forgePut(relKey, data, contentType);
 }
 
-export async function storageGet(relKey: string, expiresIn = 86400): Promise<{ key: string; url: string }> {
+export async function storageGet(relKey: string, _expiresIn = 86400): Promise<{ key: string; url: string }> {
   if (hasS3Config()) {
     const key = relKey.replace(/^\/+/, '');
-    const url = await s3PresignedGetUrl(key, expiresIn);
-    return { key, url };
+    // R2 is public — return the public URL directly, no presigning needed
+    return { key, url: r2PublicUrl(key) };
   }
   return forgeGet(relKey);
 }
 
 /**
- * Generate a presigned PUT URL so the browser can upload a file directly to S3,
- * bypassing the tRPC server entirely. This eliminates the Clerk JWT expiry problem
- * where base64 encoding of large files (7MB+) takes >60s before the request fires.
- *
- * Returns null when S3 is not configured (Forge/Manus-hosted environments).
- * Callers must fall back to the base64-through-tRPC path when this returns null.
+ * Generate a presigned PUT URL so the browser can upload directly to R2,
+ * bypassing the tRPC server. Returns null when R2 is not configured.
  */
 export async function storageGetPresignedPutUrl(
   relKey: string,
@@ -276,61 +211,53 @@ export async function storageGetPresignedPutUrl(
   if (!hasS3Config()) return null;
   const key = relKey.replace(/^\/+/, '');
   const uploadUrl = await s3PresignedPutUrl(key, contentType, expiresIn);
-  // publicUrl is the raw path-style URL — resolveAudioUrl() will presign it at read time
-  const publicUrl = s3ObjectUrl(key);
+  const publicUrl = r2PublicUrl(key);
   return { uploadUrl, publicUrl };
 }
 
 /**
- * Given a stored audioUrl (which may be a raw S3 path-style URL or a Forge CDN URL),
- * return a playable URL. For S3 URLs, generate a presigned URL. For Forge/other URLs,
- * return as-is since they are already publicly accessible.
+ * Given a stored audioUrl, return a playable URL.
  *
- * Detection strategy (in order):
- * 1. URL contains configured endpoint → extract key from path-style URL
- * 2. URL contains bucket name (handles cases where endpoint env var is missing)
- * 3. URL contains known Tigris/Railway S3 domain (t3.storageapi.dev)
- * 4. Anything else (Forge CDN, fal.ai, etc.) → return as-is
+ * R2 public URLs and Forge/CDN URLs are returned as-is (already public).
+ * Old Tigris/S3 path-style URLs are rewritten to R2 public URLs using the
+ * same key (assumes files have been migrated to R2 with the same key structure).
  */
-export async function resolveAudioUrl(storedUrl: string, expiresIn = 86400): Promise<string> {
-  if (!storedUrl || !hasS3Config()) return storedUrl;
+export async function resolveAudioUrl(storedUrl: string, _expiresIn = 86400): Promise<string> {
+  if (!storedUrl) return storedUrl;
 
-  // Helper: extract key from a path-style URL given a known prefix
-  function extractKey(url: string, prefix: string): string | null {
-    if (url.startsWith(prefix)) {
-      return url.slice(prefix.length).split('?')[0];
-    }
-    return null;
+  // Already an R2 public URL — return as-is
+  if (ENV.r2PublicUrl && storedUrl.startsWith(ENV.r2PublicUrl.replace(/\/+$/, '') + '/')) {
+    return storedUrl;
   }
 
-  // Strategy 1: endpoint env var is set and URL contains it
-  if (ENV.s3Endpoint && storedUrl.includes(ENV.s3Endpoint.replace(/\/+$/, ''))) {
-    const prefix = `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/`;
-    const key = extractKey(storedUrl, prefix);
-    if (key) return s3PresignedGetUrl(key, expiresIn);
-  }
-
-  // Strategy 2: URL contains our bucket name (works even if endpoint env var is missing)
-  if (ENV.s3Bucket && storedUrl.includes(`/${ENV.s3Bucket}/`)) {
-    const bucketIdx = storedUrl.indexOf(`/${ENV.s3Bucket}/`);
-    const key = storedUrl.slice(bucketIdx + ENV.s3Bucket.length + 2).split('?')[0];
-    if (key) return s3PresignedGetUrl(key, expiresIn);
-  }
-
-  // Strategy 3: known Tigris/Railway S3 domain
+  // Old Tigris/Railway S3 URL — rewrite to R2 public URL (post-migration)
   if (storedUrl.includes('storageapi.dev') || storedUrl.includes('tigrisdata.com')) {
-    // Path-style: https://host/bucket/key
     try {
       const parsed = new URL(storedUrl);
       const parts = parsed.pathname.replace(/^\//, '').split('/');
-      // parts[0] = bucket, parts[1..] = key
+      // path-style: /bucket/key1/key2 → key = parts[1..]
       if (parts.length >= 2) {
         const key = parts.slice(1).join('/');
-        if (key) return s3PresignedGetUrl(key, expiresIn);
+        if (key && ENV.r2PublicUrl) {
+          const r2Url = r2PublicUrl(key);
+          console.log(`[Storage] Rewrote Tigris URL → R2: ${key}`);
+          return r2Url;
+        }
       }
     } catch { /* fall through */ }
   }
 
-  // Forge CDN, fal.ai, cloudfront, and other public URLs — return as-is
+  // Also handle old endpoint-style URLs (https://endpoint/bucket/key)
+  if (ENV.s3Endpoint && storedUrl.includes(ENV.s3Endpoint.replace(/\/+$/, ''))) {
+    const prefix = `${ENV.s3Endpoint.replace(/\/+$/, '')}/${ENV.s3Bucket}/`;
+    if (storedUrl.startsWith(prefix)) {
+      const key = storedUrl.slice(prefix.length).split('?')[0];
+      if (key && ENV.r2PublicUrl) {
+        return r2PublicUrl(key);
+      }
+    }
+  }
+
+  // Forge CDN, fal.ai, and other public URLs — return as-is
   return storedUrl;
 }
