@@ -16,7 +16,34 @@ import {
   markGenerationAsSplit,
 } from "../stemsplit/db";
 import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
-import { resolveAudioUrl } from "../storage";
+import { resolveAudioUrl, storagePut } from "../storage";
+
+/**
+ * Download a stem file from a (potentially expiring) URL and re-upload to our R2 bucket.
+ * Returns a permanent public R2 URL, or null if download/upload fails.
+ */
+async function mirrorStemToR2(
+  stemUrl: string | undefined | null,
+  stemName: string,
+  generationId: number
+): Promise<string | null> {
+  if (!stemUrl) return null;
+  try {
+    const res = await fetch(stemUrl);
+    if (!res.ok) {
+      console.warn(`[StemSplit] Failed to download ${stemName} stem (HTTP ${res.status}): ${stemUrl.slice(0, 80)}`);
+      return null;
+    }
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const key = `stems/${generationId}/${stemName}-${Date.now()}.mp3`;
+    const { url } = await storagePut(key, buffer, 'audio/mpeg');
+    console.log(`[StemSplit] Mirrored ${stemName} stem → ${url}`);
+    return url;
+  } catch (err) {
+    console.warn(`[StemSplit] Error mirroring ${stemName} stem:`, err);
+    return null;
+  }
+}
 
 
 export const stemsplitRouter = router({
@@ -168,33 +195,48 @@ export const stemsplitRouter = router({
         const jobStatus = await getStemSplitStatus(jobId);
         console.log(`[StemSplit] Job ${jobId} status:`, jobStatus.status);
         
-        // If job is complete, update database with stems
+        // If job is complete, mirror stems to R2 then update database with permanent URLs
         if (jobStatus.status === "COMPLETED" && jobStatus.outputs) {
           const { updateStemSplitStems, updateStemSplitStatus } = await import('../stemsplit/db');
+          const gId = stemSplit.generationId;
+
+          // Download each stem from StemSplit's expiring presigned URLs and re-upload to our R2
+          console.log(`[StemSplit] Mirroring stems to R2 for generationId=${gId}...`);
+          const [vocalUrl, drumsUrl, bassUrl, otherUrl, pianoUrl, guitarUrl] = await Promise.all([
+            mirrorStemToR2(jobStatus.outputs.vocals?.url, 'vocals', gId),
+            mirrorStemToR2(jobStatus.outputs.drums?.url, 'drums', gId),
+            mirrorStemToR2(jobStatus.outputs.bass?.url, 'bass', gId),
+            mirrorStemToR2(jobStatus.outputs.other?.url, 'other', gId),
+            mirrorStemToR2(jobStatus.outputs.piano?.url, 'piano', gId),
+            mirrorStemToR2(jobStatus.outputs.guitar?.url, 'guitar', gId),
+          ]);
+
           await updateStemSplitStems(jobId, {
-            vocalUrl: jobStatus.outputs.vocals?.url,
-            drumsUrl: jobStatus.outputs.drums?.url,
-            bassUrl: jobStatus.outputs.bass?.url,
-            otherUrl: jobStatus.outputs.other?.url,
-            pianoUrl: jobStatus.outputs.piano?.url,
-            guitarUrl: jobStatus.outputs.guitar?.url,
+            vocalUrl: vocalUrl ?? jobStatus.outputs.vocals?.url,
+            drumsUrl: drumsUrl ?? jobStatus.outputs.drums?.url,
+            bassUrl: bassUrl ?? jobStatus.outputs.bass?.url,
+            otherUrl: otherUrl ?? jobStatus.outputs.other?.url,
+            pianoUrl: pianoUrl ?? jobStatus.outputs.piano?.url,
+            guitarUrl: guitarUrl ?? jobStatus.outputs.guitar?.url,
           });
           await updateStemSplitStatus(jobId, "completed");
           
           // Mark the generation as split
           await markGenerationAsSplit(stemSplit.generationId);
           
+          const stems = {
+            vocalUrl: vocalUrl ?? jobStatus.outputs.vocals?.url,
+            drumsUrl: drumsUrl ?? jobStatus.outputs.drums?.url,
+            bassUrl: bassUrl ?? jobStatus.outputs.bass?.url,
+            otherUrl: otherUrl ?? jobStatus.outputs.other?.url,
+            pianoUrl: pianoUrl ?? jobStatus.outputs.piano?.url,
+            guitarUrl: guitarUrl ?? jobStatus.outputs.guitar?.url,
+          };
+
           return {
             jobId,
             status: "completed",
-            stems: {
-              vocalUrl: jobStatus.outputs.vocals?.url,
-              drumsUrl: jobStatus.outputs.drums?.url,
-              bassUrl: jobStatus.outputs.bass?.url,
-              otherUrl: jobStatus.outputs.other?.url,
-              pianoUrl: jobStatus.outputs.piano?.url,
-              guitarUrl: jobStatus.outputs.guitar?.url,
-            },
+            stems,
             completedAt: new Date(),
           };
         }
