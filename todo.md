@@ -1363,3 +1363,8 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Root cause: Tigris requires virtual-hosted-style URLs (https://bucket.t3.storageapi.dev/key) for presigned GET access; our code was generating path-style (https://t3.storageapi.dev/bucket/key) which Tigris rejects with 403 even when signed
 - [x] Fix: added s3VirtualHostedUrl() helper that converts endpoint to virtual-hosted format; s3PresignedGetUrl now uses this instead of s3ObjectUrl; s3ObjectUrl (path-style) retained for PUT uploads only
 - [x] TypeScript clean (0 errors)
+
+## Bug Fix: Mixer — ffmpeg not found in production
+- [x] Write custom Dockerfile to install ffmpeg on node:22-slim base
+- [x] Verify Dockerfile follows deploy contract (full pnpm build inside image, node_modules kept, PORT from env)
+- [ ] Save checkpoint so Dockerfile is committed and picked up by Railway
