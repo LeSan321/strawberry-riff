@@ -17,6 +17,9 @@ import {
 } from "../stemsplit/db";
 import { canPerformStemSplit, incrementStemSplitUsage, getRemainingMonthlyLimit } from "../stemsplit/premium";
 import { resolveAudioUrl, storagePut } from "../storage";
+import { getDb } from "../db";
+import { musicGenerations } from "../../drizzle/schema";
+import { eq, inArray } from "drizzle-orm";
 
 /**
  * Download a stem file from a (potentially expiring) URL and re-upload to our R2 bucket.
@@ -267,16 +270,28 @@ export const stemsplitRouter = router({
    * Get all stem splits for the current user
    * Returns a list of all stem split jobs with their status
    */
-  getUserStemSplits: protectedProcedure.query(async ({ ctx }) => {
+    getUserStemSplits: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id;
-
     try {
-      const stemSplits = await getUserStemSplits(userId);
-
-      return stemSplits.map((split) => ({
+      const splits = await getUserStemSplits(userId);
+      // Batch-fetch generation titles so the Blend tab can show track names
+      const generationIds = Array.from(new Set(splits.map((s) => s.generationId)));
+      let titleMap: Record<number, string> = {};
+      if (generationIds.length > 0) {
+        const db = await getDb();
+        if (db) {
+          const gens = await db
+            .select({ id: musicGenerations.id, title: musicGenerations.title })
+            .from(musicGenerations)
+            .where(inArray(musicGenerations.id, generationIds));
+          titleMap = Object.fromEntries(gens.map((g) => [g.id, g.title]));
+        }
+      }
+      return splits.map((split) => ({
         id: split.id,
         jobId: split.jobId,
         generationId: split.generationId,
+        generationTitle: titleMap[split.generationId] ?? null,
         status: split.status,
         createdAt: split.createdAt,
         completedAt: split.completedAt,

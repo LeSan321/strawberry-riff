@@ -762,16 +762,23 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {completedSplits.map((split) => (
               <button key={split.id}
-                onClick={() => { setVocalStemUrl(split.stems!.vocalUrl!); setVocalStemLabel(`Split #${split.id} — generation ${split.generationId}`); }}
+                onClick={() => {
+                  setVocalStemUrl(split.stems!.vocalUrl!);
+                  setVocalStemLabel(split.generationTitle ?? `Track #${split.generationId}`);
+                }}
                 className={`w-full text-left px-3 py-2 rounded-lg border transition-all text-sm ${
                   vocalStemUrl === split.stems?.vocalUrl
                     ? `border-transparent bg-gradient-to-r ${theme.accent} text-white`
                     : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10`
                 }`}
               >
-                <span className="font-medium">Split #{split.id}</span>
-                <span className="text-xs ml-2 opacity-60">Generation {split.generationId}</span>
-                {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 inline ml-2" />}
+                <span className="font-medium line-clamp-1">
+                  {split.generationTitle ?? `Track #${split.generationId}`}
+                </span>
+                <span className="text-xs opacity-50 block mt-0.5">
+                  Vocal stem — split #{split.id}
+                </span>
+                {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 inline ml-1" />}
               </button>
             ))}
           </div>

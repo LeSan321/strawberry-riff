@@ -1368,3 +1368,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Write custom Dockerfile to install ffmpeg on node:22-slim base
 - [x] Verify Dockerfile follows deploy contract (full pnpm build inside image, node_modules kept, PORT from env)
 - [ ] Save checkpoint so Dockerfile is committed and picked up by Railway
+
+## Session July 30 — Vocal Pipeline Fixes
+- [x] Fix webhook.ts to mirror stems to R2 on job.completed (was saving expiring StemSplit URLs directly)
+- [x] Fix getUserStemSplits to join with music_generations and return generationTitle
+- [x] Fix Blend tab vocal stem picker to show track title instead of raw "Split #N — Generation XXXXXXX"
+- [ ] Fix saveMixToRiffs in StemMixer: investigate whether client-side WAV base64 upload is hitting 50MB body limit
+- [ ] Fix ffmpeg binary path in Railway: find actual nixpacks ffmpeg path and update FFMPEG_BIN env var

@@ -2,11 +2,16 @@
  * StemSplit Webhook Handler
  * Processes webhook events from StemSplit when stem splitting is complete
  * Docs: https://stemsplit.io/api/v1 (Webhooks section)
+ *
+ * On job.completed: downloads each stem from StemSplit's expiring presigned URLs
+ * and re-uploads to our permanent Cloudflare R2 bucket before saving to DB.
+ * This ensures stem URLs never expire and the Blend tab always has valid sources.
  */
 
 import { Request, Response } from "express";
 import { createHmac } from "crypto";
 import { getStemSplitByJobId, updateStemSplitStems, updateStemSplitStatus, markGenerationAsSplit } from "./db";
+import { storagePut } from "../storage";
 
 // Read lazily so tests can set process.env.STEMSPLIT_WEBHOOK_SECRET in beforeEach
 const getWebhookSecret = () => process.env.STEMSPLIT_WEBHOOK_SECRET;
@@ -45,6 +50,33 @@ export interface StemSplitWebhookPayload {
 }
 
 /**
+ * Download a stem file from a (potentially expiring) URL and re-upload to our R2 bucket.
+ * Returns a permanent public R2 URL, or null if download/upload fails.
+ */
+async function mirrorStemToR2(
+  stemUrl: string | undefined | null,
+  stemName: string,
+  generationId: number
+): Promise<string | null> {
+  if (!stemUrl) return null;
+  try {
+    const res = await fetch(stemUrl);
+    if (!res.ok) {
+      console.warn(`[StemSplit Webhook] Failed to download ${stemName} stem (HTTP ${res.status})`);
+      return null;
+    }
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const key = `stems/${generationId}/${stemName}-${Date.now()}.mp3`;
+    const { url } = await storagePut(key, buffer, "audio/mpeg");
+    console.log(`[StemSplit Webhook] Mirrored ${stemName} → ${url}`);
+    return url;
+  } catch (err) {
+    console.warn(`[StemSplit Webhook] Error mirroring ${stemName} stem:`, err);
+    return null;
+  }
+}
+
+/**
  * Verify webhook signature using HMAC-SHA256
  * Signature format: sha256=<hex>
  */
@@ -79,7 +111,7 @@ function verifyWebhookSignature(payload: string, signature: string): boolean {
 
 /**
  * Handle incoming webhook from StemSplit
- * Verifies signature and updates database with stem URLs
+ * Verifies signature, mirrors stems to R2, then updates database with permanent URLs
  */
 export async function handleStemSplitWebhook(req: Request, res: Response) {
   try {
@@ -111,24 +143,37 @@ export async function handleStemSplitWebhook(req: Request, res: Response) {
     }
 
     if (event === "job.completed" && data.status === "COMPLETED") {
-      // Extract stem URLs from outputs
+      const gId = stemSplit.generationId;
+      console.log(`[StemSplit Webhook] Mirroring stems to R2 for generationId=${gId}...`);
+
+      // Download each stem from StemSplit's expiring presigned URLs and re-upload to R2
+      const [vocalUrl, drumsUrl, bassUrl, otherUrl, pianoUrl, guitarUrl] = await Promise.all([
+        mirrorStemToR2(data.outputs?.vocals?.url, "vocals", gId),
+        mirrorStemToR2(data.outputs?.drums?.url, "drums", gId),
+        mirrorStemToR2(data.outputs?.bass?.url, "bass", gId),
+        mirrorStemToR2(data.outputs?.other?.url, "other", gId),
+        mirrorStemToR2(data.outputs?.piano?.url, "piano", gId),
+        mirrorStemToR2(data.outputs?.guitar?.url, "guitar", gId),
+      ]);
+
+      // Use R2 URL if mirroring succeeded, fall back to StemSplit URL otherwise
       const stems = {
-        vocalUrl: data.outputs?.vocals?.url,
-        drumsUrl: data.outputs?.drums?.url,
-        bassUrl: data.outputs?.bass?.url,
-        otherUrl: data.outputs?.other?.url,
-        pianoUrl: data.outputs?.piano?.url,
-        guitarUrl: data.outputs?.guitar?.url,
+        vocalUrl:  vocalUrl  ?? data.outputs?.vocals?.url,
+        drumsUrl:  drumsUrl  ?? data.outputs?.drums?.url,
+        bassUrl:   bassUrl   ?? data.outputs?.bass?.url,
+        otherUrl:  otherUrl  ?? data.outputs?.other?.url,
+        pianoUrl:  pianoUrl  ?? data.outputs?.piano?.url,
+        guitarUrl: guitarUrl ?? data.outputs?.guitar?.url,
       };
 
-      // Update database with stem URLs
+      // Update database with permanent R2 URLs
       await updateStemSplitStems(data.jobId, stems);
       await updateStemSplitStatus(data.jobId, "completed");
-      
+
       // Mark the generation as split
       await markGenerationAsSplit(stemSplit.generationId);
 
-      console.log(`[StemSplit Webhook] ✓ Stems saved for job ${data.jobId}`);
+      console.log(`[StemSplit Webhook] ✓ Stems mirrored and saved for job ${data.jobId}`);
       return res.json({ verified: true, status: "completed" });
     } else if (event === "job.failed" || data.status === "FAILED") {
       // Update database with failure
