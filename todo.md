@@ -1384,3 +1384,14 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Regenerate "Tangerine Cloud" (ID 16980001)
 - [ ] Regenerate "Vocal Take — Raw Emotional over 23 West African" (ID 17130001)
 - [x] Fix 401 Unauthorized on /api/stems/download-zip — send Clerk Bearer token from StemsStudio instead of relying on cookie alone
+
+## Session Aug 1 — Playback Bug Diagnosis & Stem Repair
+- [x] Diagnose audio playback bug: tracks don't play on Generate page, stems spin on Stems page
+- [x] Root cause 1: stems/ prefix in R2 had zero objects — mirrorStemToR2() fix was in b3a51bb4 checkpoint but not deployed to production
+- [x] Root cause 2: track 17160001 missing from R2 (lost to race condition, already marked failed)
+- [x] Root cause 3: stem splits 1860001 and 1830001 had R2 URLs in DB but files never uploaded
+- [x] Repair: ran repair-stems-r2.mjs to mirror both splits from StemSplit → R2 (12 stems uploaded, DB updated with permanent URLs)
+- [x] Verified all repaired stem URLs return HTTP 200 from R2
+- [ ] Deploy checkpoint b3a51bb4 to production (contains: webhook R2 mirroring, Blend tab titles, race condition fix, 401 download-zip fix)
+- [ ] After deploy: test stem playback and download on strawberryriff.com
+- [ ] After deploy: test new track generation and verify it lands in R2 correctly
