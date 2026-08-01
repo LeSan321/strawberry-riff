@@ -1396,6 +1396,11 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Repair Wild and Free (gen 16950001) stems — mirrored 6 stems to R2, DB updated
 - [x] Diagnose new track not playing after deploy: env.ts reads AWS_ENDPOINT_URL for s3Endpoint but Railway has it as AWS_S3_ENDPOINT — S3 client had no endpoint, was trying AWS us-east-1 instead of R2
 - [x] Fix env.ts: s3Endpoint now reads AWS_S3_ENDPOINT first, then AWS_ENDPOINT_URL, then ENDPOINT
-- [ ] Save checkpoint and deploy env.ts fix to Railway
-- [ ] After deploy: test new track generation and verify it lands in R2 correctly
+- [x] Save checkpoint and deploy env.ts fix to Railway (f7530160 — wrong fix, Tigris still wins)
+- [x] Root cause confirmed via Railway deploy logs: [Storage] Config check showed BUCKET=systematic-holder-7d6b-vj5e4e, ENDPOINT=https://t3.storageapi.dev — Railway auto-injects its own Tigris AWS_* vars at every deploy, overriding our R2 credentials
+- [x] Fix: rename R2 credentials to R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in env.ts — Railway won't touch these names
+- [x] Add R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL to Railway Variables
+- [ ] Save checkpoint and deploy R2 variable rename fix
+- [ ] After deploy: verify [Storage] Config check shows correct R2 bucket and endpoint
+- [ ] After deploy: generate a new track and verify it plays
 - [ ] After deploy: test stem playback on Wild and Free

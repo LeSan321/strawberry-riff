@@ -12,15 +12,14 @@ export const ENV = {
   // Key Studios sends to Riff for inbound bridge calls (same shared secret, different direction)
   studiosBridgeKeyInbound: process.env.STUDIOS_BRIDGE_KEY ?? process.env.BRIDGE_API_KEY ?? "",
   clerkSecretKey: process.env.CLERK_SECRET_KEY ?? "",
-  // Railway S3 storage — Railway Object Storage auto-injects AWS_* prefixed vars;
-  // fall back to bare names for manual overrides
-  s3Bucket: process.env.AWS_S3_BUCKET_NAME ?? process.env.BUCKET ?? "",
-  s3Region: process.env.AWS_DEFAULT_REGION ?? process.env.REGION ?? "",
-  // AWS_S3_ENDPOINT is the Cloudflare R2 endpoint (set in Railway as AWS_S3_ENDPOINT)
-  // AWS_ENDPOINT_URL is the legacy name — check both
-  s3Endpoint: process.env.AWS_S3_ENDPOINT ?? process.env.AWS_ENDPOINT_URL ?? process.env.ENDPOINT ?? "",
-  s3AccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? process.env.ACCESS_KEY_ID ?? "",
-  s3SecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SECRET_ACCESS_KEY ?? "",
+  // Cloudflare R2 credentials — use R2_* prefixed vars to avoid collision with
+  // Railway's auto-injected AWS_* vars (which point to Railway's own Tigris bucket).
+  // Set R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in Railway Variables.
+  s3Bucket: process.env.R2_BUCKET ?? process.env.AWS_S3_BUCKET_NAME ?? process.env.BUCKET ?? "",
+  s3Region: process.env.R2_REGION ?? process.env.AWS_DEFAULT_REGION ?? process.env.REGION ?? "auto",
+  s3Endpoint: process.env.R2_ENDPOINT ?? process.env.AWS_S3_ENDPOINT ?? process.env.AWS_ENDPOINT_URL ?? process.env.ENDPOINT ?? "",
+  s3AccessKeyId: process.env.R2_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID ?? process.env.ACCESS_KEY_ID ?? "",
+  s3SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SECRET_ACCESS_KEY ?? "",
   // Cloudflare R2 public bucket URL — files served directly, no presigning needed
   r2PublicUrl: process.env.R2_PUBLIC_URL ?? "",
   // Stability AI — Stable Audio 2.5 for Bespoke Instrumental generation
