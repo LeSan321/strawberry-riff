@@ -13,14 +13,19 @@
 const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY2 || process.env.MINIMAX_API_KEY;
 const MINIMAX_API_BASE = "https://api.minimax.io/v1";
 
-// In-memory store for synchronous hex audio buffers (cleared after retrieval)
-const syncAudioBuffers = new Map<string, Buffer>();
-let syncBufferCounter = 0;
-
 export interface MiniMaxGenerationResult {
   audioUrl: string;
   mimeType: string;
 }
+
+/**
+ * Discriminated union returned by startMusicGeneration.
+ * - { type: "sync", buffer } — audio was returned synchronously as hex; no polling needed.
+ * - { type: "async", taskId } — generation is running; call pollMusicGeneration(taskId).
+ */
+export type MusicGenerationStart =
+  | { type: "sync"; buffer: Buffer; mimeType: "audio/mpeg" }
+  | { type: "async"; taskId: string };
 
 export interface MusicGenerationOptions {
   prompt: string;
@@ -54,12 +59,16 @@ interface MiniMaxMusicResponse {
 
 /**
  * Start a MiniMax Music 2.6 generation via direct API.
- * Returns the task_id for async polling.
+ *
+ * Returns a MusicGenerationStart discriminated union:
+ * - { type: "sync", buffer } when MiniMax returns audio immediately (hex format).
+ *   The Buffer is passed through directly — no in-memory Map, no race condition.
+ * - { type: "async", taskId } when MiniMax starts an async task; call pollMusicGeneration().
  */
 export async function startMusicGeneration(
   promptOrOptions: string | MusicGenerationOptions,
   lyricsArg?: string
-): Promise<string> {
+): Promise<MusicGenerationStart> {
   if (!MINIMAX_API_KEY) {
     throw new Error("MINIMAX_API_KEY is not configured");
   }
@@ -122,7 +131,7 @@ export async function startMusicGeneration(
   if (isInstrumental) {
     console.log(`[MiniMax 2.6] ✓ Instrumental mode: is_instrumental=true, lyrics omitted`);
   }
-  
+
   console.log(`[MiniMax 2.6] Request body keys: ${Object.keys(body).join(', ')}`);
   console.log(`[MiniMax 2.6] Prompt length: ${prompt.length}, Lyrics length: ${lyrics.length}`);
 
@@ -154,10 +163,8 @@ export async function startMusicGeneration(
   if (data.data?.audio && data.data.status === 2) {
     const hexData = data.data.audio;
     console.log(`[MiniMax 2.6] Synchronous generation complete (hex format, ${hexData.length} chars)`);
-    // Store buffer in memory map and return a short sentinel ID
-    const bufId = `sync_${++syncBufferCounter}_${Date.now()}`;
-    syncAudioBuffers.set(bufId, Buffer.from(hexData, "hex"));
-    return `SYNCHEX:${bufId}`;
+    // Return the Buffer directly — no in-memory Map, no risk of GC between promise hops
+    return { type: "sync", buffer: Buffer.from(hexData, "hex"), mimeType: "audio/mpeg" };
   }
 
   // Async format: get task_id for polling
@@ -167,11 +174,12 @@ export async function startMusicGeneration(
   }
 
   console.log(`[MiniMax 2.6] Task started (async): ${taskId}`);
-  return taskId;
+  return { type: "async", taskId };
 }
 
 /**
  * Poll a MiniMax music generation task until it completes or fails.
+ * Only call this when startMusicGeneration returns { type: "async", taskId }.
  * Returns the output audio URL when complete.
  */
 export async function pollMusicGeneration(
@@ -184,20 +192,7 @@ export async function pollMusicGeneration(
   const maxAttempts = 120; // 10 minutes max (5s intervals)
   let attempts = 0;
 
-  // Handle synchronous completion — retrieve buffer from in-memory map
-  if (taskId.startsWith("SYNCHEX:")) {
-    const bufId = taskId.slice(8);
-    const audioBuffer = syncAudioBuffers.get(bufId);
-    syncAudioBuffers.delete(bufId); // clean up immediately
-    if (!audioBuffer) {
-      throw new Error(`Sync audio buffer not found for ID: ${bufId}`);
-    }
-    console.log(`[MiniMax 2.6] Retrieved synchronous audio buffer (${audioBuffer.length} bytes)`);
-    // Use a data URL so fetchAudioBytes can handle it without a network call
-    const base64 = audioBuffer.toString("base64");
-    return { audioUrl: `data:audio/mpeg;base64,${base64}`, mimeType: "audio/mpeg" };
-  }
-  // Legacy: URL-based sentinel (kept for backward compat)
+  // Legacy sentinel support (kept for backward compat with any in-flight tasks)
   if (taskId.startsWith("SYNC:")) {
     const audioUrl = taskId.slice(5);
     console.log(`[MiniMax 2.6] Using synchronous audio URL: ${audioUrl.substring(0, 60)}...`);

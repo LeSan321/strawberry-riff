@@ -13,6 +13,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../_core/trpc";
 import { startVocalGeneration, pollVocalGeneration } from "../vocalPipeline";
+import { storagePut } from "../storage";
+import { nanoid } from "nanoid";
 
 const vocalArchetypeEnum = z.enum([
   "intimate-bedroom",
@@ -28,7 +30,12 @@ const vocalArchetypeEnum = z.enum([
 export const vocalProjectsRouter = router({
   /**
    * Start a vocal generation job.
-   * Returns { taskId, prompt } immediately — client polls for completion.
+   *
+   * When MiniMax returns audio synchronously (the common fast path), this mutation
+   * uploads the buffer to S3 immediately and returns { taskId: "DONE", audioUrl }.
+   * The client should check for taskId === "DONE" and skip the poll step.
+   *
+   * When MiniMax starts an async task, returns { taskId, prompt } — client polls.
    */
   start: protectedProcedure
     .input(
@@ -49,7 +56,7 @@ export const vocalProjectsRouter = router({
         trackId: z.number().int().positive().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
         const job = await startVocalGeneration({
           instrumentalUrl: input.instrumentalUrl,
@@ -60,9 +67,24 @@ export const vocalProjectsRouter = router({
           styleNotes: input.styleNotes,
         });
 
+        // Sync path: MiniMax returned audio immediately — upload to S3 now
+        if (job.syncBuffer) {
+          const ext = job.syncMimeType === "audio/wav" ? "wav" : "mp3";
+          const audioKey = `vocal-takes/${ctx.user.id}/${nanoid(12)}.${ext}`;
+          const { url } = await storagePut(audioKey, job.syncBuffer, job.syncMimeType ?? "audio/mpeg");
+          console.log("[vocalProjects.start] Sync upload complete:", url.substring(0, 60));
+          return {
+            taskId: "DONE" as const,
+            prompt: job.prompt,
+            audioUrl: url,
+          };
+        }
+
+        // Async path: return task ID for client polling
         return {
           taskId: job.taskId,
           prompt: job.prompt,
+          audioUrl: undefined,
         };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -78,6 +100,7 @@ export const vocalProjectsRouter = router({
    * Poll a vocal generation job.
    * Note: pollVocalGeneration blocks until completion (up to 10 min).
    * The client should call this in a background mutation with a long timeout.
+   * Only call this when start returned a real taskId (not "DONE").
    */
   poll: protectedProcedure
     .input(

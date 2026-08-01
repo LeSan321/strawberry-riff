@@ -6,13 +6,13 @@
  *   1. Takes an instrumental audio URL + lyrics + vocal settings
  *   2. Builds a vocal-focused prompt using the Vocal Archetypes Bible
  *   3. Submits to MiniMax with the instrumental as reference audio
- *   4. Returns the task_id for async polling
+ *   4. Returns the task_id for async polling (or "SYNC_COMPLETE" for sync completions)
  *
  * This module is stateless — it does not write to the database.
  * The caller (vocalProjects router) manages persistence.
  */
 
-import { startMusicGeneration, pollMusicGeneration } from "./musicGeneration";
+import { startMusicGeneration, pollMusicGeneration, MusicGenerationStart } from "./musicGeneration";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
 import { mapSpectrumToGuidance } from "./vocalSpectrumMapper";
 
@@ -32,13 +32,17 @@ export interface VocalGenerationInput {
 }
 
 export interface VocalGenerationJob {
+  /** MiniMax task_id for async polling, or "SYNC_COMPLETE" if audio is already available */
   taskId: string;
   prompt: string;
+  /** When MiniMax returns audio synchronously, the buffer is stored here */
+  syncBuffer?: Buffer;
+  syncMimeType?: string;
 }
 
 /**
  * Start a vocal generation job.
- * Returns the MiniMax task_id for polling.
+ * Returns a VocalGenerationJob — check syncBuffer to see if audio is already available.
  */
 export async function startVocalGeneration(
   input: VocalGenerationInput
@@ -73,20 +77,31 @@ export async function startVocalGeneration(
   });
 
   // Submit to MiniMax — use instrumental as reference audio so it matches the track
-  const taskId = await startMusicGeneration({
+  const startResult: MusicGenerationStart = await startMusicGeneration({
     prompt,
     lyrics,
     referenceAudioUrl: instrumentalUrl,
   });
 
-  console.log("[VocalPipeline] Job started:", taskId);
+  if (startResult.type === "sync") {
+    console.log("[VocalPipeline] Synchronous generation complete — buffer received directly");
+    return {
+      taskId: "SYNC_COMPLETE",
+      prompt,
+      syncBuffer: startResult.buffer,
+      syncMimeType: startResult.mimeType,
+    };
+  }
 
-  return { taskId, prompt };
+  console.log("[VocalPipeline] Job started:", startResult.taskId);
+  return { taskId: startResult.taskId, prompt };
 }
 
 export interface VocalPollResult {
   status: "pending" | "processing" | "completed" | "failed";
   audioUrl?: string;
+  /** When sync, the audio buffer is returned directly instead of a URL */
+  syncBuffer?: Buffer;
   errorMessage?: string;
 }
 

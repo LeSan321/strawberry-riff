@@ -1,6 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { downloadAllStems } from "@/lib/downloadUtils";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
@@ -91,6 +92,7 @@ export function StemsStudio() {
   const { generationId } = useParams<{ generationId: string }>();
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { getToken } = useClerkAuth();
   const [stemVolumes, setStemVolumes] = useState<Record<string, number>>({});
   const [downloadingStems, setDownloadingStems] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
@@ -347,7 +349,9 @@ export function StemsStudio() {
     if (!generation) return;
     setDownloadingAll(true);
     try {
-      await downloadAllStems(parseInt(generationId || "0"), generation.title);
+      let token: string | null = null;
+      try { token = await getToken(); } catch { /* not signed in */ }
+      await downloadAllStems(parseInt(generationId || "0"), generation.title, token);
       toast.success("Stems downloaded successfully!");
     } catch (error) {
       toast.error("Failed to download stems");

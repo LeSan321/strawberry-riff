@@ -3,19 +3,22 @@
  * Uses server-side ZIP creation to avoid CORS issues
  * @param generationId ID of the music generation
  * @param title Title of the generation (for logging only)
+ * @param token Clerk session token for authentication (required on live site)
  */
 export async function downloadAllStems(
   generationId: number,
-  title?: string
+  title?: string,
+  token?: string | null
 ) {
   try {
     console.log(`[Download] Starting ZIP download for generation ${generationId}`);
-    
+
     // Call server endpoint to get stem URLs and create ZIP
     const response = await fetch(`/api/stems/download-zip`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       credentials: "include",
       body: JSON.stringify({ generationId }),
@@ -39,18 +42,18 @@ export async function downloadAllStems(
     // Get the ZIP blob from response
     const blob = await response.blob();
     console.log(`[Download] ZIP blob size: ${blob.size} bytes`);
-    
+
     // Trigger download
     const zipUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = zipUrl;
-    
+
     // Extract filename from Content-Disposition header if available
     const contentDisposition = response.headers.get("content-disposition");
     const filename = contentDisposition
       ? contentDisposition.split("filename=")[1]?.replace(/"/g, "")
       : "stems.zip";
-    
+
     console.log(`[Download] Filename: ${filename}`);
     link.download = filename;
     document.body.appendChild(link);

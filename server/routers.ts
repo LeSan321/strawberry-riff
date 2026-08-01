@@ -1049,13 +1049,26 @@ const musicGenerationRouter = router({
         voiceReferenceUrl: input.voiceReferenceUrl,
         instrumentalReferenceUrl: input.vocalMode ? (resolvedInstrumentalSourceUrl ?? undefined) : undefined,
       })
-        .then(async (predictionId) => {
-          console.log('[Generate] Got prediction ID:', predictionId);
-          const result = await pollMusicGeneration(predictionId);
-          const audioBuffer = await fetchAudioBytes(result.audioUrl);
-          const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
+        .then(async (startResult) => {
+          // Resolve audio buffer — either directly (sync) or via polling (async)
+          let audioBuffer: Buffer;
+          let mimeType: string;
+          let predictionId: string;
+          if (startResult.type === "sync") {
+            console.log('[Generate] Synchronous generation complete — buffer received directly');
+            audioBuffer = startResult.buffer;
+            mimeType = startResult.mimeType;
+            predictionId = "sync";
+          } else {
+            console.log('[Generate] Got prediction ID:', startResult.taskId);
+            predictionId = startResult.taskId;
+            const result = await pollMusicGeneration(startResult.taskId);
+            audioBuffer = await fetchAudioBytes(result.audioUrl);
+            mimeType = result.mimeType;
+          }
+          const ext = mimeType === "audio/wav" ? "wav" : "mp3";
           const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
-          const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
+          const { url } = await storagePut(audioKey, audioBuffer, mimeType);
           // Generate visual brief in parallel (non-blocking — failure doesn't affect audio delivery)
           let visualBriefJson: string | null = null;
           try {
@@ -1200,12 +1213,23 @@ const musicGenerationRouter = router({
         referenceAudioUrl: original.referenceAudioUrl ?? undefined,
         voiceReferenceUrl: original.voiceReferenceUrl ?? undefined,
       })
-        .then(async (predictionId) => {
-          const result = await pollMusicGeneration(predictionId);
-          const audioBuffer = await fetchAudioBytes(result.audioUrl);
-          const ext = result.mimeType === "audio/wav" ? "wav" : "mp3";
+        .then(async (startResult) => {
+          let audioBuffer: Buffer;
+          let mimeType: string;
+          let predictionId: string;
+          if (startResult.type === "sync") {
+            audioBuffer = startResult.buffer;
+            mimeType = startResult.mimeType;
+            predictionId = "sync";
+          } else {
+            predictionId = startResult.taskId;
+            const result = await pollMusicGeneration(startResult.taskId);
+            audioBuffer = await fetchAudioBytes(result.audioUrl);
+            mimeType = result.mimeType;
+          }
+          const ext = mimeType === "audio/wav" ? "wav" : "mp3";
           const audioKey = `music/${ctx.user.id}/${generationId}-${nanoid(8)}.${ext}`;
-          const { url } = await storagePut(audioKey, audioBuffer, result.mimeType);
+          const { url } = await storagePut(audioKey, audioBuffer, mimeType);
           // Generate visual brief (non-blocking — failure doesn't affect audio delivery)
           let visualBriefJson: string | null = null;
           try {
@@ -1438,18 +1462,21 @@ const musicGenerationRouter = router({
 
       try {
         // Start MiniMax generation with instrument sample as instrumental_file reference
-        const taskId = await startMusicGeneration({
+        const bespokeStart = await startMusicGeneration({
           prompt: conditionedPrompt,
           lyrics: "",
           instrumentalReferenceUrl: resolvedInstrumentUrl,
           isInstrumental: true,
         });
 
-        // Poll until complete
-        const result = await pollMusicGeneration(taskId);
-
-        // Download audio and upload to S3
-        const audioBytes = await fetchAudioBytes(result.audioUrl);
+        // Resolve audio buffer — sync or async
+        let audioBytes: Buffer;
+        if (bespokeStart.type === "sync") {
+          audioBytes = bespokeStart.buffer;
+        } else {
+          const result = await pollMusicGeneration(bespokeStart.taskId);
+          audioBytes = await fetchAudioBytes(result.audioUrl);
+        }
         const audioKey = `bespoke/${ctx.user.id}/${nanoid()}.mp3`;
         const { url: s3Url } = await storagePut(audioKey, audioBytes, "audio/mpeg");
 

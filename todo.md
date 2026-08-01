@@ -1375,3 +1375,12 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix Blend tab vocal stem picker to show track title instead of raw "Split #N — Generation XXXXXXX"
 - [ ] Fix saveMixToRiffs in StemMixer: investigate whether client-side WAV base64 upload is hitting 50MB body limit
 - [ ] Fix ffmpeg binary path in Railway: find actual nixpacks ffmpeg path and update FFMPEG_BIN env var
+
+## Session July 31 — Generation Pipeline Race Condition Fix
+- [x] Fix in-memory buffer race condition in musicGeneration.ts — return Buffer directly on sync path instead of storing in Map (SYNCHEX sentinel eliminated)
+- [x] Update all three generation call sites in routers.ts to handle MusicGenerationStart discriminated union (main generate, regenerate, bespoke)
+- [x] Update vocalPipeline.ts and vocalProjects router to handle sync/async discriminated union
+- [x] Mark two phantom tracks (17130001 "Vocal Take — Raw Emotional", 16980001 "Tangerine Cloud") as failed in DB — audio lost due to race condition, regeneration required
+- [ ] Regenerate "Tangerine Cloud" (ID 16980001)
+- [ ] Regenerate "Vocal Take — Raw Emotional over 23 West African" (ID 17130001)
+- [x] Fix 401 Unauthorized on /api/stems/download-zip — send Clerk Bearer token from StemsStudio instead of relying on cookie alone
