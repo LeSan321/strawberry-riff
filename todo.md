@@ -1400,7 +1400,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Root cause confirmed via Railway deploy logs: [Storage] Config check showed BUCKET=systematic-holder-7d6b-vj5e4e, ENDPOINT=https://t3.storageapi.dev — Railway auto-injects its own Tigris AWS_* vars at every deploy, overriding our R2 credentials
 - [x] Fix: rename R2 credentials to R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in env.ts — Railway won't touch these names
 - [x] Add R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL to Railway Variables
-- [ ] Save checkpoint and deploy R2 variable rename fix
-- [ ] After deploy: verify [Storage] Config check shows correct R2 bucket and endpoint
-- [ ] After deploy: generate a new track and verify it plays
-- [ ] After deploy: test stem playback on Wild and Free
+- [x] Save checkpoint and deploy R2 variable rename fix
+- [x] After deploy: R2_ACCESS_KEY_ID was still wrong (copied from Railway's overwritten AWS_ACCESS_KEY_ID which had Tigris key) — rolled Cloudflare token, updated both R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in Railway
+- [x] After second deploy: SignatureDoesNotMatch resolved but new error: InvalidRegionName 'sjc' — Railway injects AWS_DEFAULT_REGION=sjc which is invalid for R2
+- [x] Fix: add R2_REGION=auto to Railway Variables (env.ts already reads R2_REGION first)
+- [x] After third deploy: generation works and plays, stems split and play — all playback issues resolved
+- [x] Root cause summary: Railway auto-injects AWS_* vars at every deploy (Tigris bucket, sjc region, Tigris credentials) — R2_* prefix convention is permanent protection
