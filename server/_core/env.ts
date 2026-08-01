@@ -16,7 +16,9 @@ export const ENV = {
   // fall back to bare names for manual overrides
   s3Bucket: process.env.AWS_S3_BUCKET_NAME ?? process.env.BUCKET ?? "",
   s3Region: process.env.AWS_DEFAULT_REGION ?? process.env.REGION ?? "",
-  s3Endpoint: process.env.AWS_ENDPOINT_URL ?? process.env.ENDPOINT ?? "",
+  // AWS_S3_ENDPOINT is the Cloudflare R2 endpoint (set in Railway as AWS_S3_ENDPOINT)
+  // AWS_ENDPOINT_URL is the legacy name — check both
+  s3Endpoint: process.env.AWS_S3_ENDPOINT ?? process.env.AWS_ENDPOINT_URL ?? process.env.ENDPOINT ?? "",
   s3AccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? process.env.ACCESS_KEY_ID ?? "",
   s3SecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SECRET_ACCESS_KEY ?? "",
   // Cloudflare R2 public bucket URL — files served directly, no presigning needed

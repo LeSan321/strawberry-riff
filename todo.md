@@ -1392,6 +1392,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Root cause 3: stem splits 1860001 and 1830001 had R2 URLs in DB but files never uploaded
 - [x] Repair: ran repair-stems-r2.mjs to mirror both splits from StemSplit → R2 (12 stems uploaded, DB updated with permanent URLs)
 - [x] Verified all repaired stem URLs return HTTP 200 from R2
-- [ ] Deploy checkpoint b3a51bb4 to production (contains: webhook R2 mirroring, Blend tab titles, race condition fix, 401 download-zip fix)
-- [ ] After deploy: test stem playback and download on strawberryriff.com
+- [x] Deploy checkpoint c6612f71 to production (Railway deployed 2026-08-01 10:17 PDT)
+- [x] Repair Wild and Free (gen 16950001) stems — mirrored 6 stems to R2, DB updated
+- [x] Diagnose new track not playing after deploy: env.ts reads AWS_ENDPOINT_URL for s3Endpoint but Railway has it as AWS_S3_ENDPOINT — S3 client had no endpoint, was trying AWS us-east-1 instead of R2
+- [x] Fix env.ts: s3Endpoint now reads AWS_S3_ENDPOINT first, then AWS_ENDPOINT_URL, then ENDPOINT
+- [ ] Save checkpoint and deploy env.ts fix to Railway
 - [ ] After deploy: test new track generation and verify it lands in R2 correctly
+- [ ] After deploy: test stem playback on Wild and Free
