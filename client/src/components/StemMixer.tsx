@@ -402,14 +402,16 @@ export function StemMixer({ stems, stemSplitId, trackTitle = "Track", className 
     setMixProgress("Rendering mix…");
     try {
       const renderedBuffer = await renderMix(activeStemEntries, setMixProgress);
-      setMixProgress("Encoding WAV…");
-      const wavBlob = audioBufferToWav(renderedBuffer);
+      // Encode as MP3 (not WAV) to keep the upload payload small.
+      // A 3-min WAV is ~30 MB base64 → can exceed the 50 MB body limit.
+      // The same track as 192 kbps MP3 is ~3.5 MB — well within limits.
+      const mp3Blob = await audioBufferToMp3(renderedBuffer, setMixProgress);
       setMixProgress("Uploading to My Riffs…");
-      const base64 = await blobToBase64(wavBlob);
+      const base64 = await blobToBase64(mp3Blob);
       await saveMixMutation.mutateAsync({
         stemSplitId,
         audioBase64: base64,
-        mimeType: "audio/wav",
+        mimeType: "audio/mpeg",
         title: mixTitle.trim() || `${trackTitle} (Custom Mix)`,
         duration: Math.round(renderedBuffer.duration),
         blendDescription,
