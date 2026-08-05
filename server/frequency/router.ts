@@ -1,10 +1,6 @@
 /**
  * Frequency Router — proxies Visual Universe calls to Strawberry Studios bridge API.
  * Studios owns the LLM synthesis and vocabulary storage; Riff owns the UI.
- *
- * Auth: x-bridge-key shared secret + ?openId= query param (same pattern as Studios→Riff direction).
- * Clerk Bearer tokens are NOT used here — Riff and Studios are on separate Clerk instances
- * so Riff session tokens can never be verified by Studios' CLERK_SECRET_KEY.
  */
 import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
@@ -42,18 +38,22 @@ petal violet #C8A0D0 in transition zones. 35mm wide lens, slow pull-back camera,
 270° shutter, cinematic realism, film grain, unhurried pacing, camera as third explorer.`;
 
 /**
- * Fetch from the Studios bridge using x-bridge-key + openId auth.
- * openId is the Riff user's openId (Clerk userId stored in Riff's own DB),
- * which Studios uses to look up the corresponding Studios user record.
+ * Build the Studios bridge URL with the openId query param.
+ * Studios uses x-bridge-key + ?openId= for all Riff-initiated calls.
  */
+function bridgeUrl(path: string, openId: string): string {
+  const base = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${base}${sep}openId=${encodeURIComponent(openId)}`;
+}
+
 async function bridgeFetch(
   path: string,
+  openId: string,
   options: RequestInit = {},
   timeoutMs: number = 30000,
-  openId?: string
 ): Promise<Response> {
-  const base = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
-  const url = openId ? `${base}?openId=${encodeURIComponent(openId)}` : base;
+  const url = bridgeUrl(path, openId);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -85,13 +85,9 @@ export const frequencyRouter = router({
       console.log("[Frequency] getDefault: bridge URL not configured, returning no-frequency");
       return { hasFrequency: false, frequency: null };
     }
-    const openId = ctx.user?.openId;
-    if (!openId) {
-      console.log("[Frequency] getDefault: no openId in context, returning no-frequency");
-      return { hasFrequency: false, frequency: null };
-    }
+    const openId = ctx.user.openId;
     try {
-      const res = await bridgeFetch(`/frequency/default`, {}, 15000, openId);
+      const res = await bridgeFetch(`/frequency/default`, openId, {}, 15000);
       if (!res.ok) {
         const body = await res.text().catch(() => "(unreadable)");
         console.warn(`[Frequency] getDefault: Studios returned ${res.status} — body: ${body.slice(0, 300)}`);
@@ -128,9 +124,9 @@ export const frequencyRouter = router({
       q4_arc_time: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
-      const openId = ctx.user?.openId;
+      const openId = ctx.user.openId;
       // Studios expects q1/q2/q3/q4 — map from Riff's verbose field names
-      const res = await bridgeFetch("/frequency/synthesize", {
+      const res = await bridgeFetch("/frequency/synthesize", openId, {
         method: "POST",
         body: JSON.stringify({
           q1: input.q1_sound_space,
@@ -138,7 +134,7 @@ export const frequencyRouter = router({
           q3: input.q3_world_texture,
           q4: input.q4_arc_time,
         }),
-      }, 120000, openId); // 120 seconds for LLM synthesis
+      }, 120000); // 120 seconds for LLM synthesis
       const responseText = await res.text().catch(() => "{}");
       console.log(`[Frequency] synthesize: Studios returned ${res.status} — body: ${responseText.slice(0, 800)}`);
       if (!res.ok) {
@@ -211,7 +207,7 @@ export const frequencyRouter = router({
       diagnosticAnswersJson: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const openId = ctx.user?.openId;
+      const openId = ctx.user.openId;
       // Studios expects `vocabulary` as a parsed object, NOT `vocabularyJson` as a string
       let vocabularyObj: unknown = {};
       try { vocabularyObj = JSON.parse(input.vocabularyJson); } catch { /* use empty object */ }
@@ -223,10 +219,10 @@ export const frequencyRouter = router({
         diagnosticAnswersJson: input.diagnosticAnswersJson,
       };
       console.log(`[Frequency] save: sending to Studios — frequencyName: ${input.frequencyName}, arcType: ${input.arcType}, vocabKeys: ${Object.keys(vocabularyObj as object).join(",")}`);
-      const res = await bridgeFetch("/frequency/save", {
+      const res = await bridgeFetch("/frequency/save", openId, {
         method: "POST",
         body: JSON.stringify(studiosPayload),
-      }, 30000, openId);
+      }, 30000);
       if (!res.ok) {
         const body = await res.text().catch(() => "{}");
         console.error(`[Frequency] save: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
@@ -251,12 +247,7 @@ export const frequencyRouter = router({
       songTitle: z.string().max(200).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Identify user for Studios bridge via openId (x-bridge-key auth)
-      const openId = ctx.user?.openId;
-      if (!openId) {
-        console.error("[Frequency] generateCoverArt: no openId available");
-        throw new Error("Authentication required for cover art generation");
-      }
+      const openId = ctx.user.openId;
 
       // Server-side lyrics resolution:
       // 1. If caller passed lyrics directly, use them
@@ -295,9 +286,9 @@ export const frequencyRouter = router({
       const finalLyrics = resolvedLyrics || BLOOMING_FRONTIER_VOCABULARY;
       console.log(`[Frequency] generateCoverArt: lyrics resolved (${resolvedLyrics ? "from track" : "Blooming Frontier fallback"}), calling Studios bridge`);
 
-      // Image generation takes 30–90 seconds, so use a 2-minute timeout
+      // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
       // Use Studios' REST bridge endpoint — plain JSON, no tRPC wire format needed
-      const res = await bridgeFetch("/cover-art/generate", {
+      const res = await bridgeFetch("/cover-art/generate", openId, {
         method: "POST",
         body: JSON.stringify({
           lyrics: finalLyrics,
@@ -306,7 +297,7 @@ export const frequencyRouter = router({
           steeringNote: input.steeringNote,
           songTitle: input.songTitle,
         }),
-      }, 120000, openId); // 120 seconds for image generation, identified by openId via x-bridge-key
+      }, 120000); // 120 seconds for Runway image generation
 
       if (!res.ok) {
         const body = await res.text().catch(() => "{}");
@@ -355,9 +346,9 @@ export const frequencyRouter = router({
     if (!ENV.studiosBridgeUrl || !ENV.studiosBridgeKey) {
       return { ok: false, reason: "Bridge not configured" };
     }
+    const openId = ctx.user.openId;
     try {
-      const openId = ctx.user?.openId;
-      const res = await bridgeFetch("/ping", {}, 10000, openId);
+      const res = await bridgeFetch("/ping", openId);
       return { ok: res.ok, status: res.status };
     } catch (e) {
       return { ok: false, reason: String(e) };
