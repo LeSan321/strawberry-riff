@@ -37,35 +37,33 @@ touching the same surface, subsurface scattering on skin, thin rim on organic ed
 petal violet #C8A0D0 in transition zones. 35mm wide lens, slow pull-back camera,
 270° shutter, cinematic realism, film grain, unhurried pacing, camera as third explorer.`;
 
-/** Extract Clerk token from tRPC context auth header */
-function extractClerkToken(ctx: { authHeader?: string }): string | undefined {
-  const authHeader = (ctx as any).authHeader as string | undefined;
-  return authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+/**
+ * Build the Studios bridge URL with the openId query param.
+ * Studios uses x-bridge-key + ?openId= for all Riff-initiated calls.
+ */
+function bridgeUrl(path: string, openId: string): string {
+  const base = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${base}${sep}openId=${encodeURIComponent(openId)}`;
 }
 
 async function bridgeFetch(
   path: string,
+  openId: string,
   options: RequestInit = {},
   timeoutMs: number = 30000,
-  clerkToken?: string
 ): Promise<Response> {
-  const url = `${ENV.studiosBridgeUrl}/api/bridge${path}`;
+  const url = bridgeUrl(path, openId);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-bridge-key": ENV.studiosBridgeKey,
       ...(options.headers as Record<string, string> ?? {}),
     };
-    
-    // Use Clerk Bearer token if provided, otherwise fall back to x-bridge-key for backward compatibility
-    if (clerkToken) {
-      headers["Authorization"] = `Bearer ${clerkToken}`;
-    } else if (ENV.studiosBridgeKey) {
-      headers["x-bridge-key"] = ENV.studiosBridgeKey;
-    }
-    
+
     return await fetch(url, {
       ...options,
       signal: controller.signal,
@@ -87,13 +85,9 @@ export const frequencyRouter = router({
       console.log("[Frequency] getDefault: bridge URL not configured, returning no-frequency");
       return { hasFrequency: false, frequency: null };
     }
-    const clerkToken = extractClerkToken(ctx);
-    if (!clerkToken) {
-      console.log("[Frequency] getDefault: no Clerk token in context, returning no-frequency");
-      return { hasFrequency: false, frequency: null };
-    }
+    const openId = ctx.user.openId;
     try {
-      const res = await bridgeFetch(`/frequency/default`, {}, 15000, clerkToken);
+      const res = await bridgeFetch(`/frequency/default`, openId, {}, 15000);
       if (!res.ok) {
         const body = await res.text().catch(() => "(unreadable)");
         console.warn(`[Frequency] getDefault: Studios returned ${res.status} — body: ${body.slice(0, 300)}`);
@@ -130,9 +124,9 @@ export const frequencyRouter = router({
       q4_arc_time: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
-      const clerkToken = extractClerkToken(ctx);
+      const openId = ctx.user.openId;
       // Studios expects q1/q2/q3/q4 — map from Riff's verbose field names
-      const res = await bridgeFetch("/frequency/synthesize", {
+      const res = await bridgeFetch("/frequency/synthesize", openId, {
         method: "POST",
         body: JSON.stringify({
           q1: input.q1_sound_space,
@@ -140,7 +134,7 @@ export const frequencyRouter = router({
           q3: input.q3_world_texture,
           q4: input.q4_arc_time,
         }),
-      }, 120000, clerkToken); // 120 seconds for LLM synthesis
+      }, 120000); // 120 seconds for LLM synthesis
       const responseText = await res.text().catch(() => "{}");
       console.log(`[Frequency] synthesize: Studios returned ${res.status} — body: ${responseText.slice(0, 800)}`);
       if (!res.ok) {
@@ -213,7 +207,7 @@ export const frequencyRouter = router({
       diagnosticAnswersJson: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const clerkToken = extractClerkToken(ctx);
+      const openId = ctx.user.openId;
       // Studios expects `vocabulary` as a parsed object, NOT `vocabularyJson` as a string
       let vocabularyObj: unknown = {};
       try { vocabularyObj = JSON.parse(input.vocabularyJson); } catch { /* use empty object */ }
@@ -225,10 +219,10 @@ export const frequencyRouter = router({
         diagnosticAnswersJson: input.diagnosticAnswersJson,
       };
       console.log(`[Frequency] save: sending to Studios — frequencyName: ${input.frequencyName}, arcType: ${input.arcType}, vocabKeys: ${Object.keys(vocabularyObj as object).join(",")}`);
-      const res = await bridgeFetch("/frequency/save", {
+      const res = await bridgeFetch("/frequency/save", openId, {
         method: "POST",
         body: JSON.stringify(studiosPayload),
-      }, 30000, clerkToken);
+      }, 30000);
       if (!res.ok) {
         const body = await res.text().catch(() => "{}");
         console.error(`[Frequency] save: Studios returned ${res.status} — body: ${body.slice(0, 500)}`);
@@ -253,12 +247,7 @@ export const frequencyRouter = router({
       songTitle: z.string().max(200).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Get Clerk session token for Studios bridge authentication
-      const clerkToken = extractClerkToken(ctx);
-      if (!clerkToken) {
-        console.error("[Frequency] generateCoverArt: no Clerk token available");
-        throw new Error("Authentication required for cover art generation");
-      }
+      const openId = ctx.user.openId;
 
       // Server-side lyrics resolution:
       // 1. If caller passed lyrics directly, use them
@@ -299,7 +288,7 @@ export const frequencyRouter = router({
 
       // Runway ML image generation takes 30–90 seconds, so use a 2-minute timeout
       // Use Studios' REST bridge endpoint — plain JSON, no tRPC wire format needed
-      const res = await bridgeFetch("/cover-art/generate", {
+      const res = await bridgeFetch("/cover-art/generate", openId, {
         method: "POST",
         body: JSON.stringify({
           lyrics: finalLyrics,
@@ -308,7 +297,7 @@ export const frequencyRouter = router({
           steeringNote: input.steeringNote,
           songTitle: input.songTitle,
         }),
-      }, 120000, clerkToken); // 120 seconds for Runway image generation, pass Clerk token
+      }, 120000); // 120 seconds for Runway image generation
 
       if (!res.ok) {
         const body = await res.text().catch(() => "{}");
@@ -353,12 +342,13 @@ export const frequencyRouter = router({
   /**
    * Health check — verify the bridge is reachable and the key is valid.
    */
-  ping: protectedProcedure.query(async () => {
+  ping: protectedProcedure.query(async ({ ctx }) => {
     if (!ENV.studiosBridgeUrl || !ENV.studiosBridgeKey) {
       return { ok: false, reason: "Bridge not configured" };
     }
+    const openId = ctx.user.openId;
     try {
-      const res = await bridgeFetch("/ping");
+      const res = await bridgeFetch("/ping", openId);
       return { ok: res.ok, status: res.status };
     } catch (e) {
       return { ok: false, reason: String(e) };
