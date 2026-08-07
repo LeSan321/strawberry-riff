@@ -583,7 +583,10 @@ export async function deleteVibePreset(id: number, userId: number): Promise<bool
 
 // ─── Music Generations ────────────────────────────────────────────────────────
 export async function createMusicGeneration(
-  data: Omit<MusicGeneration, "id" | "createdAt" | "updatedAt" | "completedAt">
+  data: Omit<MusicGeneration, "id" | "createdAt" | "updatedAt" | "completedAt" | "structureFingerprint" | "accentProfileId"> & {
+    structureFingerprint?: string | null;
+    accentProfileId?: string | null;
+  }
 ): Promise<number | null> {
   const db = await getDb();
   if (!db) return null;

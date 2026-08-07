@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { INSTRUMENT_CATALOG, INSTRUMENT_FAMILIES, getCatalogByFamily } from "./instrumentPalette";
 import { assistantChat } from "./assistant";
 import { z } from "zod";
+import { buildAccentVocalPrompt, applyDialectSubstitutions, AccentProfileId } from "./vocalBiblePrompt";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
 import { mapSpectrumToGuidance } from "./vocalSpectrumMapper";
 import {
@@ -845,6 +846,15 @@ const musicGenerationRouter = router({
         instrumentalSourceId: z.number().int().positive().optional(),
         /** Direct URL of the instrumental to use as instrumental_file reference in vocal mode */
         instrumentalSourceUrl: z.string().url().optional(),
+        /** Accent profile ID from the Vocal Bible (e.g. "celtic_irish", "blues_south") */
+        accentProfileId: z.enum([
+          "celtic_irish", "blues_south", "country_americana",
+          "british_rp", "bossa_nova", "jazz_american", "none",
+        ] as const).optional(),
+        /** BPM of the instrumental track (used in accent prompt assembly) */
+        instrumentalBpm: z.number().int().positive().optional(),
+        /** Atmosphere description for the role block */
+        atmosphere: z.string().max(200).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -932,21 +942,36 @@ const musicGenerationRouter = router({
       let promptWithIntensity: string;
       
       if (input.vocalMode) {
-        // Vocal Take mode: prompt is ENTIRELY vocal-character-driven
-        // The instrumental_file handles tempo/key matching — no music style text needed
-        // Build from gender + archetype only
-        const genderGuide = input.vocalGender !== "neutral" ? `${input.vocalGender} vocalist` : "vocalist";
-        const spectrumGuidance = input.vocalArchetype && input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50
-          ? mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue)
-          : null;
-        const vocalBasePrompt = [genderGuide, spectrumGuidance].filter(Boolean).join(", ");
-        // buildVocalPrompt puts archetype core first, then user prompt
-        promptWithIntensity = buildVocalPrompt(
-          vocalBasePrompt,
-          input.vocalArchetype as VocalArchetype,
-          true // include negative prompts
-        );
-        console.log(`[Generate/VocalMode] Vocal-steered prompt: ${promptWithIntensity.substring(0, 120)}...`);
+        // Vocal Take mode: use three-signal assembler when accent profile provided, else legacy path
+        const hasAccent = input.accentProfileId && input.accentProfileId !== "none";
+        if (hasAccent) {
+          // Three-signal prompt: genre frame → negative gates → vocal identity → role → structure → reinforcement
+          const register = input.vocalGender === "male" ? "bass male" : "mezzo-soprano female";
+          promptWithIntensity = buildAccentVocalPrompt({
+            accentProfileId: input.accentProfileId as AccentProfileId,
+            register,
+            role: "primary melodic carrier replacing lead instrument",
+            bpm: input.instrumentalBpm,
+            atmosphere: input.atmosphere,
+            styleNotes: input.vocalArchetype
+              ? (mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue ?? 50) ?? undefined)
+              : undefined,
+          });
+          console.log(`[Generate/VocalMode/Accent] Three-signal prompt (${input.accentProfileId}): ${promptWithIntensity.substring(0, 120)}...`);
+        } else {
+          // Legacy vocal mode: build from gender + archetype only
+          const genderGuide = input.vocalGender !== "neutral" ? `${input.vocalGender} vocalist` : "vocalist";
+          const spectrumGuidance = input.vocalArchetype && input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50
+            ? mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue)
+            : null;
+          const vocalBasePrompt = [genderGuide, spectrumGuidance].filter(Boolean).join(", ");
+          promptWithIntensity = buildVocalPrompt(
+            vocalBasePrompt,
+            input.vocalArchetype as VocalArchetype,
+            true
+          );
+          console.log(`[Generate/VocalMode] Vocal-steered prompt: ${promptWithIntensity.substring(0, 120)}...`);
+        }
       } else if (resolvedReferenceAudioUrl) {
         // Reference audio mode: MINIMAL prompt (just intensity + vocal gender)
         // MiniMax will analyze the song_file and match its style automatically
@@ -1009,6 +1034,7 @@ const musicGenerationRouter = router({
             instrumentalSourceUrl: resolvedInstrumentalSourceUrl ?? null,
             vocalArchetype: input.vocalArchetype ?? null,
             vocalGender: input.vocalGender,
+            accentProfileId: input.accentProfileId ?? null,
           })
         : null;
       const generationId = await createMusicGeneration({
@@ -1029,6 +1055,7 @@ const musicGenerationRouter = router({
         vocalSpectrumValue: input.vocalSpectrumValue ?? 50,
         visualBrief: null,
         isSplit: false,
+        accentProfileId: input.accentProfileId ?? null,
       });
       if (!generationId) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create generation record" });;

@@ -162,6 +162,8 @@ export const musicGenerations = mysqlTable("music_generations", {
   vocalSpectrumValue: int("vocalSpectrumValue").default(50), // 0-100 spectrum slider (0=left endpoint, 100=right endpoint)
   visualBrief: text("visualBrief"), // JSON: auto-generated visual brief (camera, lighting, color, emotion, scene)
   isSplit: boolean("isSplit").default(false).notNull(), // Track if stems have been split
+  structureFingerprint: text("structureFingerprint"), // JSON: {bpm, sections, section_sequence, shape_hash} — populated at generation time for Bespoke/vocal tracks
+  accentProfileId: varchar("accentProfileId", { length: 50 }), // Accent profile used (e.g. "celtic_irish", "blues_south") — null = no accent steering
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

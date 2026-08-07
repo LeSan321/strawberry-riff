@@ -1406,3 +1406,15 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Fix: add R2_REGION=auto to Railway Variables (env.ts already reads R2_REGION first)
 - [x] After third deploy: generation works and plays, stems split and play — all playback issues resolved
 - [x] Root cause summary: Railway auto-injects AWS_* vars at every deploy (Tigris bucket, sjc region, Tigris credentials) — R2_* prefix convention is permanent protection
+
+## Phase: Four-Dimension Sessions Pipeline (Vocal Bible Integration)
+- [x] Schema: add structureFingerprint TEXT column to music_generations
+- [x] Schema: add accentProfileId VARCHAR(50) column to music_generations
+- [x] Server: create server/vocalBiblePrompt.ts with buildAccentVocalPrompt() and applyDialectSubstitutions()
+- [x] Server: update musicGeneration.generate procedure to use new assembler when vocalMode=true and accentProfileId provided
+- [x] Sessions UI: add Accent Profile selector to AddVocalsPanel (6 accent cards: Celtic/Scottish, Blues/Deep South, British RP, Bossa Nova, Jazz, None)
+- [x] Sessions UI: add Dialect Lyrics toggle — shows transformed lyrics in textarea when accent selected
+- [ ] Sessions UI: show structure block auto-assembly indicator when selected instrumental has structureFingerprint
+- [ ] Sessions UI: store structureFingerprint at generation time for all Bespoke/vocal-mode generations
+- [x] Sound DNA UX fix: rename "Music Style Prompt" to "Musical Direction" when DNA track is active, update placeholder text
+- [ ] Add Vocals page: replace track card grid with searchable dropdown (too many cards to scroll through)

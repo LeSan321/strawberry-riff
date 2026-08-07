@@ -5,7 +5,7 @@
  * Full Generate controls, Add Vocals workflow, Lyrics, Styles, Stems.
  * Structurally loose — each section is its own component for easy rearrangement.
  */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -50,6 +50,72 @@ import { MyStemsPanel } from "@/components/MyStemsPanel";
 import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
 import { FrequencyModal } from "@/components/FrequencyModal";
+
+// ─── Accent Profile Data ───────────────────────────────────────────────────────
+const ACCENT_PROFILES = [
+  { id: "none" as const, label: "No Accent", description: "Standard neutral vocal", icon: "🎤" },
+  { id: "celtic_irish" as const, label: "Celtic / Scottish", description: "Highland folk — rolled R, open vowels, rising intonation", icon: "🏴" },
+  { id: "blues_south" as const, label: "Blues / Deep South", description: "Chicago & Delta blues — blue notes, Southern drawl", icon: "🎸" },
+  { id: "british_rp" as const, label: "British RP", description: "Received Pronunciation — clipped consonants, precise articulation", icon: "🇬🇧" },
+  { id: "bossa_nova" as const, label: "Bossa Nova", description: "Brazilian samba-jazz — soft sibilants, intimate delivery", icon: "🌴" },
+  { id: "jazz_american" as const, label: "Jazz (American)", description: "Swing tradition — behind-the-beat, blue notes", icon: "🎷" },
+  { id: "country_americana" as const, label: "Country / Americana", description: "Nashville & Americana — twang, storytelling delivery", icon: "🤠" },
+] as const;
+type AccentProfileId = typeof ACCENT_PROFILES[number]["id"];
+
+const DIALECT_SUBS: Record<AccentProfileId, Array<{ from: string; to: string }>> = {
+  none: [],
+  celtic_irish: [
+    { from: "I'm", to: "Ah'm" }, { from: "I am", to: "Ah am" }, { from: "I'll", to: "Ah'll" },
+    { from: "I've", to: "Ah've" }, { from: "I'd", to: "Ah'd" }, { from: "I ", to: "Ah " },
+    { from: "you", to: "ye" }, { from: "You", to: "Ye" },
+    { from: "don't", to: "dinnae" }, { from: "Don't", to: "Dinnae" },
+    { from: "doesn't", to: "doesnae" }, { from: "can't", to: "cannae" },
+    { from: "won't", to: "willnae" }, { from: "isn't", to: "isnae" },
+    { from: "my", to: "ma" }, { from: "My", to: "Ma" },
+    { from: "the old", to: "the auld" }, { from: "old", to: "auld" },
+    { from: "home", to: "hame" }, { from: "Home", to: "Hame" },
+    { from: "one", to: "yin" }, { from: "Oh,", to: "Och," }, { from: "Oh ", to: "Och " },
+  ],
+  blues_south: [
+    { from: "going to", to: "gonna" }, { from: "want to", to: "wanna" },
+    { from: "got to", to: "gotta" }, { from: "about", to: "'bout" },
+    { from: "because", to: "'cause" }, { from: "something", to: "somethin'" },
+    { from: "nothing", to: "nothin'" }, { from: "running", to: "runnin'" },
+    { from: "coming", to: "comin'" }, { from: "feeling", to: "feelin'" },
+  ],
+  country_americana: [
+    { from: "going to", to: "gonna" }, { from: "want to", to: "wanna" },
+    { from: "you all", to: "y'all" }, { from: "something", to: "somethin'" },
+    { from: "nothing", to: "nothin'" }, { from: "running", to: "runnin'" },
+  ],
+  british_rp: [
+    { from: "can't", to: "cahn't" }, { from: "water", to: "wah-tah" },
+    { from: "better", to: "bettah" }, { from: "never", to: "nevah" },
+    { from: "forever", to: "forevah" }, { from: "together", to: "togethah" },
+  ],
+  bossa_nova: [
+    { from: "the sun", to: "o sol" }, { from: "the sea", to: "o mar" },
+    { from: "the night", to: "a noite" }, { from: "love", to: "amor" },
+    { from: "beautiful", to: "bonita" },
+  ],
+  jazz_american: [
+    { from: "going to", to: "gonna" }, { from: "want to", to: "wanna" },
+    { from: "got to", to: "gotta" }, { from: "something", to: "somethin'" },
+    { from: "darling", to: "darlin'" }, { from: "feeling", to: "feelin'" },
+    { from: "singing", to: "singin'" },
+  ],
+};
+
+function applyDialectPreview(lyrics: string, accentId: AccentProfileId): string {
+  const subs = DIALECT_SUBS[accentId] ?? [];
+  let result = lyrics;
+  for (const sub of subs) {
+    const escaped = sub.from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(new RegExp(escaped, "g"), sub.to);
+  }
+  return result;
+}
 
 // ─── Session Theme Definitions ─────────────────────────────────────────────────
 const SESSION_THEMES = [
@@ -348,6 +414,13 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
   const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
   const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [selectedAccent, setSelectedAccent] = useState<AccentProfileId>("none");
+  const [dialectEnabled, setDialectEnabled] = useState(false);
+  // Dialect-transformed lyrics (computed, not stored separately)
+  const dialectLyrics = useMemo(
+    () => dialectEnabled && selectedAccent !== "none" ? applyDialectPreview(lyrics, selectedAccent) : lyrics,
+    [lyrics, selectedAccent, dialectEnabled]
+  );
 
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   // Show completed non-vocal-take tracks as instrumental sources
@@ -391,10 +464,13 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
     setResultUrl(null);
     const selectedTrack = completedTracks.find(t => t.audioUrl === selectedTrackUrl);
     const archName = VOCAL_ARCHETYPES.find(a => a.id === selectedArchetype)?.name ?? selectedArchetype;
+    const accentLabel = selectedAccent !== "none"
+      ? ` [${ACCENT_PROFILES.find(a => a.id === selectedAccent)?.label ?? selectedAccent}]`
+      : "";
     try {
       const job = await generateMutation.mutateAsync({
-        title: `Vocal Take — ${archName} over ${selectedTrackTitle ?? "instrumental"}`,
-        lyrics: lyrics.trim(),
+        title: `Vocal Take — ${archName}${accentLabel} over ${selectedTrackTitle ?? "instrumental"}`,
+        lyrics: dialectLyrics.trim(),
         vocalMode: true,
         vocalArchetype: selectedArchetype,
         vocalGender,
@@ -402,6 +478,7 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
         instrumentalSourceId: selectedTrack?.id,
         instrumentalSourceUrl: selectedTrackUrl,
         intensity: "balanced",
+        accentProfileId: selectedAccent !== "none" ? selectedAccent : undefined,
       });
       // Poll via getById — the useQuery above will pick this up
       setPendingGenerationId(job.id);
@@ -530,6 +607,91 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
       </div>
 
       {/* Step 4: Voice Controls */}
+      {/* Step 5: Accent Profile */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>5 — Vocal Accent</h3>
+        <div className="grid grid-cols-4 gap-2">
+          {ACCENT_PROFILES.map((accent) => {
+            const isSelected = selectedAccent === accent.id;
+            return (
+              <button
+                key={accent.id}
+                onClick={() => {
+                  setSelectedAccent(accent.id);
+                  if (accent.id === "none") setDialectEnabled(false);
+                }}
+                className={`group relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border transition-all aspect-square text-center ${
+                  isSelected
+                    ? `border-violet-500 bg-violet-500/15 text-white shadow-lg shadow-violet-500/20`
+                    : `${theme.borderAccent} bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/30`
+                }`}
+              >
+                <span className="text-xl leading-none">{accent.icon}</span>
+                <p className="text-[10px] font-semibold leading-tight">{accent.label.split(" ")[0]}</p>
+                {isSelected && (
+                  <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-gradient-to-br ${theme.accent}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {selectedAccent !== "none" && (() => {
+          const accent = ACCENT_PROFILES.find(a => a.id === selectedAccent);
+          return accent ? (
+            <motion.div
+              key={selectedAccent}
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+              className={`mt-2 flex items-start gap-3 px-3 py-2.5 rounded-xl border ${theme.borderAccent} bg-white/5`}
+            >
+              <span className="text-xl flex-shrink-0 mt-0.5">{accent.icon}</span>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-white">{accent.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{accent.description}</p>
+              </div>
+            </motion.div>
+          ) : null;
+        })()}
+      </div>
+      {/* Step 6: Dialect Lyrics Toggle */}
+      {selectedAccent !== "none" && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent}`}>6 — Dialect Lyrics</h3>
+            <button
+              onClick={() => setDialectEnabled(!dialectEnabled)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                dialectEnabled ? `bg-gradient-to-r ${theme.accent}` : "bg-gray-700"
+              }`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                dialectEnabled ? "translate-x-4" : "translate-x-0.5"
+              }`} />
+            </button>
+          </div>
+          {dialectEnabled ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+              <p className="text-xs text-gray-400">Dialect applied — review and edit before generating:</p>
+              <Textarea
+                value={dialectLyrics}
+                onChange={(e) => setLyrics(
+                  // When user edits dialect lyrics, we need to reverse-map or just store the edit
+                  // For simplicity: editing dialect view updates the base lyrics directly
+                  e.target.value
+                )}
+                className={`min-h-[120px] bg-white/5 border ${theme.borderAccent} text-white placeholder:text-gray-600 resize-none text-xs`}
+                maxLength={3500}
+              />
+              <p className="text-xs text-gray-500 italic">
+                Dialect signals reinforce the accent throughout the generation — this is the text MiniMax will sing.
+              </p>
+            </motion.div>
+          ) : (
+            <p className="text-xs text-gray-500">
+              Enable to apply {ACCENT_PROFILES.find(a => a.id === selectedAccent)?.label} dialect patterns to your lyrics before generation. Recommended for stronger accent results.
+            </p>
+          )}
+        </div>
+      )}
       <div>
         <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 — Voice Controls</h3>
         <div className="space-y-4">
