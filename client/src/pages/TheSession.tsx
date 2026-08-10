@@ -818,7 +818,12 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
               </div>
               <div>
                 <p className="text-sm text-white font-medium">Stems splitting</p>
-                <p className="text-xs text-gray-400">Check <span className={`font-semibold ${theme.textAccent}`}>My Stems</span> in ~1 min, then use <span className={`font-semibold ${theme.textAccent}`}>Blend</span> to layer.</p>
+                <p className="text-xs text-gray-400 mt-0.5">Ready in ~1–3 min. Then use <span className={`font-semibold ${theme.textAccent}`}>Blend</span> to layer.</p>
+                {resultGenerationId && (
+                  <Link href={`/stems/${resultGenerationId}`} className={`text-xs font-semibold ${theme.textAccent} underline underline-offset-2 mt-1 inline-block`}>
+                    View Stems →
+                  </Link>
+                )}
               </div>
             </div>
           )}
