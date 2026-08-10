@@ -421,6 +421,60 @@ export const stemsplitRouter = router({
           return null;
         }
 
+        // If still pending/processing, poll StemSplit API for live status and mirror stems if complete
+        if (stemSplit.status === "pending" || stemSplit.status === "processing") {
+          try {
+            const jobStatus = await getStemSplitStatus(stemSplit.jobId);
+            if (jobStatus.status === "COMPLETED" && jobStatus.outputs) {
+              const { updateStemSplitStems, updateStemSplitStatus } = await import('../stemsplit/db');
+              const gId = stemSplit.generationId;
+              console.log(`[StemSplit] getTrackStemSplit: job ${stemSplit.jobId} completed — mirroring stems for gen ${gId}`);
+              const [vocalUrl, drumsUrl, bassUrl, otherUrl, pianoUrl, guitarUrl] = await Promise.all([
+                mirrorStemToR2(jobStatus.outputs.vocals?.url, 'vocals', gId),
+                mirrorStemToR2(jobStatus.outputs.drums?.url, 'drums', gId),
+                mirrorStemToR2(jobStatus.outputs.bass?.url, 'bass', gId),
+                mirrorStemToR2(jobStatus.outputs.other?.url, 'other', gId),
+                mirrorStemToR2(jobStatus.outputs.piano?.url, 'piano', gId),
+                mirrorStemToR2(jobStatus.outputs.guitar?.url, 'guitar', gId),
+              ]);
+              await updateStemSplitStems(stemSplit.jobId, {
+                vocalUrl: vocalUrl ?? jobStatus.outputs.vocals?.url,
+                drumsUrl: drumsUrl ?? jobStatus.outputs.drums?.url,
+                bassUrl: bassUrl ?? jobStatus.outputs.bass?.url,
+                otherUrl: otherUrl ?? jobStatus.outputs.other?.url,
+                pianoUrl: pianoUrl ?? jobStatus.outputs.piano?.url,
+                guitarUrl: guitarUrl ?? jobStatus.outputs.guitar?.url,
+              });
+              await updateStemSplitStatus(stemSplit.jobId, "completed");
+              await markGenerationAsSplit(stemSplit.generationId);
+              return {
+                id: stemSplit.id,
+                jobId: stemSplit.jobId,
+                status: "completed",
+                createdAt: stemSplit.createdAt,
+                completedAt: new Date(),
+                stems: {
+                  vocalUrl: vocalUrl ?? jobStatus.outputs.vocals?.url ?? null,
+                  drumsUrl: drumsUrl ?? jobStatus.outputs.drums?.url ?? null,
+                  bassUrl: bassUrl ?? jobStatus.outputs.bass?.url ?? null,
+                  otherUrl: otherUrl ?? jobStatus.outputs.other?.url ?? null,
+                  pianoUrl: pianoUrl ?? jobStatus.outputs.piano?.url ?? null,
+                  guitarUrl: guitarUrl ?? jobStatus.outputs.guitar?.url ?? null,
+                },
+                error: null,
+              };
+            }
+            if (jobStatus.status === "FAILED") {
+              const { updateStemSplitStatus } = await import('../stemsplit/db');
+              await updateStemSplitStatus(stemSplit.jobId, "failed");
+              return { id: stemSplit.id, jobId: stemSplit.jobId, status: "failed", createdAt: stemSplit.createdAt, completedAt: null, stems: null, error: jobStatus.errorMessage || "Job failed" };
+            }
+          } catch (pollErr) {
+            console.warn(`[StemSplit] getTrackStemSplit: polling failed for job ${stemSplit.jobId}:`, pollErr);
+            // Fall through and return the pending status from DB
+          }
+        }
+
         return {
           id: stemSplit.id,
           jobId: stemSplit.jobId,
