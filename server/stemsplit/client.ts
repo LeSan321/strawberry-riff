@@ -50,11 +50,13 @@ export interface StemSplitJob {
 export async function startStemSplit(
   audioUrl: string
 ): Promise<{ jobId: string; status: string }> {
+  const appUrl = (process.env.APP_URL ?? "https://strawberryriff.com").replace(/\/$/, "");
   const payload = {
     sourceUrl: audioUrl,
     outputType: "SIX_STEMS", // vocals, drums, bass, other, piano, guitar
     quality: "BEST", // SIX_STEMS requires BEST quality per API constraint
     outputFormat: "MP3",
+    webhookUrl: `${appUrl}/api/stemsplit/webhook`,
   };
 
   const response = await fetch(`${STEMSPLIT_API_BASE}/jobs`, {
