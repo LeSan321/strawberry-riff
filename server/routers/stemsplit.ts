@@ -284,14 +284,15 @@ export const stemsplitRouter = router({
             .select({ id: musicGenerations.id, title: musicGenerations.title })
             .from(musicGenerations)
             .where(inArray(musicGenerations.id, generationIds));
-          titleMap = Object.fromEntries(gens.map((g) => [g.id, g.title]));
+          // Coerce both sides to number to avoid string/number key mismatch from MySQL
+          titleMap = Object.fromEntries(gens.map((g) => [Number(g.id), g.title ?? ""]));
         }
       }
       return splits.map((split) => ({
         id: split.id,
         jobId: split.jobId,
-        generationId: split.generationId,
-        generationTitle: titleMap[split.generationId] ?? null,
+        generationId: Number(split.generationId),
+        generationTitle: titleMap[Number(split.generationId)] ?? null,
         status: split.status,
         createdAt: split.createdAt,
         completedAt: split.completedAt,

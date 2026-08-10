@@ -336,24 +336,35 @@ function SessionHeader({ theme }: { theme: SessionTheme }) {
 }
 
 // ─── Add Vocals Panel ──────────────────────────────────────────────────────────
-function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
+function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persistedLyrics, persistedAccentId, persistedDialectEnabled, onTrackChange, onLyricsChange, onAccentChange, onDialectChange }: {
+  theme: SessionTheme;
+  persistedTrackUrl?: string | null;
+  persistedTrackTitle?: string | null;
+  persistedLyrics?: string;
+  persistedAccentId?: string | null;
+  persistedDialectEnabled?: boolean;
+  onTrackChange?: (url: string | null, title: string | null) => void;
+  onLyricsChange?: (lyrics: string) => void;
+  onAccentChange?: (accentId: string | null) => void;
+  onDialectChange?: (enabled: boolean) => void;
+}) {
   const { user } = useAuth();
   const [selectedArchetype, setSelectedArchetype] = useState<VocalArchetypeId | null>(null);
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [spectrumValue, setSpectrumValue] = useState(50);
-  const [lyrics, setLyrics] = useState("");
+  const [lyrics, setLyrics] = useState(persistedLyrics ?? "");
   const [styleNotes, setStyleNotes] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultGenerationId, setResultGenerationId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
-  const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(null);
+  const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(persistedTrackUrl ?? null);
+  const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(persistedTrackTitle ?? null);
   const [trackSearch, setTrackSearch] = useState("");
   const [showTrackDropdown, setShowTrackDropdown] = useState(false);
-  const [accentProfileId, setAccentProfileId] = useState<string | null>(null);
-  const [dialectEnabled, setDialectEnabled] = useState(false);
+  const [accentProfileId, setAccentProfileId] = useState<string | null>(persistedAccentId ?? null);
+  const [dialectEnabled, setDialectEnabled] = useState(persistedDialectEnabled ?? false);
   const [dialectPreview, setDialectPreview] = useState("");
   const [isSplitting, setIsSplitting] = useState(false);
   const [splitComplete, setSplitComplete] = useState(false);
@@ -853,6 +864,21 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   const { data: stemSplits } = trpc.stemsplit.getUserStemSplits.useQuery(undefined, { enabled: !!user });
   const completedSplits = stemSplits?.filter(s => s.status === "completed" && s.stems?.vocalUrl) ?? [];
 
+  // Preview audio state for pickers
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewRef = useRef<HTMLAudioElement>(null);
+  const togglePreview = (e: React.MouseEvent, url: string) => {
+    e.stopPropagation();
+    if (previewUrl === url) {
+      previewRef.current?.pause();
+      setPreviewUrl(null);
+    } else {
+      if (previewRef.current) { previewRef.current.pause(); }
+      setPreviewUrl(url);
+      setTimeout(() => previewRef.current?.play().catch(() => {}), 50);
+    }
+  };
+
   // Fetch user's completed generations (for instrumental picker)
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   const instrumentalTracks = myGenerations?.filter(g => {
@@ -934,28 +960,40 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
         ) : (
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {completedSplits.map((split) => (
-              <button key={split.id}
-                onClick={() => {
-                  setVocalStemUrl(split.stems!.vocalUrl!);
-                  setVocalStemLabel(split.generationTitle ?? `Track #${split.generationId}`);
-                }}
-                className={`w-full text-left px-3 py-2 rounded-lg border transition-all text-sm ${
+              <div key={split.id}
+                className={`flex items-center gap-2 rounded-lg border transition-all text-sm ${
                   vocalStemUrl === split.stems?.vocalUrl
                     ? `border-transparent bg-gradient-to-r ${theme.accent} text-white`
-                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10`
+                    : `${theme.borderAccent} bg-white/5 text-gray-300`
                 }`}
               >
-                <span className="font-medium line-clamp-1">
-                  {split.generationTitle ?? `Track #${split.generationId}`}
-                </span>
-                <span className="text-xs opacity-50 block mt-0.5">
-                  Vocal stem — split #{split.id}
-                </span>
-                {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 inline ml-1" />}
-              </button>
+                <button
+                  onClick={(e) => togglePreview(e, split.stems!.vocalUrl!)}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-l-lg hover:bg-white/10 transition-colors"
+                  title="Preview vocal stem"
+                >
+                  {previewUrl === split.stems?.vocalUrl
+                    ? <Pause className="w-3.5 h-3.5" />
+                    : <Play className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  className="flex-1 text-left py-2 pr-3 min-w-0"
+                  onClick={() => {
+                    setVocalStemUrl(split.stems!.vocalUrl!);
+                    setVocalStemLabel(split.generationTitle ?? `Vocal Take #${split.generationId}`);
+                  }}
+                >
+                  <span className="font-medium line-clamp-1 block">
+                    {split.generationTitle ?? `Vocal Take #${split.generationId}`}
+                  </span>
+                  <span className="text-xs opacity-50 block mt-0.5">Vocal stem</span>
+                </button>
+                {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 mr-2 flex-shrink-0" />}
+              </div>
             ))}
           </div>
         )}
+        <audio ref={previewRef} src={previewUrl ?? undefined} onEnded={() => setPreviewUrl(null)} />
         {vocalStemLabel && (
           <p className="text-xs text-green-400">Selected: {vocalStemLabel}</p>
         )}
@@ -970,17 +1008,30 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
         ) : (
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {instrumentalTracks.map((track) => (
-              <button key={track.id}
-                onClick={() => { setInstrumentalUrl(track.audioUrl); setInstrumentalLabel(track.title); }}
-                className={`w-full text-left px-3 py-2 rounded-lg border transition-all text-sm ${
+              <div key={track.id}
+                className={`flex items-center gap-2 rounded-lg border transition-all text-sm ${
                   instrumentalUrl === track.audioUrl
                     ? `border-transparent bg-gradient-to-r ${theme.accent} text-white`
-                    : `${theme.borderAccent} bg-white/5 text-gray-300 hover:bg-white/10`
+                    : `${theme.borderAccent} bg-white/5 text-gray-300`
                 }`}
               >
-                <span className="font-medium line-clamp-1">{track.title}</span>
-                {instrumentalUrl === track.audioUrl && <Check className="w-3.5 h-3.5 inline ml-2" />}
-              </button>
+                <button
+                  onClick={(e) => togglePreview(e, track.audioUrl!)}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-l-lg hover:bg-white/10 transition-colors"
+                  title="Preview track"
+                >
+                  {previewUrl === track.audioUrl
+                    ? <Pause className="w-3.5 h-3.5" />
+                    : <Play className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  className="flex-1 text-left py-2 pr-3 min-w-0"
+                  onClick={() => { setInstrumentalUrl(track.audioUrl); setInstrumentalLabel(track.title); }}
+                >
+                  <span className="font-medium line-clamp-1 block">{track.title}</span>
+                </button>
+                {instrumentalUrl === track.audioUrl && <Check className="w-3.5 h-3.5 mr-2 flex-shrink-0" />}
+              </div>
             ))}
           </div>
         )}
@@ -1096,6 +1147,12 @@ export default function TheSession() {
   const [selectedInstrument, setSelectedInstrument] = useState<{
     id: string; name: string; family: string; description: string; audioPath: string; tags: string[];
   } | null>(null);
+  // Persisted Add Vocals state — survives tab switches
+  const [vocalsTrackUrl, setVocalsTrackUrl] = useState<string | null>(null);
+  const [vocalsTrackTitle, setVocalsTrackTitle] = useState<string | null>(null);
+  const [vocalsLyrics, setVocalsLyrics] = useState("");
+  const [vocalsAccentId, setVocalsAccentId] = useState<string | null>(null);
+  const [vocalsDialectEnabled, setVocalsDialectEnabled] = useState(false);
 
   const theme = SESSION_THEMES.find((t) => t.id === selectedThemeId) ?? SESSION_THEMES[0];
 
@@ -1179,7 +1236,17 @@ export default function TheSession() {
               {activeTool === "generate" ? (
                 <GeneratePage selectedInstrument={selectedInstrument} onClearInstrument={() => setSelectedInstrument(null)} />
               ) : activeTool === "vocals" ? (
-                <AddVocalsPanel theme={theme} />
+                <AddVocalsPanel theme={theme}
+                  persistedTrackUrl={vocalsTrackUrl}
+                  persistedTrackTitle={vocalsTrackTitle}
+                  persistedLyrics={vocalsLyrics}
+                  persistedAccentId={vocalsAccentId}
+                  persistedDialectEnabled={vocalsDialectEnabled}
+                  onTrackChange={(url, title) => { setVocalsTrackUrl(url); setVocalsTrackTitle(title ?? null); }}
+                  onLyricsChange={setVocalsLyrics}
+                  onAccentChange={setVocalsAccentId}
+                  onDialectChange={setVocalsDialectEnabled}
+                />
               ) : activeTool === "mixer" ? (
                 <MixerPanel theme={theme} />
               ) : activeTool === "lyrics" ? (
