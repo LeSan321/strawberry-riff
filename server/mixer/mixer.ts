@@ -15,14 +15,41 @@ import * as http from "http";
 
 // Resolve ffmpeg binary path:
 // 1. FFMPEG_BIN env var (set on Railway or any custom deployment)
-// 2. Common system paths (Railway Nixpacks installs to /usr/bin/ffmpeg)
-// 3. ffmpeg-static fallback (may not work on all platforms)
+// 2. Common system paths
+// 3. Nix store search (Railway nixpacks installs ffmpeg via Nix, not apt)
+// 4. `which ffmpeg` shell lookup
+// 5. ffmpeg-static fallback
 function resolveFfmpegPath(): string {
   if (process.env.FFMPEG_BIN) return process.env.FFMPEG_BIN;
-  const systemPaths = ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/homebrew/bin/ffmpeg"];
+  const systemPaths = [
+    "/usr/bin/ffmpeg",
+    "/usr/local/bin/ffmpeg",
+    "/opt/homebrew/bin/ffmpeg",
+    "/run/current-system/sw/bin/ffmpeg",
+  ];
   for (const p of systemPaths) {
     if (fs.existsSync(p)) return p;
   }
+  // Railway Nix: search /nix/store for ffmpeg binary
+  try {
+    const nixStore = "/nix/store";
+    if (fs.existsSync(nixStore)) {
+      const entries = fs.readdirSync(nixStore);
+      for (const entry of entries) {
+        if (/^[a-z0-9]+-ffmpeg-\d/.test(entry)) {
+          const candidate = `${nixStore}/${entry}/bin/ffmpeg`;
+          if (fs.existsSync(candidate)) return candidate;
+        }
+      }
+    }
+  } catch {}
+  // Try `which ffmpeg` via shell as final system check
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { execSync } = require("child_process") as typeof import("child_process");
+    const whichResult = (execSync("which ffmpeg 2>/dev/null", { encoding: "utf8" }) as string).trim();
+    if (whichResult && fs.existsSync(whichResult)) return whichResult;
+  } catch {}
   // Last resort: try ffmpeg-static (may be null if binary not downloaded)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -31,7 +58,7 @@ function resolveFfmpegPath(): string {
   } catch {}
   throw new Error(
     "ffmpeg binary not found. Set FFMPEG_BIN environment variable to the ffmpeg binary path, " +
-    "or ensure ffmpeg is installed on the system (e.g. apt install ffmpeg)."
+    "or ensure ffmpeg is installed on the system."
   );
 }
 

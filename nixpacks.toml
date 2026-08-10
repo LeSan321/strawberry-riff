@@ -1,5 +1,6 @@
 # Railway Nixpacks configuration
-# Installs ffmpeg system binary so the Custom Mix Export feature works in production.
+# Installs ffmpeg system binary so the Blend/Mix feature works in production.
+# Railway uses Nix package manager — use nixPkgs, not aptPkgs.
 
 [phases.setup]
-aptPkgs = ["ffmpeg", "libmp3lame-dev"]
+nixPkgs = ["ffmpeg", "lame"]
