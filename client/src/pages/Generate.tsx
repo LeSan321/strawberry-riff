@@ -1723,17 +1723,27 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
 
               {/* Prompt */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Music Style Prompt</label>
+                <label className="mb-2 block text-sm font-medium">
+                  {referenceAudioUrl ? "Musical Direction" : "Music Style Prompt"}
+                </label>
                 <Textarea
                   ref={promptRef}
-                  placeholder="What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
+                  placeholder={referenceAudioUrl
+                    ? "What should this track do with the sound DNA? (e.g., melancholic slow burn, 90 BPM, intimate jazz club feel — the DNA provides the sonic character)"
+                    : "What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
+                  }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   disabled={isGenerating}
                   maxLength={1000}
                   rows={4}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">{prompt.length}/1000 characters — describe genre, instruments, mood, and tempo</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {referenceAudioUrl
+                    ? `${prompt.length}/1000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
+                    : `${prompt.length}/1000 characters — describe genre, instruments, mood, and tempo`
+                  }
+                </p>
               </div>
 
               {/* Intensity Level */}
