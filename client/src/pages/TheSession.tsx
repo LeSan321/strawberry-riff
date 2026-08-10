@@ -862,7 +862,12 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
   // Fetch user's completed stem splits (for vocal stem picker)
   const { data: stemSplits } = trpc.stemsplit.getUserStemSplits.useQuery(undefined, { enabled: !!user });
-  const completedSplits = stemSplits?.filter(s => s.status === "completed" && s.stems?.vocalUrl) ?? [];
+  const completedSplits = stemSplits?.filter(s =>
+    s.status === "completed" &&
+    s.stems?.vocalUrl &&
+    s.stems.vocalUrl.startsWith("https://pub-") &&
+    Number(s.generationId) >= 1000000
+  ) ?? [];
 
   // Preview audio state for pickers
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -883,7 +888,10 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   const instrumentalTracks = myGenerations?.filter(g => {
     if (g.status !== "complete" || !g.audioUrl) return false;
-    try { const m = g.metadata ? JSON.parse(g.metadata) : {}; return m.generationType !== "vocal-overlay"; }
+    try {
+      const m = g.metadata ? JSON.parse(g.metadata) : {};
+      return m.generationType !== "vocal-overlay" && m.generationType !== "vocal-take";
+    }
     catch { return true; }
   }) ?? [];
 
