@@ -3,6 +3,7 @@ import { INSTRUMENT_CATALOG, INSTRUMENT_FAMILIES, getCatalogByFamily } from "./i
 import { assistantChat } from "./assistant";
 import { z } from "zod";
 import { buildVocalPrompt, VocalArchetype } from "./vocalArchetypes";
+import { buildAccentVocalPrompt } from "./vocalBiblePrompt";
 import { mapSpectrumToGuidance } from "./vocalSpectrumMapper";
 import {
   addTrackToPlaylist,
@@ -845,6 +846,10 @@ const musicGenerationRouter = router({
         instrumentalSourceId: z.number().int().positive().optional(),
         /** Direct URL of the instrumental to use as instrumental_file reference in vocal mode */
         instrumentalSourceUrl: z.string().url().optional(),
+        /** Accent profile ID for three-signal vocal steering (e.g. "celtic-irish") */
+        accentProfileId: z.string().optional(),
+        /** BPM of the instrumental source for structure matching */
+        instrumentalBpm: z.number().int().min(40).max(300).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -931,22 +936,31 @@ const musicGenerationRouter = router({
       // (reference audio IS the style instruction — text prompt would override it)
       let promptWithIntensity: string;
       
-      if (input.vocalMode) {
-        // Vocal Take mode: prompt is ENTIRELY vocal-character-driven
-        // The instrumental_file handles tempo/key matching — no music style text needed
-        // Build from gender + archetype only
-        const genderGuide = input.vocalGender !== "neutral" ? `${input.vocalGender} vocalist` : "vocalist";
-        const spectrumGuidance = input.vocalArchetype && input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50
-          ? mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue)
-          : null;
-        const vocalBasePrompt = [genderGuide, spectrumGuidance].filter(Boolean).join(", ");
-        // buildVocalPrompt puts archetype core first, then user prompt
-        promptWithIntensity = buildVocalPrompt(
-          vocalBasePrompt,
-          input.vocalArchetype as VocalArchetype,
-          true // include negative prompts
-        );
-        console.log(`[Generate/VocalMode] Vocal-steered prompt: ${promptWithIntensity.substring(0, 120)}...`);
+        if (input.vocalMode) {
+        // Vocal Take mode: use three-signal assembler when accent profile provided
+        if (input.accentProfileId) {
+          const register = input.vocalGender === "male" ? "bass-male" : "mezzo-soprano-female";
+          const { prompt: accentPrompt } = buildAccentVocalPrompt({
+            accentProfileId: input.accentProfileId,
+            register,
+            bpm: input.instrumentalBpm,
+          });
+          promptWithIntensity = accentPrompt;
+          console.log(`[Generate/VocalMode] Three-signal accent prompt (${input.accentProfileId}): ${promptWithIntensity.substring(0, 120)}...`);
+        } else {
+          // Legacy path: archetype-based prompt
+          const genderGuide = input.vocalGender !== "neutral" ? `${input.vocalGender} vocalist` : "vocalist";
+          const spectrumGuidance = input.vocalArchetype && input.vocalSpectrumValue !== undefined && input.vocalSpectrumValue !== 50
+            ? mapSpectrumToGuidance(input.vocalArchetype as VocalArchetype, input.vocalSpectrumValue)
+            : null;
+          const vocalBasePrompt = [genderGuide, spectrumGuidance].filter(Boolean).join(", ");
+          promptWithIntensity = buildVocalPrompt(
+            vocalBasePrompt,
+            input.vocalArchetype as VocalArchetype,
+            true
+          );
+          console.log(`[Generate/VocalMode] Legacy vocal prompt: ${promptWithIntensity.substring(0, 120)}...`);
+        }
       } else if (resolvedReferenceAudioUrl) {
         // Reference audio mode: MINIMAL prompt (just intensity + vocal gender)
         // MiniMax will analyze the song_file and match its style automatically

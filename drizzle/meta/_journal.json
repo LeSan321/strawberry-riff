@@ -190,6 +190,13 @@
       "when": 1785116896104,
       "tag": "0026_burly_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1786331962680,
+      "tag": "0027_sour_vanisher",
+      "breakpoints": true
     }
   ]
 }

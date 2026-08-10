@@ -36,6 +36,8 @@ import {
   Sparkles,
   RefreshCw,
   AlertCircle,
+  ChevronDown,
+  Scissors,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -343,20 +345,100 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
   const [styleNotes, setStyleNotes] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [resultGenerationId, setResultGenerationId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTrackUrl, setSelectedTrackUrl] = useState<string | null>(null);
   const [selectedTrackTitle, setSelectedTrackTitle] = useState<string | null>(null);
+  const [trackSearch, setTrackSearch] = useState("");
+  const [showTrackDropdown, setShowTrackDropdown] = useState(false);
+  const [accentProfileId, setAccentProfileId] = useState<string | null>(null);
+  const [dialectEnabled, setDialectEnabled] = useState(false);
+  const [dialectPreview, setDialectPreview] = useState("");
+  const [isSplitting, setIsSplitting] = useState(false);
+  const [splitComplete, setSplitComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const trackDropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
-  // Show completed non-vocal-take tracks as instrumental sources
   const completedTracks = myGenerations?.filter(g => {
     if (g.status !== "complete" || !g.audioUrl) return false;
     try { const m = g.metadata ? JSON.parse(g.metadata) : {}; return m.generationType !== "vocal-take"; }
     catch { return true; }
   }) ?? [];
 
+  const filteredTracks = completedTracks.filter(t =>
+    !trackSearch || t.title.toLowerCase().includes(trackSearch.toLowerCase())
+  );
+
+  const ACCENT_OPTIONS = [
+    { id: null as string | null, label: "No Accent", summary: "Standard neutral vocal", icon: "\u{1F3A4}" },
+    { id: "celtic-irish", label: "Celtic / Scottish", summary: "Rolled R\u2019s, open vowels, rising intonation", icon: "\u{1F3F4}" },
+    { id: "blues-south", label: "Blues / Deep South", summary: "Drawled vowels, melismatic bends", icon: "\u{1F3B8}" },
+    { id: "british-rp", label: "British RP", summary: "Non-rhotic R, clipped consonants", icon: "\u{1F1EC}\u{1F1E7}" },
+    { id: "bossa-nova", label: "Bossa Nova", summary: "Soft sibilants, nasal resonance", icon: "\u{1F3B5}" },
+    { id: "jazz-american", label: "Jazz (American)", summary: "Behind-the-beat, scooped entries", icon: "\u{1F3B7}" },
+    { id: "country-americana", label: "Country / Americana", summary: "Southern twang, storytelling", icon: "\u{1F920}" },
+  ];
+
+  const applyDialectPreview = (text: string, profileId: string | null): string => {
+    if (!profileId || !text) return text;
+    const substitutions: Record<string, Array<[RegExp, string]>> = {
+      "celtic-irish": [
+        [/\bI'm\b/g, "Ah'm"], [/\bI\b/g, "Ah"], [/\byou\b/gi, "ye"], [/\bmy\b/gi, "ma"],
+        [/\bdon't\b/gi, "dinnae"], [/\bnot\b/gi, "nae"], [/\boh\b/gi, "och"],
+        [/\bold\b/gi, "auld"], [/\bhome\b/gi, "hame"], [/\bto\b/gi, "tae"],
+        [/\byes\b/gi, "aye"], [/\bnow\b/gi, "the noo"],
+      ],
+      "blues-south": [
+        [/\bI\b/g, "Ah"], [/\bgoing to\b/gi, "gonna"], [/\bwant to\b/gi, "wanna"],
+        [/\byou all\b/gi, "y'all"], [/\byou\b/gi, "ya"], [/\bmy\b/gi, "mah"],
+        [/\bsomething\b/gi, "somethin'"], [/\bnothing\b/gi, "nothin'"],
+      ],
+      "british-rp": [
+        [/\bgonna\b/gi, "going to"], [/\bwanna\b/gi, "want to"], [/\bain't\b/gi, "isn't"],
+        [/\by'all\b/gi, "you all"], [/\bcool\b/gi, "brilliant"],
+      ],
+      "bossa-nova": [
+        [/\blove\b/gi, "amor"], [/\bheart\b/gi, "cora\u00e7\u00e3o"], [/\bnight\b/gi, "noite"],
+        [/\bday\b/gi, "dia"], [/\bsky\b/gi, "c\u00e9u"], [/\byes\b/gi, "sim"],
+      ],
+      "jazz-american": [
+        [/\bsomething\b/gi, "somethin'"], [/\bnothing\b/gi, "nothin'"],
+        [/\bsinging\b/gi, "singin'"], [/\bwalking\b/gi, "walkin'"],
+      ],
+      "country-americana": [
+        [/\bgoing\b/gi, "goin'"], [/\bsinging\b/gi, "singin'"],
+        [/\bsomething\b/gi, "somethin'"], [/\byou all\b/gi, "y'all"],
+        [/\bwant to\b/gi, "wanna"], [/\bgoing to\b/gi, "gonna"],
+      ],
+    };
+    const subs = substitutions[profileId] ?? [];
+    let result = text;
+    for (const [from, to] of subs) result = result.replace(from, to);
+    return result;
+  };
+
+  useEffect(() => {
+    if (dialectEnabled && accentProfileId && lyrics) {
+      setDialectPreview(applyDialectPreview(lyrics, accentProfileId));
+    } else {
+      setDialectPreview("");
+    }
+  }, [lyrics, accentProfileId, dialectEnabled]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (trackDropdownRef.current && !trackDropdownRef.current.contains(e.target as Node)) {
+        setShowTrackDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const startStemSplitMutation = trpc.stemsplit.startStemSplit.useMutation();
+  // Note: correct procedure name is startStemSplit
   const [pendingGenerationId, setPendingGenerationId] = useState<number | null>(null);
   const generateMutation = trpc.musicGeneration.generate.useMutation();
   const { data: pendingGeneration } = trpc.musicGeneration.getById.useQuery(
@@ -364,15 +446,15 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
     { enabled: !!pendingGenerationId, refetchInterval: (query) => (query.state.data?.status === "generating" ? 4000 : false) }
   );
 
-  // When a pending generation completes, surface the result
   useEffect(() => {
     if (!pendingGeneration) return;
     if (pendingGeneration.status === "complete" && pendingGeneration.audioUrl) {
       setResultUrl(pendingGeneration.audioUrl);
+      setResultGenerationId(pendingGeneration.id);
       setIsGenerating(false);
       setPendingGenerationId(null);
       refetchGenerations();
-      toast.success("Vocal take ready — it's in your library too!");
+      toast.success("Vocal take ready \u2014 it's in your library too!");
     } else if (pendingGeneration.status === "failed") {
       const msg = pendingGeneration.errorMessage ?? "Vocal generation failed";
       setError(msg);
@@ -389,12 +471,17 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
     if (!lyrics.trim()) { setError("Please enter lyrics for the vocals"); return; }
     setIsGenerating(true);
     setResultUrl(null);
+    setResultGenerationId(null);
+    setSplitComplete(false);
     const selectedTrack = completedTracks.find(t => t.audioUrl === selectedTrackUrl);
     const archName = VOCAL_ARCHETYPES.find(a => a.id === selectedArchetype)?.name ?? selectedArchetype;
+    const finalLyrics = dialectEnabled && accentProfileId
+      ? applyDialectPreview(lyrics.trim(), accentProfileId)
+      : lyrics.trim();
     try {
       const job = await generateMutation.mutateAsync({
-        title: `Vocal Take — ${archName} over ${selectedTrackTitle ?? "instrumental"}`,
-        lyrics: lyrics.trim(),
+        title: `Vocal Take \u2014 ${archName} over ${selectedTrackTitle ?? "instrumental"}`,
+        lyrics: finalLyrics,
         vocalMode: true,
         vocalArchetype: selectedArchetype,
         vocalGender,
@@ -402,14 +489,28 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
         instrumentalSourceId: selectedTrack?.id,
         instrumentalSourceUrl: selectedTrackUrl,
         intensity: "balanced",
+        accentProfileId: accentProfileId ?? undefined,
       });
-      // Poll via getById — the useQuery above will pick this up
       setPendingGenerationId(job.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed";
       setError(msg);
       toast.error(msg);
       setIsGenerating(false);
+    }
+  };
+
+  const handleSplitStems = async () => {
+    if (!resultGenerationId) return;
+    setIsSplitting(true);
+    try {
+      await startStemSplitMutation.mutateAsync({ generationId: resultGenerationId });
+      setSplitComplete(true);
+      toast.success("Stem split started \u2014 check My Stems in a minute");
+    } catch {
+      toast.error("Failed to start stem split \u2014 try again from My Stems");
+    } finally {
+      setIsSplitting(false);
     }
   };
 
@@ -423,59 +524,68 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
       {/* Step 1: Pick Instrumental */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 — Select Instrumental</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 \u2014 Select Instrumental</h3>
         {completedTracks.length === 0 ? (
           <div className={`rounded-xl border border-dashed ${theme.borderAccent} p-6 text-center`}>
             <Music className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">No completed tracks yet — generate some music first</p>
+            <p className="text-sm text-gray-400">No completed tracks yet \u2014 generate some music first</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {completedTracks.map((track) => {
-              const isSelected = selectedTrackUrl === track.audioUrl;
-              return (
-                <button
-                  key={track.id}
-                  onClick={() => { setSelectedTrackUrl(track.audioUrl!); setSelectedTrackTitle(track.title); }}
-                  className={`group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border transition-all aspect-square text-center ${
-                    isSelected
-                      ? `border-violet-500 bg-violet-500/15 text-white shadow-lg shadow-violet-500/20`
-                      : `${theme.borderAccent} bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/30`
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                    isSelected ? `bg-gradient-to-br ${theme.accent}` : "bg-white/10 group-hover:bg-white/20"
-                  }`}>
-                    {isSelected ? <Check className="w-4 h-4 text-white" /> : <Music className="w-4 h-4" />}
-                  </div>
-                  <p className="text-[10px] font-medium leading-tight line-clamp-2 w-full">{track.title}</p>
-                  {isSelected && (
-                    <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-gradient-to-br ${theme.accent}`} />
-                  )}
+          <div ref={trackDropdownRef} className="relative">
+            <div
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${theme.borderAccent} bg-white/5 cursor-pointer hover:bg-white/10 transition-colors`}
+              onClick={() => setShowTrackDropdown(v => !v)}
+            >
+              <Music className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className={`flex-1 text-sm truncate ${selectedTrackTitle ? "text-white" : "text-gray-500"}`}>
+                {selectedTrackTitle ?? "Select an instrumental track..."}
+              </span>
+              {selectedTrackTitle && (
+                <button onClick={(e) => { e.stopPropagation(); setSelectedTrackUrl(null); setSelectedTrackTitle(null); }} className="text-gray-600 hover:text-gray-400">
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
-          </div>
-        )}
-        {selectedTrackTitle && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            className={`mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border ${theme.borderAccent} bg-white/5`}
-          >
-            <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0`}>
-              <Check className="w-3 h-3 text-white" />
+              )}
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showTrackDropdown ? "rotate-180" : ""}`} />
             </div>
-            <p className="text-xs text-white truncate flex-1">{selectedTrackTitle}</p>
-            <button onClick={() => { setSelectedTrackUrl(null); setSelectedTrackTitle(null); }} className="text-gray-600 hover:text-gray-400 transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </motion.div>
+            {showTrackDropdown && (
+              <div className={`absolute z-50 top-full mt-1 w-full rounded-xl border ${theme.borderAccent} bg-gray-900 shadow-xl overflow-hidden`}>
+                <div className="p-2 border-b border-white/10">
+                  <Input
+                    value={trackSearch}
+                    onChange={(e) => setTrackSearch(e.target.value)}
+                    placeholder="Search tracks..."
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-8 text-sm"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  {filteredTracks.length === 0 ? (
+                    <p className="text-xs text-gray-500 text-center py-4">No tracks found</p>
+                  ) : (
+                    filteredTracks.map(track => (
+                      <button
+                        key={track.id}
+                        onClick={() => { setSelectedTrackUrl(track.audioUrl!); setSelectedTrackTitle(track.title); setShowTrackDropdown(false); setTrackSearch(""); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/10 transition-colors ${selectedTrackUrl === track.audioUrl ? "bg-white/10" : ""}`}
+                      >
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedTrackUrl === track.audioUrl ? `bg-gradient-to-br ${theme.accent}` : "bg-white/10"}`}>
+                          {selectedTrackUrl === track.audioUrl ? <Check className="w-3 h-3 text-white" /> : <Music className="w-3 h-3 text-gray-400" />}
+                        </div>
+                        <span className="text-sm text-white truncate">{track.title}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Step 2: Lyrics */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>2 — Lyrics</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>2 \u2014 Lyrics</h3>
         <Textarea
           value={lyrics}
           onChange={(e) => setLyrics(e.target.value)}
@@ -486,9 +596,57 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
         <p className="text-xs text-gray-600 mt-1 text-right">{lyrics.length}/3500</p>
       </div>
 
-      {/* Step 3: Vocal Archetype */}
+      {/* Step 3: Vocal Accent */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 — Vocal Character</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 \u2014 Vocal Accent</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {ACCENT_OPTIONS.map((opt) => {
+            const isSelected = accentProfileId === opt.id;
+            return (
+              <button
+                key={opt.id ?? "none"}
+                onClick={() => { setAccentProfileId(opt.id); if (!opt.id) setDialectEnabled(false); }}
+                className={`group relative flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left ${
+                  isSelected
+                    ? `border-violet-500 bg-violet-500/15 text-white shadow-lg shadow-violet-500/20`
+                    : `${theme.borderAccent} bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/30`
+                }`}
+              >
+                <span className="text-lg leading-none">{opt.icon}</span>
+                <p className="text-xs font-semibold leading-tight">{opt.label}</p>
+                <p className="text-[10px] text-gray-500 leading-tight line-clamp-2">{opt.summary}</p>
+                {isSelected && <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-gradient-to-br ${theme.accent}`} />}
+              </button>
+            );
+          })}
+        </div>
+        {accentProfileId && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className={`mt-3 rounded-xl border ${theme.borderAccent} bg-white/5 p-3 space-y-2`}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400">Apply dialect to lyrics</p>
+              <button
+                onClick={() => setDialectEnabled(v => !v)}
+                className={`relative w-10 h-5 rounded-full transition-colors ${dialectEnabled ? `bg-gradient-to-r ${theme.accent}` : "bg-white/20"}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${dialectEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+            {dialectEnabled && dialectPreview && (
+              <div className="space-y-1">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Dialect preview</p>
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-4">{dialectPreview}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Step 4: Vocal Archetype */}
+      <div>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 \u2014 Vocal Character</h3>
         <div className="grid grid-cols-4 gap-2">
           {VOCAL_ARCHETYPES.map((arch) => {
             const isSelected = selectedArchetype === arch.id;
@@ -529,9 +687,9 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
         })()}
       </div>
 
-      {/* Step 4: Voice Controls */}
+      {/* Step 5: Voice Controls */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 — Voice Controls</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>5 \u2014 Voice Controls</h3>
         <div className="space-y-4">
           <div>
             <p className="text-xs text-gray-400 mb-2">Voice Gender</p>
@@ -590,7 +748,7 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
           size="lg"
         >
           {isGenerating
-            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Vocals — 2–5 min...</>
+            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Vocals \u2014 2\u20135 min...</>
             : <><Mic className="w-4 h-4 mr-2" />Generate Vocals</>
           }
         </Button>
@@ -601,7 +759,6 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="space-y-3"
         >
-          {/* Result playback card */}
           <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
             <div className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center`}>
@@ -623,42 +780,53 @@ function AddVocalsPanel({ theme }: { theme: SessionTheme }) {
                 </Button>
               </a>
               <Button variant="outline" size="sm" className={`border ${theme.borderAccent} text-white bg-white/5`}
-                onClick={() => { setResultUrl(null); }}>
+                onClick={() => { setResultUrl(null); setResultGenerationId(null); setSplitComplete(false); }}>
                 <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
-          {/* Pipeline next-step guide */}
-          <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-2`}>
-            <p className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} opacity-70`}>Next Steps</p>
-            <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                  <span className="text-white text-xs font-bold">1</span>
-                </div>
-                <div>
-                  <p className="text-sm text-white font-medium">Split the stems</p>
-                  <p className="text-xs text-gray-400">Go to <span className={`font-semibold ${theme.textAccent}`}>My Stems</span> and split this vocal take to extract the pure vocal stem.</p>
-                </div>
+          {!splitComplete ? (
+            <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
+              <div>
+                <p className="text-sm font-semibold text-white">Use this vocal for a fusion?</p>
+                <p className="text-xs text-gray-400 mt-1">Split the stems to extract the pure vocal track, then blend it with your instrumental.</p>
               </div>
-              <div className="flex items-start gap-3">
-                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                  <span className="text-white text-xs font-bold">2</span>
-                </div>
-                <div>
-                  <p className="text-sm text-white font-medium">Blend with your instrumental</p>
-                  <p className="text-xs text-gray-400">Go to <span className={`font-semibold ${theme.textAccent}`}>Blend</span> and overlay the vocal stem on your original instrumental track.</p>
-                </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSplitStems}
+                  disabled={isSplitting}
+                  className={`flex-1 bg-gradient-to-r ${theme.accent} text-white font-semibold rounded-xl border-0`}
+                  size="sm"
+                >
+                  {isSplitting ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />Splitting...</> : <><Scissors className="w-3.5 h-3.5 mr-2" />Split &amp; Continue</>}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`border ${theme.borderAccent} text-gray-400 bg-white/5`}
+                  onClick={() => setSplitComplete(true)}
+                >
+                  Keep as song
+                </Button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-3 flex items-center gap-3`}>
+              <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${theme.accent} flex items-center justify-center flex-shrink-0`}>
+                <Check className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-white font-medium">Stems splitting</p>
+                <p className="text-xs text-gray-400">Check <span className={`font-semibold ${theme.textAccent}`}>My Stems</span> in ~1 min, then use <span className={`font-semibold ${theme.textAccent}`}>Blend</span> to layer.</p>
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
     </div>
   );
 }
-
 // ─── Mixer Panel ──────────────────────────────────────────────────────────────
 function MixerPanel({ theme }: { theme: SessionTheme }) {
   const { user } = useAuth();
