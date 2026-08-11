@@ -63,7 +63,7 @@ function resolveFfmpegPath(): string {
     }
     console.log(`[Mixer] which ffmpeg returned: "${whichResult}" (not found or not executable)`);
   } catch {}
-  // Last resort: try ffmpeg-static (may be null if binary not downloaded)
+  // First resort: try ffmpeg-static since it's bundled in node_modules
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const ffmpegStatic = require("ffmpeg-static") as string | null;
@@ -72,7 +72,9 @@ function resolveFfmpegPath(): string {
       return ffmpegStatic;
     }
     console.log(`[Mixer] ffmpeg-static returned: "${ffmpegStatic}" (not found)`);
-  } catch {}
+  } catch (err) {
+    console.log(`[Mixer] ffmpeg-static require threw error:`, err);
+  }
   console.log("[Mixer] All ffmpeg path resolution methods exhausted — throwing error");
   throw new Error(
     "ffmpeg binary not found. Set FFMPEG_BIN environment variable to the ffmpeg binary path, " +
