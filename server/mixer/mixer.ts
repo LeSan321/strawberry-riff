@@ -20,6 +20,28 @@ import * as http from "http";
 // 4. `which ffmpeg` shell lookup
 // 5. ffmpeg-static fallback
 function resolveFfmpegPath(): string {
+  // First resort: try ffmpeg-static since it's bundled in node_modules
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ffmpegStatic = require("ffmpeg-static") as string | null;
+    console.log(`[Mixer-Diagnostic] require("ffmpeg-static") returned:`, ffmpegStatic);
+    if (ffmpegStatic) {
+      const exists = fs.existsSync(ffmpegStatic);
+      console.log(`[Mixer-Diagnostic] Does ffmpeg-static path exist? ${exists}`);
+      if (exists) {
+        try {
+          const stats = fs.statSync(ffmpegStatic);
+          console.log(`[Mixer-Diagnostic] Stats size: ${stats.size}, mode: ${stats.mode.toString(8)}`);
+        } catch (statErr) {
+          console.log(`[Mixer-Diagnostic] Failed to stat ffmpeg-static binary:`, statErr);
+        }
+        return ffmpegStatic;
+      }
+    }
+  } catch (err) {
+    console.log(`[Mixer-Diagnostic] ffmpeg-static require threw error:`, err);
+  }
+
   if (process.env.FFMPEG_BIN) {
     console.log(`[Mixer] FFMPEG_BIN env var set to: "${process.env.FFMPEG_BIN}"`);
     return process.env.FFMPEG_BIN;
@@ -63,18 +85,6 @@ function resolveFfmpegPath(): string {
     }
     console.log(`[Mixer] which ffmpeg returned: "${whichResult}" (not found or not executable)`);
   } catch {}
-  // First resort: try ffmpeg-static since it's bundled in node_modules
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ffmpegStatic = require("ffmpeg-static") as string | null;
-    if (ffmpegStatic && fs.existsSync(ffmpegStatic)) {
-      console.log(`[Mixer] Found ffmpeg via ffmpeg-static: ${ffmpegStatic}`);
-      return ffmpegStatic;
-    }
-    console.log(`[Mixer] ffmpeg-static returned: "${ffmpegStatic}" (not found)`);
-  } catch (err) {
-    console.log(`[Mixer] ffmpeg-static require threw error:`, err);
-  }
   console.log("[Mixer] All ffmpeg path resolution methods exhausted — throwing error");
   throw new Error(
     "ffmpeg binary not found. Set FFMPEG_BIN environment variable to the ffmpeg binary path, " +
