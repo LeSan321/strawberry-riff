@@ -1,6 +1,2 @@
 # Railway Nixpacks configuration
-# Installs ffmpeg via Nix and symlinks it to /usr/local/bin so it's findable at a known path.
-[phases.setup]
-nixPkgs = ["ffmpeg", "lame"]
-cmds = ["ln -sf $(which ffmpeg) /usr/local/bin/ffmpeg || true"]
-
+# ffmpeg is now bundled via ffmpeg-static npm package, so no system installation needed.
