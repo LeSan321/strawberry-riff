@@ -20,7 +20,10 @@ import * as http from "http";
 // 4. `which ffmpeg` shell lookup
 // 5. ffmpeg-static fallback
 function resolveFfmpegPath(): string {
-  if (process.env.FFMPEG_BIN) return process.env.FFMPEG_BIN;
+  if (process.env.FFMPEG_BIN) {
+    console.log(`[Mixer] FFMPEG_BIN env var set to: "${process.env.FFMPEG_BIN}"`);
+    return process.env.FFMPEG_BIN;
+  }
   const systemPaths = [
     "/usr/bin/ffmpeg",
     "/usr/local/bin/ffmpeg",
@@ -28,7 +31,10 @@ function resolveFfmpegPath(): string {
     "/run/current-system/sw/bin/ffmpeg",
   ];
   for (const p of systemPaths) {
-    if (fs.existsSync(p)) return p;
+    if (fs.existsSync(p)) {
+      console.log(`[Mixer] Found ffmpeg at system path: ${p}`);
+      return p;
+    }
   }
   // Railway Nix: search /nix/store for ffmpeg binary
   try {
@@ -38,7 +44,10 @@ function resolveFfmpegPath(): string {
       for (const entry of entries) {
         if (/^[a-z0-9]+-ffmpeg-\d/.test(entry)) {
           const candidate = `${nixStore}/${entry}/bin/ffmpeg`;
-          if (fs.existsSync(candidate)) return candidate;
+          if (fs.existsSync(candidate)) {
+            console.log(`[Mixer] Found ffmpeg in Nix store: ${candidate}`);
+            return candidate;
+          }
         }
       }
     }
@@ -48,14 +57,23 @@ function resolveFfmpegPath(): string {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { execSync } = require("child_process") as typeof import("child_process");
     const whichResult = (execSync("which ffmpeg 2>/dev/null", { encoding: "utf8" }) as string).trim();
-    if (whichResult && fs.existsSync(whichResult)) return whichResult;
+    if (whichResult && fs.existsSync(whichResult)) {
+      console.log(`[Mixer] Found ffmpeg via which: ${whichResult}`);
+      return whichResult;
+    }
+    console.log(`[Mixer] which ffmpeg returned: "${whichResult}" (not found or not executable)`);
   } catch {}
   // Last resort: try ffmpeg-static (may be null if binary not downloaded)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const ffmpegStatic = require("ffmpeg-static") as string | null;
-    if (ffmpegStatic && fs.existsSync(ffmpegStatic)) return ffmpegStatic;
+    if (ffmpegStatic && fs.existsSync(ffmpegStatic)) {
+      console.log(`[Mixer] Found ffmpeg via ffmpeg-static: ${ffmpegStatic}`);
+      return ffmpegStatic;
+    }
+    console.log(`[Mixer] ffmpeg-static returned: "${ffmpegStatic}" (not found)`);
   } catch {}
+  console.log("[Mixer] All ffmpeg path resolution methods exhausted — throwing error");
   throw new Error(
     "ffmpeg binary not found. Set FFMPEG_BIN environment variable to the ffmpeg binary path, " +
     "or ensure ffmpeg is installed on the system."
