@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { execSync } from "child_process";
+import * as fs from "fs";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -9,6 +11,27 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../routers/stripe";
 import { handleStemSplitWebhook } from "../stemsplit/webhook";
+
+// Probe ffmpeg availability at startup — helps diagnose Railway build issues
+(function probeFfmpeg() {
+  const paths = ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/run/current-system/sw/bin/ffmpeg"];
+  for (const p of paths) {
+    if (fs.existsSync(p)) { console.log(`[ffmpeg-probe] Found at: ${p}`); return; }
+  }
+  try {
+    const w = (execSync("which ffmpeg 2>/dev/null", { encoding: "utf8" }) as string).trim();
+    if (w) { console.log(`[ffmpeg-probe] Found via which: ${w}`); return; }
+  } catch {}
+  try {
+    const nix = "/nix/store";
+    if (fs.existsSync(nix)) {
+      const hit = fs.readdirSync(nix).find((e: string) => /^[a-z0-9]+-ffmpeg-\d/.test(e));
+      if (hit) { console.log(`[ffmpeg-probe] Found in Nix store: /nix/store/${hit}/bin/ffmpeg`); return; }
+      console.log(`[ffmpeg-probe] Nix store exists but no ffmpeg entry found`);
+    }
+  } catch {}
+  console.log(`[ffmpeg-probe] ffmpeg NOT FOUND — FFMPEG_BIN=${process.env.FFMPEG_BIN ?? "(unset)"}`);
+})();
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
