@@ -1,6 +1,6 @@
 # Railway Nixpacks configuration
-# Installs ffmpeg system binary so the Blend/Mix feature works in production.
-# Railway uses Nix package manager — use nixPkgs, not aptPkgs.
-
+# Installs ffmpeg via Nix and symlinks it to /usr/local/bin so it's findable at a known path.
 [phases.setup]
 nixPkgs = ["ffmpeg", "lame"]
+cmds = ["ln -sf $(which ffmpeg) /usr/local/bin/ffmpeg || true"]
+
