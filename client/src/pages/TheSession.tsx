@@ -895,7 +895,9 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
     catch { return true; }
   }) ?? [];
 
+  const utils = trpc.useUtils();
   const saveMixMutation = trpc.mixer.saveMixToRiffs.useMutation();
+  const presignedMutation = trpc.tracks.getUploadPresignedUrl.useMutation();
 
   // Helper to convert AudioBuffer to WAV ArrayBuffer
   const audioBufferToWav = (buffer: AudioBuffer): ArrayBuffer => {
@@ -1008,29 +1010,53 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
       const wavBuf = audioBufferToWav(renderedBuffer);
       const wavBlob = new Blob([wavBuf], { type: "audio/wav" });
 
-      // 5. Convert blob to base64 for server upload
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          // strip data url prefix if present
-          const base64 = res.includes(",") ? res.split(",")[1] : res;
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(wavBlob);
-      });
-      const base64Data = await base64Promise;
+      // 5. Try direct presigned upload to R2, or fallback to base64 if direct upload isn't configured
+      toast.info("Uploading mixed fusion to your Riffs...");
+      let finalAudioUrl: string | undefined = undefined;
+      let finalBase64: string | undefined = undefined;
+
+      try {
+        const presigned = await presignedMutation.mutateAsync({
+          mimeType: "audio/wav",
+          fileExtension: "wav",
+        });
+        if (presigned.useDirectUpload && presigned.uploadUrl && presigned.publicUrl) {
+          const putRes = await fetch(presigned.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "audio/wav" },
+            body: wavBlob,
+          });
+          if (!putRes.ok) throw new Error("Direct R2 upload failed");
+          finalAudioUrl = presigned.publicUrl;
+        }
+      } catch (uploadErr) {
+        console.warn("Direct upload fallback to base64:", uploadErr);
+      }
+
+      if (!finalAudioUrl) {
+        // Fallback: base64 encoding for small files / Forge storage
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => {
+            const res = reader.result as string;
+            const base64 = res.includes(",") ? res.split(",")[1] : res;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(wavBlob);
+        });
+        finalBase64 = await base64Promise;
+      }
 
       // 6. Find corresponding stemSplitId for this vocalStemUrl
       const matchedSplit = completedSplits.find(s => s.stems?.vocalUrl === vocalStemUrl);
       const stemSplitId = matchedSplit ? matchedSplit.id : (completedSplits[0]?.id ?? 1);
 
       // 7. Save to Riffs via tRPC
-      toast.info("Uploading mixed fusion to your Riffs...");
       const savedTrack = await saveMixMutation.mutateAsync({
         stemSplitId,
-        audioBase64: base64Data,
+        audioUrl: finalAudioUrl,
+        audioBase64: finalBase64,
         mimeType: "audio/wav",
         title: title.trim(),
         blendDescription: `Vocals ${(vocalVolume * 100).toFixed(0)}%, Instrumental ${(instrumentalVolume * 100).toFixed(0)}%`,

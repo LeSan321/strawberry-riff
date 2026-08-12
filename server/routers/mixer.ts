@@ -34,20 +34,22 @@ export const mixerRouter = router({
     .input(
       z.object({
         stemSplitId: z.number().int().positive(),
-        /** Base64-encoded audio data (WAV or MP3) */
-        audioBase64: z.string().min(1),
+        /** Optional direct public URL if uploaded via presigned URL */
+        audioUrl: z.string().url().optional(),
+        /** Optional Base64-encoded audio data if small */
+        audioBase64: z.string().optional(),
         /** MIME type of the audio blob */
         mimeType: z.enum(["audio/wav", "audio/mp3", "audio/mpeg"]).default("audio/wav"),
         /** Title for the new track */
         title: z.string().min(1).max(200),
         /** Approximate duration in seconds */
         duration: z.number().int().min(0).max(7200).optional(),
-        /** Human-readable blend description, e.g. "Vocals 80%, Drums 150% 🔔, Bass 100%" */
+        /** Human-readable blend description */
         blendDescription: z.string().max(500).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { stemSplitId, audioBase64, mimeType, title, duration, blendDescription } = input;
+      const { stemSplitId, audioUrl: directUrl, audioBase64, mimeType, title, duration, blendDescription } = input;
       const userId = ctx.user.id;
 
       // Verify the stem split belongs to this user and is completed
@@ -68,7 +70,7 @@ export const mixerRouter = router({
         throw new Error("Stem split is not yet completed");
       }
 
-      // Look up the original track's cover art (via generationId → tracks.musicGenerationId)
+      // Look up the original track's cover art
       let coverArtUrl: string | null = null;
       try {
         const originalTracks = await db
@@ -78,19 +80,26 @@ export const mixerRouter = router({
           .limit(1);
         if (originalTracks[0]?.coverArtUrl) {
           coverArtUrl = originalTracks[0].coverArtUrl;
-          console.log(`[Mixer] Copied cover art from original track: ${coverArtUrl}`);
         }
       } catch (err) {
-        console.warn(`[Mixer] Could not look up cover art, proceeding without it:`, err);
+        console.warn(`[Mixer] Could not look up cover art:`, err);
       }
 
-      // Decode base64 audio and upload to S3
-      const audioBuffer = Buffer.from(audioBase64, "base64");
-      const ext = mimeType === "audio/wav" ? "wav" : "mp3";
-      const fileKey = `custom-mixes/${userId}/${nanoid(12)}.${ext}`;
-      const { url: audioUrl } = await storagePut(fileKey, audioBuffer, mimeType);
+      let audioUrl = directUrl;
+      let fileKey = `custom-mixes/${userId}/${nanoid(12)}`;
 
-      console.log(`[Mixer] Custom mix uploaded: ${audioUrl}`);
+      if (!audioUrl) {
+        if (!audioBase64) {
+          throw new Error("Either audioUrl or audioBase64 must be provided");
+        }
+        const audioBuffer = Buffer.from(audioBase64, "base64");
+        const ext = mimeType === "audio/wav" ? "wav" : "mp3";
+        fileKey = `custom-mixes/${userId}/${nanoid(12)}.${ext}`;
+        const uploaded = await storagePut(fileKey, audioBuffer, mimeType);
+        audioUrl = uploaded.url;
+      }
+
+      console.log(`[Mixer] Custom mix ready: ${audioUrl}`);
 
       // Create a track record in My Riffs
       const trackId = await createTrack({
