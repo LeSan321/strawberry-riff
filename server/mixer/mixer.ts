@@ -12,34 +12,28 @@ import * as os from "os";
 import * as path from "path";
 import * as https from "https";
 import * as http from "http";
+import ffmpegStatic from "ffmpeg-static";
 
 // Resolve ffmpeg binary path:
-// 1. FFMPEG_BIN env var (set on Railway or any custom deployment)
-// 2. Common system paths
-// 3. Nix store search (Railway nixpacks installs ffmpeg via Nix, not apt)
-// 4. `which ffmpeg` shell lookup
-// 5. ffmpeg-static fallback
+// 1. ffmpeg-static's bundled binary (loaded as a static ESM import)
+// 2. FFMPEG_BIN env var (set on Railway or any custom deployment)
+// 3. Common system paths
+// 4. Nix store search (Railway nixpacks installs ffmpeg via Nix, not apt)
+// 5. `which ffmpeg` shell lookup
 function resolveFfmpegPath(): string {
-  // First resort: try ffmpeg-static since it's bundled in node_modules
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ffmpegStatic = require("ffmpeg-static") as string | null;
-    console.log(`[Mixer-Diagnostic] require("ffmpeg-static") returned:`, ffmpegStatic);
-    if (ffmpegStatic) {
-      const exists = fs.existsSync(ffmpegStatic);
-      console.log(`[Mixer-Diagnostic] Does ffmpeg-static path exist? ${exists}`);
-      if (exists) {
-        try {
-          const stats = fs.statSync(ffmpegStatic);
-          console.log(`[Mixer-Diagnostic] Stats size: ${stats.size}, mode: ${stats.mode.toString(8)}`);
-        } catch (statErr) {
-          console.log(`[Mixer-Diagnostic] Failed to stat ffmpeg-static binary:`, statErr);
-        }
-        return ffmpegStatic;
+  console.log(`[Mixer-Diagnostic] Static ffmpeg-static import returned:`, ffmpegStatic);
+  if (ffmpegStatic) {
+    const exists = fs.existsSync(ffmpegStatic);
+    console.log(`[Mixer-Diagnostic] Does static ffmpeg path exist? ${exists}`);
+    if (exists) {
+      try {
+        const stats = fs.statSync(ffmpegStatic);
+        console.log(`[Mixer-Diagnostic] Stats size: ${stats.size}, mode: ${stats.mode.toString(8)}`);
+      } catch (statErr) {
+        console.log(`[Mixer-Diagnostic] Failed to stat static ffmpeg binary:`, statErr);
       }
+      return ffmpegStatic;
     }
-  } catch (err) {
-    console.log(`[Mixer-Diagnostic] ffmpeg-static require threw error:`, err);
   }
 
   if (process.env.FFMPEG_BIN) {

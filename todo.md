@@ -1418,3 +1418,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Sessions UI: store structureFingerprint at generation time for all Bespoke/vocal-mode generations
 - [x] Sound DNA UX fix: rename "Music Style Prompt" to "Musical Direction" when DNA track is active, update placeholder text
 - [ ] Add Vocals page: replace track card grid with searchable dropdown (too many cards to scroll through)
+
+- [x] Diagnose Railway Blend failure: production dist/index.js is ESM and dynamic `require("ffmpeg-static")` throws `Dynamic require of "ffmpeg-static" is not supported`; replace it with a static ESM import and retain runtime diagnostics.
+- [ ] Deploy the static ffmpeg-static import to Railway and verify a Blend attempt reaches ffmpeg execution.
