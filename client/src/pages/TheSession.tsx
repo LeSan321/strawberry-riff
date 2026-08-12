@@ -895,30 +895,58 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
     catch { return true; }
   }) ?? [];
 
-  const mixMutation = trpc.mixer.vocalOverlay.useMutation();
+  const saveMixMutation = trpc.mixer.saveMixToRiffs.useMutation();
 
-  // Poll for mix completion
-  const { data: pendingMix } = trpc.musicGeneration.getById.useQuery(
-    { id: pendingMixId! },
-    { enabled: !!pendingMixId, refetchInterval: (query) => (query.state.data?.status === "generating" ? 4000 : false) }
-  );
+  // Helper to convert AudioBuffer to WAV ArrayBuffer
+  const audioBufferToWav = (buffer: AudioBuffer): ArrayBuffer => {
+    const numOfChan = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const format = 1; // PCM
+    const bitDepth = 16;
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numOfChan * bytesPerSample;
+    const dataLength = buffer.length * blockAlign;
+    const headerLength = 44;
+    const totalLength = headerLength + dataLength;
+    const result = new ArrayBuffer(totalLength);
+    const view = new DataView(result);
 
-  useEffect(() => {
-    if (!pendingMix) return;
-    if (pendingMix.status === "complete" && pendingMix.audioUrl) {
-      setResultUrl(pendingMix.audioUrl);
-      setIsMixing(false);
-      setPendingMixId(null);
-      refetchGenerations();
-      toast.success("Mix complete — saved to your library!");
-    } else if (pendingMix.status === "failed") {
-      const msg = pendingMix.errorMessage ?? "Mix failed";
-      setError(msg);
-      setIsMixing(false);
-      setPendingMixId(null);
-      toast.error(msg);
+    const writeString = (view: DataView, offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataLength, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, format, true);
+    view.setUint16(22, numOfChan, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataLength, true);
+
+    const channels = [];
+    for (let i = 0; i < numOfChan; i++) {
+      channels.push(buffer.getChannelData(i));
     }
-  }, [pendingMix?.status, pendingMix?.audioUrl]);
+
+    let offset = 44;
+    for (let i = 0; i < buffer.length; i++) {
+      for (let channel = 0; channel < numOfChan; channel++) {
+        let sample = Math.max(-1, Math.min(1, channels[channel][i]));
+        sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+        view.setInt16(offset, sample, true);
+        offset += 2;
+      }
+    }
+    return result;
+  };
 
   const handleMix = async () => {
     setError(null);
@@ -928,18 +956,92 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
     setIsMixing(true);
     setResultUrl(null);
     const selectedInst = instrumentalTracks.find(t => t.audioUrl === instrumentalUrl);
+
     try {
-      const job = await mixMutation.mutateAsync({
-        vocalStemUrl,
-        instrumentalUrl,
-        vocalVolume,
-        instrumentalVolume,
-        title: title.trim(),
-        instrumentalGenerationId: selectedInst?.id,
+      // 1. Fetch both audio files in parallel
+      toast.info("Downloading stems for mixing...");
+      const [vocalRes, instRes] = await Promise.all([
+        fetch(vocalStemUrl),
+        fetch(instrumentalUrl)
+      ]);
+      if (!vocalRes.ok || !instRes.ok) throw new Error("Failed to download audio stems for mixing.");
+
+      const [vocalArrayBuf, instArrayBuf] = await Promise.all([
+        vocalRes.arrayBuffer(),
+        instRes.arrayBuffer()
+      ]);
+
+      // 2. Decode audio buffers in browser
+      toast.info("Processing audio buffers...");
+      const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const [vocalDecoded, instDecoded] = await Promise.all([
+        audioCtx.decodeAudioData(vocalArrayBuf),
+        audioCtx.decodeAudioData(instArrayBuf)
+      ]);
+
+      // 3. Render mixed audio offline
+      const sampleRate = Math.max(vocalDecoded.sampleRate, instDecoded.sampleRate);
+      const duration = Math.max(vocalDecoded.duration, instDecoded.duration);
+      const offlineCtx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
+
+      const vocalSource = offlineCtx.createBufferSource();
+      vocalSource.buffer = vocalDecoded;
+      const vocalGain = offlineCtx.createGain();
+      vocalGain.gain.value = vocalVolume;
+      vocalSource.connect(vocalGain);
+      vocalGain.connect(offlineCtx.destination);
+
+      const instSource = offlineCtx.createBufferSource();
+      instSource.buffer = instDecoded;
+      const instGain = offlineCtx.createGain();
+      instGain.gain.value = instrumentalVolume;
+      instSource.connect(instGain);
+      instGain.connect(offlineCtx.destination);
+
+      vocalSource.start(0);
+      instSource.start(0);
+
+      toast.info("Rendering custom fusion mix...");
+      const renderedBuffer = await offlineCtx.startRendering();
+
+      // 4. Convert to WAV Blob
+      const wavBuf = audioBufferToWav(renderedBuffer);
+      const wavBlob = new Blob([wavBuf], { type: "audio/wav" });
+
+      // 5. Convert blob to base64 for server upload
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          // strip data url prefix if present
+          const base64 = res.includes(",") ? res.split(",")[1] : res;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(wavBlob);
       });
-      setPendingMixId(job.id);
+      const base64Data = await base64Promise;
+
+      // 6. Find corresponding stemSplitId for this vocalStemUrl
+      const matchedSplit = completedSplits.find(s => s.stems?.vocalUrl === vocalStemUrl);
+      const stemSplitId = matchedSplit ? matchedSplit.id : (completedSplits[0]?.id ?? 1);
+
+      // 7. Save to Riffs via tRPC
+      toast.info("Uploading mixed fusion to your Riffs...");
+      const savedTrack = await saveMixMutation.mutateAsync({
+        stemSplitId,
+        audioBase64: base64Data,
+        mimeType: "audio/wav",
+        title: title.trim(),
+        blendDescription: `Vocals ${(vocalVolume * 100).toFixed(0)}%, Instrumental ${(instrumentalVolume * 100).toFixed(0)}%`,
+      });
+
+      setResultUrl(savedTrack.audioUrl);
+      setIsMixing(false);
+      refetchGenerations();
+      toast.success("Custom fusion mix saved to your library!");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Mix failed";
+      const msg = err instanceof Error ? err.message : "Client-side mix failed";
       setError(msg);
       toast.error(msg);
       setIsMixing(false);
