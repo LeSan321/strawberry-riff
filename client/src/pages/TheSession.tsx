@@ -887,25 +887,34 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   // Fetch user's completed generations (for instrumental picker)
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   
-  // Strict instrumental filtering: only show splits that have a clean instrumental stem URL
-  // If a vocal stem is currently selected, sort instrumental stems by matching structure fingerprint / generation session if available
+  // Find selected vocal generation to match fingerprints/session
   const selectedSplit = completedSplits.find(s => s.stems?.vocalUrl === vocalStemUrl);
   const selectedGen = myGenerations?.find(g => g.id === selectedSplit?.generationId);
   const selectedFingerprint = selectedGen?.structureFingerprint;
 
-  const instrumentalTracks = (completedSplits
-    .filter(s => s.stems && (s.stems.otherUrl || s.stems.drumsUrl || s.stems.bassUrl))
-    .map(s => {
-      const instUrl = s.stems!.otherUrl || s.stems!.drumsUrl || s.stems!.bassUrl!;
-      const gen = myGenerations?.find(g => g.id === s.generationId);
-      const isExactMatch = selectedGen && s.generationId === selectedGen.id;
-      const isSameFingerprint = selectedFingerprint && gen?.structureFingerprint === selectedFingerprint;
+  // Correct model: Instrumental picker selects from completed instrument-palette / bespoke instrumental fusions
+  // or generations explicitly flagged as instrumental (or created via bespoke instrument palette / fusion mode).
+  const instrumentalTracks = (myGenerations
+    ?.filter(g => {
+      if (g.status !== "complete" || !g.audioUrl) return false;
+      try {
+        const m = g.metadata ? JSON.parse(g.metadata) : {};
+        // Fusions / instrumental generations: bespoke-instrumental mode, or tagged instrumental, or not a vocal take/overlay
+        return m.mode === "bespoke-instrumental" || m.isInstrumental === true || (m.generationType !== "vocal-take" && m.generationType !== "vocal-overlay");
+      }
+      catch { return true; }
+    })
+    .map(g => {
+      const m = g.metadata ? JSON.parse(g.metadata) : {};
+      const isBespoke = m.mode === "bespoke-instrumental";
+      const isExactMatch = selectedGen && g.id === selectedGen.id;
+      const isSameFingerprint = selectedFingerprint && g.structureFingerprint === selectedFingerprint;
       return {
-        id: s.id,
-        generationId: s.generationId,
-        title: gen ? `${gen.title} (Backing Stem)` : `Backing Stem #${s.id}`,
-        audioUrl: instUrl,
-        structureFingerprint: gen?.structureFingerprint,
+        id: g.id,
+        generationId: g.id,
+        title: g.title ? `${g.title} ${isBespoke ? '(Fusion Instrumental)' : '(Instrumental)'}` : `Instrumental #${g.id}`,
+        audioUrl: g.audioUrl,
+        structureFingerprint: g.structureFingerprint,
         matchScore: isExactMatch ? 3 : (isSameFingerprint ? 2 : 1),
       };
     })
