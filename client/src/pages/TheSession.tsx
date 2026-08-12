@@ -886,14 +886,30 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
   // Fetch user's completed generations (for instrumental picker)
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
-  const instrumentalTracks = myGenerations?.filter(g => {
-    if (g.status !== "complete" || !g.audioUrl) return false;
-    try {
-      const m = g.metadata ? JSON.parse(g.metadata) : {};
-      return m.generationType !== "vocal-overlay" && m.generationType !== "vocal-take";
-    }
-    catch { return true; }
-  }) ?? [];
+  
+  // Strict instrumental filtering: only show splits that have a clean instrumental stem URL
+  // If a vocal stem is currently selected, sort instrumental stems by matching structure fingerprint / generation session if available
+  const selectedSplit = completedSplits.find(s => s.stems?.vocalUrl === vocalStemUrl);
+  const selectedGen = myGenerations?.find(g => g.id === selectedSplit?.generationId);
+  const selectedFingerprint = selectedGen?.structureFingerprint;
+
+  const instrumentalTracks = (completedSplits
+    .filter(s => s.stems && (s.stems.otherUrl || s.stems.drumsUrl || s.stems.bassUrl))
+    .map(s => {
+      const instUrl = s.stems!.otherUrl || s.stems!.drumsUrl || s.stems!.bassUrl!;
+      const gen = myGenerations?.find(g => g.id === s.generationId);
+      const isExactMatch = selectedGen && s.generationId === selectedGen.id;
+      const isSameFingerprint = selectedFingerprint && gen?.structureFingerprint === selectedFingerprint;
+      return {
+        id: s.id,
+        generationId: s.generationId,
+        title: gen ? `${gen.title} (Backing Stem)` : `Backing Stem #${s.id}`,
+        audioUrl: instUrl,
+        structureFingerprint: gen?.structureFingerprint,
+        matchScore: isExactMatch ? 3 : (isSameFingerprint ? 2 : 1),
+      };
+    })
+    .sort((a, b) => b.matchScore - a.matchScore)) ?? [];
 
   const utils = trpc.useUtils();
   const saveMixMutation = trpc.mixer.saveMixToRiffs.useMutation();
