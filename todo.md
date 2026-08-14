@@ -1424,8 +1424,9 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Design and implement visible Structural Match Family labels and library filters for compatible instrumental fusion and vocal takes.
 - [ ] Evaluate and specify a safe Riff workflow for reusable vocal stems that preserves source lineage and Structural Match Family.
 - [ ] Extend Structural Match Families with lyric-fit signals for cadence, density, phrase structure, and dialect compatibility in Sessions.
-- [ ] Design the Session-room guided flow for custom fusion beds, dialect-informed lyrics, steered vocal takes, and Match Family exploration.
+- [x] Design the Session-room guided flow for custom fusion beds, dialect-informed lyrics, steered vocal takes, and Match Family exploration.
 - [ ] Prototype vocal auditioning / Riff This Voice controls that preserve Match Family and source lineage.
 - [ ] Decide whether an optional exploration control (for example, variation or unpredictability) belongs in advanced vocal and fusion generation.
 - [ ] Design and implement the invitation-led Session-room UX for the established fusion, lyric, vocal, Match Family, and Blend workflow.
 - [ ] Make Fusion Studio a self-contained Platinum workspace with direct creation, guided-but-non-linear navigation, utilitarian Match Family labels, and balanced practical-poetic language.
+- [x] Build the first visual Session Room iteration: invitation-led shell, creative sequence navigation, stage framing, Match Family placeholders, and progressive empty states.

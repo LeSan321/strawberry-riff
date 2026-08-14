@@ -198,12 +198,12 @@ function SessionSidebar({
   onOpenInstrumentPalette: () => void;
 }) {
   const tools = [
-    { id: "generate" as const, label: "Generate", icon: Music, desc: "Create new fusion" },
-    { id: "vocals" as const, label: "Add Vocals", icon: Mic, desc: "Vocal generation" },
-    { id: "mixer" as const, label: "Blend", icon: Layers, desc: "Vocal overlay mix" },
-    { id: "lyrics" as const, label: "Lyrics", icon: Pen, desc: "Lyrics editor" },
-    { id: "styles" as const, label: "My Styles", icon: Library, desc: "Saved style library" },
-    { id: "stems" as const, label: "My Stems", icon: Download, desc: "Split stems" },
+    { id: "generate" as const, label: "Sound World", icon: Music, desc: "Build a fusion landscape" },
+    { id: "vocals" as const, label: "Voice & Words", icon: Mic, desc: "Explore vocal color" },
+    { id: "mixer" as const, label: "Listen Together", icon: Layers, desc: "Keep a custom fusion" },
+    { id: "lyrics" as const, label: "Shape the Words", icon: Pen, desc: "Develop the lyric world" },
+    { id: "styles" as const, label: "Your Sound Library", icon: Library, desc: "Return to saved directions" },
+    { id: "stems" as const, label: "My Stems", icon: Download, desc: "Prepare a vocal take" },
   ];
 
   return (
@@ -260,8 +260,8 @@ function SessionSidebar({
         <button onClick={onOpenInstrumentPalette} className={`w-full flex items-center gap-2.5 px-2 md:px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-all ${theme.raspberryAccent} hover:text-white`}>
           <Piano className="w-4 h-4 flex-shrink-0" />
           <div className="hidden md:block">
-            <p className="text-sm font-medium leading-none">Instrument Palette</p>
-            <p className="text-xs mt-0.5 opacity-60">36 sonic references</p>
+            <p className="text-sm font-medium leading-none">Acoustic Palette</p>
+            <p className="text-xs mt-0.5 opacity-60">Choose a sonic anchor</p>
           </div>
         </button>
 
@@ -318,7 +318,7 @@ function SessionHeader({ theme }: { theme: SessionTheme }) {
       <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
           <Badge className="text-xs bg-black/40 text-white border-white/20 backdrop-blur-sm">
-            <Radio className="w-3 h-3 mr-1" />The Session
+            <Radio className="w-3 h-3 mr-1" />The Session Room
           </Badge>
           <Badge className="text-xs bg-violet-500/30 text-violet-200 border-violet-400/30 backdrop-blur-sm">
             <Crown className="w-3 h-3 mr-1" />Platinum
@@ -326,12 +326,131 @@ function SessionHeader({ theme }: { theme: SessionTheme }) {
         </div>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-            Riff Session
+            The Session Room
           </h1>
-          <p className="text-white/60 text-sm mt-0.5 hidden md:block">{theme.description}</p>
+          <p className="text-white/75 text-sm mt-0.5 hidden md:block">Build a fusion landscape. Then explore vocal color.</p>
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Invitation-led room sequence ──────────────────────────────────────────────
+function SessionJourney({
+  activeTool, onToolChange, theme,
+}: {
+  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
+  theme: SessionTheme;
+}) {
+  const stages = [
+    { tool: "generate" as const, title: "Sound World", detail: "Build a fusion landscape", icon: Piano },
+    { tool: "generate" as const, title: "Shared Shape", detail: "Match Family appears here", icon: Layers },
+    { tool: "vocals" as const, title: "Voice & Words", detail: "Explore vocal color", icon: Mic },
+    { tool: "mixer" as const, title: "Listen Together", detail: "Keep the fusion", icon: Sparkles },
+  ];
+
+  return (
+    <section className="px-4 pt-4 md:px-6 md:pt-6">
+      <div className={`rounded-2xl border ${theme.borderAccent} bg-black/20 p-3 md:p-4 backdrop-blur-sm`}>
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Your creative thread</p>
+            <p className="text-xs text-gray-400 mt-1">Move in any order. The room will keep the relationship between your choices visible.</p>
+          </div>
+          <Badge className="hidden sm:flex bg-white/5 text-gray-300 border-white/10 text-[10px]">Guided, never rigid</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {stages.map((stage, index) => {
+            const Icon = stage.icon;
+            const isCurrent = activeTool === stage.tool && !(stage.tool === "generate" && index === 1);
+            return (
+              <button
+                key={stage.title}
+                onClick={() => onToolChange(stage.tool)}
+                className={`group relative min-h-[78px] rounded-xl border p-3 text-left transition-all ${
+                  isCurrent
+                    ? `border-transparent bg-gradient-to-br ${theme.accent} text-white shadow-lg`
+                    : `${theme.borderAccent} bg-white/[0.035] text-gray-300 hover:bg-white/[0.08] hover:border-white/25`
+                }`}
+              >
+                <span className={`absolute top-2 right-2 text-[10px] font-bold ${isCurrent ? "text-white/65" : "text-gray-600"}`}>{String(index + 1).padStart(2, "0")}</span>
+                <Icon className={`w-4 h-4 mb-2 ${isCurrent ? "text-white" : theme.textAccent}`} />
+                <p className="text-xs font-semibold leading-none">{stage.title}</p>
+                <p className={`text-[10px] mt-1 leading-snug ${isCurrent ? "text-white/70" : "text-gray-500"}`}>{stage.detail}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SessionStageCallout({
+  activeTool, theme, onOpenInstrumentPalette,
+}: {
+  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  theme: SessionTheme;
+  onOpenInstrumentPalette: () => void;
+}) {
+  const content = {
+    generate: {
+      label: "Begin with a sound world",
+      title: "What world should this sound grow up in?",
+      body: "Choose an acoustic anchor, then describe the movement, place, rhythm, or collision you want to hear. The room handles the hidden musical conditioning.",
+    },
+    vocals: {
+      label: "Invite a voice in",
+      title: "Who could live inside this song?",
+      body: "Choose a vocal character and let the language, delivery, and structure help the voice belong to the world you built.",
+    },
+    mixer: {
+      label: "Listen together",
+      title: "What happens when these two meet?",
+      body: "Choose a vocal take and an instrumental fusion. Your browser will render the relationship while your original pieces remain unchanged.",
+    },
+    lyrics: {
+      label: "Shape the words",
+      title: "Give the feeling a way to speak.",
+      body: "Write freely, refine a fragment, or let the lyric space reveal what the music can hold. You can return here at any point in the session.",
+    },
+    styles: {
+      label: "Return to a direction",
+      title: "Your sound history is part of the room.",
+      body: "Use a saved direction when you want to revisit a world you have already begun to make your own.",
+    },
+    stems: {
+      label: "Prepare a take",
+      title: "Separate what you want to carry forward.",
+      body: "Split a vocal take only when you want to explore it in a future fusion. A song you love can remain whole.",
+    },
+  }[activeTool];
+
+  return (
+    <section className="px-4 pt-4 md:px-6">
+      <div className={`relative overflow-hidden rounded-2xl border ${theme.borderAccent} bg-gradient-to-r from-white/[0.07] to-transparent px-4 py-4 md:px-5`}>
+        <div className={`absolute inset-y-0 left-0 w-1 bg-gradient-to-b ${theme.accent}`} />
+        <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>{content.label}</p>
+        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <h2 className="text-lg font-semibold text-white md:text-xl">{content.title}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-gray-400">{content.body}</p>
+            {activeTool === "generate" && (
+              <div className={`mt-3 inline-flex items-center gap-2 rounded-lg border ${theme.borderAccent} bg-black/20 px-2.5 py-2`}>
+                <Layers className={`h-3.5 w-3.5 ${theme.textAccent}`} />
+                <span className="text-[11px] text-gray-400"><span className="font-semibold text-gray-200">Shared Shape</span> — a Match Family appears after you keep a fusion bed.</span>
+              </div>
+            )}
+          </div>
+          {activeTool === "generate" && (
+            <Button onClick={onOpenInstrumentPalette} variant="outline" className={`shrink-0 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}>
+              <Piano className={`mr-2 h-4 w-4 ${theme.textAccent}`} />Choose an acoustic anchor
+            </Button>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -533,13 +652,18 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
+      <div className={`rounded-2xl border ${theme.borderAccent} bg-white/[0.035] p-4`}>
+        <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Voice &amp; Words</p>
+        <h2 className="mt-1 text-xl font-semibold text-white">Who could live inside this song?</h2>
+        <p className="mt-1 text-sm leading-relaxed text-gray-400">Begin with a fusion bed, then choose how the words, character, and delivery should meet it.</p>
+      </div>
       {/* Step 1: Pick Instrumental */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 \u2014 Select Instrumental</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>1 \u2014 Choose a fusion bed</h3>
         {completedTracks.length === 0 ? (
           <div className={`rounded-xl border border-dashed ${theme.borderAccent} p-6 text-center`}>
             <Music className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">No completed tracks yet \u2014 generate some music first</p>
+            <p className="text-sm text-gray-400">No fusion beds yet \u2014 begin by building a sound world</p>
           </div>
         ) : (
           <div ref={trackDropdownRef} className="relative">
@@ -549,7 +673,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
             >
               <Music className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className={`flex-1 text-sm truncate ${selectedTrackTitle ? "text-white" : "text-gray-500"}`}>
-                {selectedTrackTitle ?? "Select an instrumental track..."}
+                {selectedTrackTitle ?? "Choose a fusion bed..."}
               </span>
               {selectedTrackTitle && (
                 <button onClick={(e) => { e.stopPropagation(); setSelectedTrackUrl(null); setSelectedTrackTitle(null); }} className="text-gray-600 hover:text-gray-400">
@@ -596,11 +720,11 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
 
       {/* Step 2: Lyrics */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>2 \u2014 Lyrics</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>2 \u2014 Shape the words</h3>
         <Textarea
           value={lyrics}
           onChange={(e) => setLyrics(e.target.value)}
-          placeholder="Enter the lyrics to be sung over your instrumental..."
+          placeholder="Give the feeling a way to speak. You can write freely or bring in lyrics you already have..."
           className={`min-h-[120px] bg-white/5 border ${theme.borderAccent} text-white placeholder:text-gray-600 resize-none`}
           maxLength={3500}
         />
@@ -609,7 +733,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
 
       {/* Step 3: Vocal Accent */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 \u2014 Vocal Accent</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>3 \u2014 Let the language support the voice</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {ACCENT_OPTIONS.map((opt) => {
             const isSelected = accentProfileId === opt.id;
@@ -657,7 +781,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
 
       {/* Step 4: Vocal Archetype */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 \u2014 Vocal Character</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>4 \u2014 Invite a vocal color</h3>
         <div className="grid grid-cols-4 gap-2">
           {VOCAL_ARCHETYPES.map((arch) => {
             const isSelected = selectedArchetype === arch.id;
@@ -700,7 +824,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
 
       {/* Step 5: Voice Controls */}
       <div>
-        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>5 \u2014 Voice Controls</h3>
+        <h3 className={`text-xs font-semibold uppercase tracking-wider ${theme.textAccent} mb-3`}>5 \u2014 Set the presence</h3>
         <div className="space-y-4">
           <div>
             <p className="text-xs text-gray-400 mb-2">Voice Gender</p>
@@ -760,7 +884,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
         >
           {isGenerating
             ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating Vocals \u2014 2\u20135 min...</>
-            : <><Mic className="w-4 h-4 mr-2" />Generate Vocals</>
+            : <><Mic className="w-4 h-4 mr-2" />Audition this voice</>
           }
         </Button>
       )}
@@ -1106,15 +1230,16 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
-      <div>
-        <h2 className={`text-lg font-bold ${theme.textAccent} mb-1`}>Vocal Overlay Mix</h2>
-        <p className="text-xs text-gray-400">Blend a vocal stem with an instrumental track using server-side ffmpeg mixing.</p>
+      <div className={`rounded-2xl border ${theme.borderAccent} bg-white/[0.035] p-4`}>
+        <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Listen Together</p>
+        <h2 className="mt-1 text-xl font-semibold text-white">What happens when these two meet?</h2>
+        <p className="mt-1 text-sm leading-relaxed text-gray-400">Choose a vocal take and a fusion landscape. Your browser renders the relationship while the original pieces remain unchanged.</p>
       </div>
 
       {/* Step 1: Pick Vocal Stem */}
       <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
-        <p className={`text-sm font-semibold ${theme.textAccent}`}>1. Pick a Vocal Stem</p>
-        <p className="text-xs text-gray-400">Select from your completed stem splits. The vocal stem is the isolated voice track.</p>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>1. Choose a vocal take</p>
+        <p className="text-xs text-gray-400">Select an isolated voice you want to bring into a new relationship.</p>
         {completedSplits.length === 0 ? (
           <p className="text-xs text-gray-500 italic">No completed stem splits yet. Split a vocal-take generation in My Stems first.</p>
         ) : (
@@ -1161,10 +1286,10 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
       {/* Step 2: Pick Instrumental */}
       <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
-        <p className={`text-sm font-semibold ${theme.textAccent}`}>2. Pick an Instrumental</p>
-        <p className="text-xs text-gray-400">Choose the backing track to mix the vocals over.</p>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>2. Choose a fusion landscape</p>
+        <p className="text-xs text-gray-400">Start with beds in the same Match Family when you want the most natural fit.</p>
         {instrumentalTracks.length === 0 ? (
-          <p className="text-xs text-gray-500 italic">No completed tracks yet. Generate one in the Generate tab first.</p>
+          <p className="text-xs text-gray-500 italic">No tagged fusion landscapes yet. Build a new sound world first.</p>
         ) : (
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {instrumentalTracks.map((track) => (
@@ -1202,11 +1327,11 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
       {/* Step 3: Volume Controls */}
       <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-4`}>
-        <p className={`text-sm font-semibold ${theme.textAccent}`}>3. Volume Balance</p>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>3. Let each element breathe</p>
         <div className="space-y-3">
           <div>
             <div className="flex justify-between mb-1">
-              <span className="text-xs text-gray-300">Vocals</span>
+              <span className="text-xs text-gray-300">Voice</span>
               <span className="text-xs text-gray-400">{(vocalVolume * 100).toFixed(0)}%</span>
             </div>
             <Slider value={[vocalVolume * 100]} min={0} max={200} step={5}
@@ -1215,7 +1340,7 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
           </div>
           <div>
             <div className="flex justify-between mb-1">
-              <span className="text-xs text-gray-300">Instrumental</span>
+              <span className="text-xs text-gray-300">Landscape</span>
               <span className="text-xs text-gray-400">{(instrumentalVolume * 100).toFixed(0)}%</span>
             </div>
             <Slider value={[instrumentalVolume * 100]} min={0} max={200} step={5}
@@ -1227,7 +1352,7 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
       {/* Step 4: Title + Mix */}
       <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-4 space-y-3`}>
-        <p className={`text-sm font-semibold ${theme.textAccent}`}>4. Name Your Mix</p>
+        <p className={`text-sm font-semibold ${theme.textAccent}`}>4. Name what you found</p>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -1250,13 +1375,13 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
         {isMixing ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Mixing…</>
         ) : (
-          <><Sparkles className="w-4 h-4 mr-2" />Mix Vocals + Instrumental</>
+          <><Sparkles className="w-4 h-4 mr-2" />Hear them together</>
         )}
       </Button>
 
       {isMixing && (
         <div className="text-center text-xs text-gray-400 animate-pulse">
-          ffmpeg is combining your tracks — this takes 30–90 seconds…
+          Your browser is rendering this custom fusion…
         </div>
       )}
 
@@ -1387,6 +1512,12 @@ export default function TheSession() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden min-h-0">
         <SessionHeader theme={theme} />
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 min-h-0">
+          <SessionJourney activeTool={activeTool} onToolChange={setActiveTool} theme={theme} />
+          <SessionStageCallout
+            activeTool={activeTool}
+            theme={theme}
+            onOpenInstrumentPalette={() => setInstrumentPaletteOpen(true)}
+          />
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTool}
@@ -1424,10 +1555,10 @@ export default function TheSession() {
       {/* Mobile bottom toolbar */}
       <div className={`md:hidden fixed bottom-0 inset-x-0 z-30 ${theme.sidebarBg} border-t ${theme.borderAccent} flex items-center justify-around px-2 py-2 safe-area-pb`}>
         {[
-          { id: "generate" as const, icon: Music, label: "Generate" },
-          { id: "vocals" as const, icon: Mic, label: "Vocals" },
-          { id: "mixer" as const, icon: Layers, label: "Blend" },
-          { id: "lyrics" as const, icon: Pen, label: "Lyrics" },
+          { id: "generate" as const, icon: Music, label: "World" },
+          { id: "vocals" as const, icon: Mic, label: "Voice" },
+          { id: "mixer" as const, icon: Layers, label: "Listen" },
+          { id: "lyrics" as const, icon: Pen, label: "Words" },
           { id: "stems" as const, icon: Download, label: "Stems" },
         ].map(({ id, icon: Icon, label }) => (
           <button key={id} onClick={() => setActiveTool(id)}
