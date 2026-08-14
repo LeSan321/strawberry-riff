@@ -1421,3 +1421,11 @@ Manus-managed services so the site can run entirely independently long-term.
 
 - [x] Diagnose Railway Blend failure: production dist/index.js is ESM and dynamic `require("ffmpeg-static")` throws `Dynamic require of "ffmpeg-static" is not supported`; replace it with a static ESM import and retain runtime diagnostics.
 - [ ] Deploy the static ffmpeg-static import to Railway and verify a Blend attempt reaches ffmpeg execution.
+- [ ] Design and implement visible Structural Match Family labels and library filters for compatible instrumental fusion and vocal takes.
+- [ ] Evaluate and specify a safe Riff workflow for reusable vocal stems that preserves source lineage and Structural Match Family.
+- [ ] Extend Structural Match Families with lyric-fit signals for cadence, density, phrase structure, and dialect compatibility in Sessions.
+- [ ] Design the Session-room guided flow for custom fusion beds, dialect-informed lyrics, steered vocal takes, and Match Family exploration.
+- [ ] Prototype vocal auditioning / Riff This Voice controls that preserve Match Family and source lineage.
+- [ ] Decide whether an optional exploration control (for example, variation or unpredictability) belongs in advanced vocal and fusion generation.
+- [ ] Design and implement the invitation-led Session-room UX for the established fusion, lyric, vocal, Match Family, and Blend workflow.
+- [ ] Make Fusion Studio a self-contained Platinum workspace with direct creation, guided-but-non-linear navigation, utilitarian Match Family labels, and balanced practical-poetic language.

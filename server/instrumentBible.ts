@@ -155,6 +155,7 @@ export function buildBespokePrompt(
   userPrompt: string
 ): string {
   const tag = getInstrumentConditioningTag(instrumentId);
-  if (!tag) return userPrompt;
-  return `${tag} ${userPrompt}`;
+  const vocalSpacingDirective = "Backing accompaniment arrangement leaving a clear midrange vocal lane for a lead singer, no competing melodic top-line hook.";
+  const combined = `${tag} ${userPrompt} — ${vocalSpacingDirective}`;
+  return combined;
 }

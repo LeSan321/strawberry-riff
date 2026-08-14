@@ -892,17 +892,16 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   const selectedGen = myGenerations?.find(g => g.id === selectedSplit?.generationId);
   const selectedFingerprint = selectedGen?.structureFingerprint;
 
-  // Correct model: Instrumental picker selects from completed instrument-palette / bespoke instrumental fusions
-  // or generations explicitly flagged as instrumental (or created via bespoke instrument palette / fusion mode).
+  // Correct model: Instrumental picker selects ONLY from explicitly tagged instrumental fusions
+  // (isInstrumentalFusion === true or bespoke-instrumental mode). This cleanly excludes any ambiguous or legacy vocal tracks.
   const instrumentalTracks = (myGenerations
     ?.filter(g => {
       if (g.status !== "complete" || !g.audioUrl) return false;
       try {
         const m = g.metadata ? JSON.parse(g.metadata) : {};
-        // Fusions / instrumental generations: bespoke-instrumental mode, or tagged instrumental, or not a vocal take/overlay
-        return m.mode === "bespoke-instrumental" || m.isInstrumental === true || (m.generationType !== "vocal-take" && m.generationType !== "vocal-overlay");
+        return m.isInstrumentalFusion === true || m.mode === "bespoke-instrumental";
       }
-      catch { return true; }
+      catch { return false; }
     })
     .map(g => {
       const m = g.metadata ? JSON.parse(g.metadata) : {};

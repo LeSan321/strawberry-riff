@@ -1454,6 +1454,7 @@ const musicGenerationRouter = router({
         status: "generating",
         metadata: JSON.stringify({
           mode: "bespoke-instrumental",
+          isInstrumentalFusion: true,
           provider: "minimax-2.6",
           instrumentName: input.instrumentName,
           instrumentId: input.instrumentId,
@@ -1512,6 +1513,7 @@ const musicGenerationRouter = router({
           audioKey,
           metadata: JSON.stringify({
             mode: "bespoke-instrumental",
+            isInstrumentalFusion: true,
             provider: "minimax-2.6",
             instrumentName: input.instrumentName,
             conditionedPrompt,
