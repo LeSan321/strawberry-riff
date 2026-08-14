@@ -1113,7 +1113,7 @@ interface GeneratePageProps {
   } | null;
   onClearInstrument?: () => void;
   sessionMode?: boolean;
-  onFusionBedReady?: (bed: { id: number; title: string; audioUrl: string }) => void;
+  onFusionBedReady?: (bed: { id: number; title: string; audioUrl: string; matchFamilyId: string }) => void;
 }
 
 export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMode = false, onFusionBedReady }: GeneratePageProps = {}) {
@@ -1506,8 +1506,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
         setReferenceAudioUrl(null);
         setReferenceAudioName(null);
         setInstrumentId(null);
-        if (sessionMode && result.id && result.audioUrl) {
-          onFusionBedReady?.({ id: result.id, title: result.title ?? title.trim(), audioUrl: result.audioUrl });
+        if (sessionMode && result.id && result.audioUrl && result.matchFamilyId) {
+          onFusionBedReady?.({ id: result.id, title: result.title ?? title.trim(), audioUrl: result.audioUrl, matchFamilyId: result.matchFamilyId });
           toast.success("Your fusion bed is ready — Voice & Words is waiting when you are.");
         } else {
           toast.success("Your bespoke instrumental is ready.");

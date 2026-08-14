@@ -53,6 +53,18 @@ import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
 import { FrequencyModal } from "@/components/FrequencyModal";
 
+function readMatchFamilyId(metadata?: string | null): string | null {
+  if (!metadata) return null;
+  try {
+    const parsed = JSON.parse(metadata) as { matchFamilyId?: unknown };
+    return typeof parsed.matchFamilyId === "string" && /^F-\d+$/.test(parsed.matchFamilyId)
+      ? parsed.matchFamilyId
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Session Theme Definitions ─────────────────────────────────────────────────
 const SESSION_THEMES = [
   {
@@ -342,11 +354,11 @@ function SessionJourney({
   activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
   onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
   theme: SessionTheme;
-  activeFusionBed?: { id: number; title: string; audioUrl: string } | null;
+  activeFusionBed?: { id: number; title: string; audioUrl: string; matchFamilyId: string } | null;
 }) {
   const stages = [
     { tool: "generate" as const, title: "Sound World", detail: "Build a fusion landscape", icon: Piano },
-    { tool: "generate" as const, title: "Shared Shape", detail: "Match Family appears here", icon: Layers },
+    { tool: "generate" as const, title: "Shared Shape", detail: activeFusionBed ? `Match Family ${activeFusionBed.matchFamilyId}` : "Match Family appears here", icon: Layers },
     { tool: "vocals" as const, title: "Voice & Words", detail: "Explore vocal color", icon: Mic },
     { tool: "mixer" as const, title: "Listen Together", detail: "Keep the fusion", icon: Sparkles },
   ];
@@ -394,7 +406,7 @@ function SessionStageCallout({
   activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
   theme: SessionTheme;
   onOpenInstrumentPalette: () => void;
-  activeFusionBed?: { id: number; title: string; audioUrl: string } | null;
+  activeFusionBed?: { id: number; title: string; audioUrl: string; matchFamilyId: string } | null;
   onExploreVoice: () => void;
 }) {
   const content = {
@@ -448,6 +460,7 @@ function SessionStageCallout({
             {activeTool === "generate" && activeFusionBed && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Badge className="bg-emerald-500/10 text-emerald-300 border-emerald-400/20 text-[11px]">Fusion bed held in this session</Badge>
+                <Badge className="bg-white/5 text-gray-200 border-white/10 text-[11px]">Match Family {activeFusionBed.matchFamilyId}</Badge>
                 <span className="text-xs text-gray-300 truncate max-w-[16rem]">{activeFusionBed.title}</span>
                 <Button onClick={onExploreVoice} size="sm" className={`bg-gradient-to-r ${theme.accent} text-white border-0`}>
                   <Mic className="mr-1.5 h-3.5 w-3.5" />Explore a voice
@@ -517,6 +530,8 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
   const filteredTracks = completedTracks.filter(t =>
     !trackSearch || t.title.toLowerCase().includes(trackSearch.toLowerCase())
   );
+  const selectedTrack = completedTracks.find(t => t.audioUrl === selectedTrackUrl);
+  const selectedMatchFamilyId = readMatchFamilyId(selectedTrack?.metadata);
 
   const ACCENT_OPTIONS = [
     { id: null as string | null, label: "No Accent", summary: "Standard neutral vocal", icon: "\u{1F3A4}" },
@@ -620,7 +635,6 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
     setResultUrl(null);
     setResultGenerationId(null);
     setSplitComplete(false);
-    const selectedTrack = completedTracks.find(t => t.audioUrl === selectedTrackUrl);
     const archName = VOCAL_ARCHETYPES.find(a => a.id === selectedArchetype)?.name ?? selectedArchetype;
     const finalLyrics = dialectEnabled && accentProfileId
       ? applyDialectPreview(lyrics.trim(), accentProfileId)
@@ -637,6 +651,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
         instrumentalSourceUrl: selectedTrackUrl,
         intensity: "balanced",
         accentProfileId: accentProfileId ?? undefined,
+        matchFamilyId: selectedMatchFamilyId ?? undefined,
       });
       setPendingGenerationId(job.id);
     } catch (err) {
@@ -699,6 +714,13 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
               )}
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showTrackDropdown ? "rotate-180" : ""}`} />
             </div>
+            {selectedMatchFamilyId && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                <Layers className={`w-3.5 h-3.5 ${theme.textAccent}`} />
+                <span>Shared Shape</span>
+                <Badge className="bg-white/5 text-gray-200 border-white/10 text-[10px]">Match Family {selectedMatchFamilyId}</Badge>
+              </div>
+            )}
             {showTrackDropdown && (
               <div className={`absolute z-50 top-full mt-1 w-full rounded-xl border ${theme.borderAccent} bg-gray-900 shadow-xl overflow-hidden`}>
                 <div className="p-2 border-b border-white/10">
@@ -724,7 +746,8 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
                         <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedTrackUrl === track.audioUrl ? `bg-gradient-to-br ${theme.accent}` : "bg-white/10"}`}>
                           {selectedTrackUrl === track.audioUrl ? <Check className="w-3 h-3 text-white" /> : <Music className="w-3 h-3 text-gray-400" />}
                         </div>
-                        <span className="text-sm text-white truncate">{track.title}</span>
+                          <span className="text-sm text-white truncate">{track.title}</span>
+                          {readMatchFamilyId(track.metadata) && <Badge className="ml-auto bg-white/5 text-gray-300 border-white/10 text-[10px]">{readMatchFamilyId(track.metadata)}</Badge>}
                       </button>
                     ))
                   )}
@@ -1032,6 +1055,7 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   const selectedSplit = completedSplits.find(s => s.stems?.vocalUrl === vocalStemUrl);
   const selectedGen = myGenerations?.find(g => g.id === selectedSplit?.generationId);
   const selectedFingerprint = selectedGen?.structureFingerprint;
+  const selectedMatchFamilyId = readMatchFamilyId(selectedGen?.metadata);
 
   // Correct model: Instrumental picker selects ONLY from explicitly tagged instrumental fusions
   // (isInstrumentalFusion === true or bespoke-instrumental mode). This cleanly excludes any ambiguous or legacy vocal tracks.
@@ -1049,13 +1073,16 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
       const isBespoke = m.mode === "bespoke-instrumental";
       const isExactMatch = selectedGen && g.id === selectedGen.id;
       const isSameFingerprint = selectedFingerprint && g.structureFingerprint === selectedFingerprint;
+      const matchFamilyId = readMatchFamilyId(g.metadata);
+      const isSameMatchFamily = selectedMatchFamilyId && matchFamilyId === selectedMatchFamilyId;
       return {
         id: g.id,
         generationId: g.id,
         title: g.title ? `${g.title} ${isBespoke ? '(Fusion Instrumental)' : '(Instrumental)'}` : `Instrumental #${g.id}`,
         audioUrl: g.audioUrl,
         structureFingerprint: g.structureFingerprint,
-        matchScore: isExactMatch ? 3 : (isSameFingerprint ? 2 : 1),
+        matchFamilyId,
+        matchScore: isExactMatch ? 4 : (isSameMatchFamily ? 3 : (isSameFingerprint ? 2 : 1)),
       };
     })
     .sort((a, b) => b.matchScore - a.matchScore)) ?? [];
@@ -1289,6 +1316,11 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
                     {split.generationTitle ?? `Vocal Take #${split.generationId}`}
                   </span>
                   <span className="text-xs opacity-50 block mt-0.5">Vocal stem</span>
+                  {readMatchFamilyId(myGenerations?.find(g => g.id === split.generationId)?.metadata) && (
+                    <Badge className="mt-1 bg-white/10 text-current border-white/15 text-[10px]">
+                      {readMatchFamilyId(myGenerations?.find(g => g.id === split.generationId)?.metadata)}
+                    </Badge>
+                  )}
                 </button>
                 {vocalStemUrl === split.stems?.vocalUrl && <Check className="w-3.5 h-3.5 mr-2 flex-shrink-0" />}
               </div>
@@ -1297,7 +1329,10 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
         )}
         <audio ref={previewRef} src={previewUrl ?? undefined} onEnded={() => setPreviewUrl(null)} />
         {vocalStemLabel && (
-          <p className="text-xs text-green-400">Selected: {vocalStemLabel}</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-green-400">
+            <span>Selected: {vocalStemLabel}</span>
+            {selectedMatchFamilyId && <Badge className="bg-white/5 text-gray-200 border-white/10 text-[10px]">Match Family {selectedMatchFamilyId}</Badge>}
+          </div>
         )}
       </div>
 
@@ -1331,6 +1366,10 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
                   onClick={() => { setInstrumentalUrl(track.audioUrl); setInstrumentalLabel(track.title); }}
                 >
                   <span className="font-medium line-clamp-1 block">{track.title}</span>
+                  <span className="mt-1 flex items-center gap-1.5">
+                    {track.matchFamilyId && <Badge className="bg-white/10 text-current border-white/15 text-[10px]">{track.matchFamilyId}</Badge>}
+                    {selectedMatchFamilyId && track.matchFamilyId === selectedMatchFamilyId && <span className="text-[10px] opacity-65">natural starting point</span>}
+                  </span>
                 </button>
                 {instrumentalUrl === track.audioUrl && <Check className="w-3.5 h-3.5 mr-2 flex-shrink-0" />}
               </div>
@@ -1449,7 +1488,7 @@ export default function TheSession() {
   const [selectedInstrument, setSelectedInstrument] = useState<{
     id: string; name: string; family: string; description: string; audioPath: string; tags: string[];
   } | null>(null);
-  const [activeFusionBed, setActiveFusionBed] = useState<{ id: number; title: string; audioUrl: string } | null>(null);
+  const [activeFusionBed, setActiveFusionBed] = useState<{ id: number; title: string; audioUrl: string; matchFamilyId: string } | null>(null);
   // Persisted Add Vocals state — survives tab switches
   const [vocalsTrackUrl, setVocalsTrackUrl] = useState<string | null>(null);
   const [vocalsTrackTitle, setVocalsTrackTitle] = useState<string | null>(null);

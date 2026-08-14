@@ -92,6 +92,7 @@ import { nanoid } from "nanoid";
 import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMusicGenerationParams } from "./musicGeneration";
 import { generateBespokeInstrumental } from "./stableAudio";
 import { buildBespokePrompt } from "./instrumentBible";
+import { getNextMatchFamilyId, readMatchFamilyId } from "./matchFamily";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
 import { generateVisualBrief } from "./visualBriefGenerator";
@@ -850,6 +851,8 @@ const musicGenerationRouter = router({
         accentProfileId: z.string().optional(),
         /** BPM of the instrumental source for structure matching */
         instrumentalBpm: z.number().int().min(40).max(300).optional(),
+        /** Shared Shape family inherited from the selected fusion bed when creating a vocal take */
+        matchFamilyId: z.string().regex(/^F-\d+$/).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -899,6 +902,10 @@ const musicGenerationRouter = router({
       // In vocal mode, the instrumental source URL is the reference — resolve it
       // instrumentalSourceUrl is already a full URL (passed directly from the client)
       const resolvedInstrumentalSourceUrl = input.vocalMode ? (input.instrumentalSourceUrl ?? null) : null;
+      const sourceGeneration = input.vocalMode && input.instrumentalSourceId
+        ? await getMusicGenerationById(input.instrumentalSourceId)
+        : null;
+      const inheritedMatchFamilyId = readMatchFamilyId(sourceGeneration?.metadata) ?? input.matchFamilyId ?? null;
 
       // Resolve /manus-storage/ paths to full presigned URLs before passing to MiniMax
       let resolvedReferenceAudioUrl = input.referenceAudioUrl;
@@ -1023,6 +1030,7 @@ const musicGenerationRouter = router({
             instrumentalSourceUrl: resolvedInstrumentalSourceUrl ?? null,
             vocalArchetype: input.vocalArchetype ?? null,
             vocalGender: input.vocalGender,
+            matchFamilyId: inheritedMatchFamilyId,
           })
         : null;
       const generationId = await createMusicGeneration({
@@ -1100,7 +1108,7 @@ const musicGenerationRouter = router({
             audioUrl: url,
             audioKey: audioKey,
             metadata: input.vocalMode
-              ? JSON.stringify({ predictionId, generationType: "vocal-take", instrumentalSourceId: input.instrumentalSourceId ?? null, vocalArchetype: input.vocalArchetype ?? null, vocalGender: input.vocalGender })
+              ? JSON.stringify({ predictionId, generationType: "vocal-take", instrumentalSourceId: input.instrumentalSourceId ?? null, instrumentalSourceUrl: resolvedInstrumentalSourceUrl ?? null, vocalArchetype: input.vocalArchetype ?? null, vocalGender: input.vocalGender, matchFamilyId: inheritedMatchFamilyId })
               : JSON.stringify({ predictionId }),
             ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
           });
@@ -1434,6 +1442,8 @@ const musicGenerationRouter = router({
       const conditionedPrompt = input.instrumentId
         ? buildBespokePrompt(input.instrumentId, input.prompt ?? "")
         : input.prompt || input.instrumentName;
+      const existingGenerations = await getMusicGenerationsByUserId(ctx.user.id);
+      const matchFamilyId = getNextMatchFamilyId(existingGenerations);
 
       console.log(`[Bespoke] Starting MiniMax generation — instrument=${input.instrumentName}`);
       console.log(`[Bespoke] Prompt: "${conditionedPrompt.slice(0, 120)}"`);
@@ -1460,6 +1470,7 @@ const musicGenerationRouter = router({
           instrumentId: input.instrumentId,
           instrumentAudioPath: input.instrumentAudioPath,
           conditionedPrompt,
+          matchFamilyId,
         }),
         aceStepTaskId: null,
         errorMessage: null,
@@ -1517,6 +1528,7 @@ const musicGenerationRouter = router({
             provider: "minimax-2.6",
             instrumentName: input.instrumentName,
             conditionedPrompt,
+            matchFamilyId,
           }),
           ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
         });
@@ -1527,6 +1539,7 @@ const musicGenerationRouter = router({
           ...gen,
           audioUrl: await resolveAudioUrl(s3Url),
           status: "complete" as const,
+          matchFamilyId,
         };
       } catch (error: unknown) {
         const raw = error instanceof Error ? error.message : String(error);
