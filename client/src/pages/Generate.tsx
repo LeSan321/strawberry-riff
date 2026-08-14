@@ -263,6 +263,15 @@ function getStartersForInstrument(instrumentId: string | null): string[] {
   return INSTRUMENT_STARTERS[instrumentId] ?? DEFAULT_STARTERS;
 }
 
+function getSessionFusionStarters(instrumentName: string): string[] {
+  return [
+    `${instrumentName} as the acoustic anchor over a driving rockabilly rhythm, upright bass and brushed snare, bright forward motion, clear midrange lane for a future lead vocal, instrumental only, 108 BPM`,
+    `${instrumentName} carried by late-night hip-hop drums and warm sub-bass, spacious verses, textured chorus lift, room between phrases for a future vocal, instrumental only, 92 BPM`,
+    `${instrumentName} inside a cinematic coastal samba, hand percussion and low brass pulse, playful but grounded, leave the melodic top line open for a singer, instrumental only, 104 BPM`,
+    `${instrumentName} meeting an indie-pop pulse with a sparse opening, rhythmic lift in the chorus, supportive accompaniment rather than a competing lead melody, vocal-ready instrumental, 118 BPM`,
+  ];
+}
+
 function useGenerationPolling(
   generationId: number | null,
   onComplete: () => void
@@ -1104,9 +1113,10 @@ interface GeneratePageProps {
   } | null;
   onClearInstrument?: () => void;
   sessionMode?: boolean;
+  onFusionBedReady?: (bed: { id: number; title: string; audioUrl: string }) => void;
 }
 
-export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMode = false }: GeneratePageProps = {}) {
+export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMode = false, onFusionBedReady }: GeneratePageProps = {}) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -1496,7 +1506,12 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
         setReferenceAudioUrl(null);
         setReferenceAudioName(null);
         setInstrumentId(null);
-        toast.success(`Your bespoke instrumental is ready.`);
+        if (sessionMode && result.id && result.audioUrl) {
+          onFusionBedReady?.({ id: result.id, title: result.title ?? title.trim(), audioUrl: result.audioUrl });
+          toast.success("Your fusion bed is ready — Voice & Words is waiting when you are.");
+        } else {
+          toast.success("Your bespoke instrumental is ready.");
+        }
         return;
       }
 
@@ -1556,9 +1571,11 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">Generate Music</h1>
+                <h1 className="text-3xl font-bold">{sessionMode ? "Build a fusion landscape" : "Generate Music"}</h1>
                 <p className="mt-1 text-muted-foreground">
-                  What does this song already know? Give it a title, a sound, and the words — and let it become.
+                  {sessionMode
+                    ? "Choose a sonic anchor, then give it a new world to grow up in. The room will hold the bed for a later vocal exploration."
+                    : "What does this song already know? Give it a title, a sound, and the words — and let it become."}
                 </p>
               </div>
             </div>
@@ -1630,7 +1647,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                         <p className="text-xs font-medium text-amber-300">Not sure what to write? Pick a starting point:</p>
                       </div>
                       <div className="grid grid-cols-1 gap-1.5">
-                        {getStartersForInstrument(instrumentId).map((starter, i) => (
+                        {(sessionMode ? getSessionFusionStarters(referenceAudioName ?? "this instrument") : getStartersForInstrument(instrumentId)).map((starter, i) => (
                           <button
                             key={i}
                             type="button"
@@ -1655,7 +1672,7 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                           </button>
                         ))}
                       </div>
-                      <p className="text-[10px] text-gray-600 mt-2">Click any starter to fill the prompt — then customise it to make it yours.</p>
+                      <p className="text-[10px] text-gray-600 mt-2">Click any starting point to fill Art Direction — then change it until the world feels like yours.</p>
                     </div>
                   )}
 
@@ -1677,10 +1694,10 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Zap className="h-3.5 w-3.5 text-yellow-400" />
-                          <span className="text-xs font-semibold text-foreground">Quick Generate</span>
+                          <span className="text-xs font-semibold text-foreground">{sessionMode ? "Full Song Sketch" : "Quick Generate"}</span>
                           {generationMode === "quick" && <span className="ml-auto text-[10px] text-purple-300">✓ selected</span>}
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">Full song with vocals. Uses reference as a style hint. ~1–3 min.</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{sessionMode ? "A complete song sketch with vocals. Return here when you want to explore a different route." : "Full song with vocals. Uses reference as a style hint. ~1–3 min."}</p>
                       </button>
                       <button
                         type="button"
@@ -1693,15 +1710,15 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Music className="h-3.5 w-3.5 text-pink-400" />
-                          <span className="text-xs font-semibold text-foreground">Bespoke Instrumental</span>
+                          <span className="text-xs font-semibold text-foreground">{sessionMode ? "Fusion Bed" : "Bespoke Instrumental"}</span>
                           {generationMode === "bespoke" && <span className="ml-auto text-[10px] text-pink-300">✓ selected</span>}
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">Pure instrumental from the sonic DNA of your reference. ~15 sec.</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{sessionMode ? "A vocal-ready instrumental landscape built around your acoustic anchor." : "Pure instrumental from the sonic DNA of your reference. ~15 sec."}</p>
                       </button>
                     </div>
                     {generationMode === "bespoke" && (
                       <p className="text-xs text-pink-300/80 bg-pink-500/10 rounded-md px-3 py-2 border border-pink-400/20">
-                        <strong>Bespoke mode:</strong> No lyrics needed — your prompt steers the mood, the {referenceAudioName} provides the sonic foundation.
+                        <strong>{sessionMode ? "Fusion bed:" : "Bespoke mode:"}</strong> No lyrics needed — your Art Direction steers the world, while {referenceAudioName} provides the sonic foundation.
                       </p>
                     )}
                   </div>
@@ -1710,9 +1727,9 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
 
               {/* Title */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Title</label>
+                <label className="mb-2 block text-sm font-medium">{sessionMode ? "Name this fusion landscape" : "Title"}</label>
                 <Input
-                  placeholder="What is this song called? (e.g., Midnight Blues)"
+                  placeholder={sessionMode ? "e.g., Chrome & Heather" : "What is this song called? (e.g., Midnight Blues)"}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={isGenerating}
@@ -1724,12 +1741,14 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
               {/* Prompt */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
-                  {referenceAudioUrl ? "Musical Direction" : "Music Style Prompt"}
+                  {sessionMode ? "Art Direction" : referenceAudioUrl ? "Musical Direction" : "Music Style Prompt"}
                 </label>
                 <Textarea
                   ref={promptRef}
                   placeholder={referenceAudioUrl
-                    ? "What should this track do with the sound DNA? (e.g., melancholic slow burn, 90 BPM, intimate jazz club feel — the DNA provides the sonic character)"
+                    ? sessionMode
+                      ? "How should this anchor change worlds? (e.g., rockabilly rhythm under Great Highland pipes, bright movement, open lane for a future voice)"
+                      : "What should this track do with the sound DNA? (e.g., melancholic slow burn, 90 BPM, intimate jazz club feel — the DNA provides the sonic character)"
                     : "What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
                   }
                   value={prompt}
@@ -1740,7 +1759,9 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {referenceAudioUrl
-                    ? `${prompt.length}/1000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
+                    ? sessionMode
+                      ? `${prompt.length}/1000 — the palette carries the acoustic detail; this is where you describe the new world, rhythm, energy, and vocal space`
+                      : `${prompt.length}/1000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
                     : `${prompt.length}/1000 characters — describe genre, instruments, mood, and tempo`
                   }
                 </p>

@@ -1430,3 +1430,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Design and implement the invitation-led Session-room UX for the established fusion, lyric, vocal, Match Family, and Blend workflow.
 - [ ] Make Fusion Studio a self-contained Platinum workspace with direct creation, guided-but-non-linear navigation, utilitarian Match Family labels, and balanced practical-poetic language.
 - [x] Build the first visual Session Room iteration: invitation-led shell, creative sequence navigation, stage framing, Match Family placeholders, and progressive empty states.
+- [x] Connect Acoustic Palette choices to Session-aware fusion-bed creation and preserve the in-progress creative thread across Session stages.

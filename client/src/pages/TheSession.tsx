@@ -337,11 +337,12 @@ function SessionHeader({ theme }: { theme: SessionTheme }) {
 
 // ─── Invitation-led room sequence ──────────────────────────────────────────────
 function SessionJourney({
-  activeTool, onToolChange, theme,
+  activeTool, onToolChange, theme, activeFusionBed,
 }: {
   activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
   onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
   theme: SessionTheme;
+  activeFusionBed?: { id: number; title: string; audioUrl: string } | null;
 }) {
   const stages = [
     { tool: "generate" as const, title: "Sound World", detail: "Build a fusion landscape", icon: Piano },
@@ -356,7 +357,7 @@ function SessionJourney({
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Your creative thread</p>
-            <p className="text-xs text-gray-400 mt-1">Move in any order. The room will keep the relationship between your choices visible.</p>
+            <p className="text-xs text-gray-400 mt-1">{activeFusionBed ? `Working with “${activeFusionBed.title}”. Move in any order — the room will keep the relationship between your choices visible.` : "Move in any order. The room will keep the relationship between your choices visible."}</p>
           </div>
           <Badge className="hidden sm:flex bg-white/5 text-gray-300 border-white/10 text-[10px]">Guided, never rigid</Badge>
         </div>
@@ -388,11 +389,13 @@ function SessionJourney({
 }
 
 function SessionStageCallout({
-  activeTool, theme, onOpenInstrumentPalette,
+  activeTool, theme, onOpenInstrumentPalette, activeFusionBed, onExploreVoice,
 }: {
   activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
   theme: SessionTheme;
   onOpenInstrumentPalette: () => void;
+  activeFusionBed?: { id: number; title: string; audioUrl: string } | null;
+  onExploreVoice: () => void;
 }) {
   const content = {
     generate: {
@@ -436,10 +439,19 @@ function SessionStageCallout({
           <div className="max-w-2xl">
             <h2 className="text-lg font-semibold text-white md:text-xl">{content.title}</h2>
             <p className="mt-1 text-sm leading-relaxed text-gray-400">{content.body}</p>
-            {activeTool === "generate" && (
+            {activeTool === "generate" && !activeFusionBed && (
               <div className={`mt-3 inline-flex items-center gap-2 rounded-lg border ${theme.borderAccent} bg-black/20 px-2.5 py-2`}>
                 <Layers className={`h-3.5 w-3.5 ${theme.textAccent}`} />
                 <span className="text-[11px] text-gray-400"><span className="font-semibold text-gray-200">Shared Shape</span> — a Match Family appears after you keep a fusion bed.</span>
+              </div>
+            )}
+            {activeTool === "generate" && activeFusionBed && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge className="bg-emerald-500/10 text-emerald-300 border-emerald-400/20 text-[11px]">Fusion bed held in this session</Badge>
+                <span className="text-xs text-gray-300 truncate max-w-[16rem]">{activeFusionBed.title}</span>
+                <Button onClick={onExploreVoice} size="sm" className={`bg-gradient-to-r ${theme.accent} text-white border-0`}>
+                  <Mic className="mr-1.5 h-3.5 w-3.5" />Explore a voice
+                </Button>
               </div>
             )}
           </div>
@@ -489,6 +501,11 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
   const [splitComplete, setSplitComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const trackDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSelectedTrackUrl(persistedTrackUrl ?? null);
+    setSelectedTrackTitle(persistedTrackTitle ?? null);
+  }, [persistedTrackUrl, persistedTrackTitle]);
 
   const { data: myGenerations, refetch: refetchGenerations } = trpc.musicGeneration.myGenerations.useQuery(undefined, { enabled: !!user });
   const completedTracks = myGenerations?.filter(g => {
@@ -1432,6 +1449,7 @@ export default function TheSession() {
   const [selectedInstrument, setSelectedInstrument] = useState<{
     id: string; name: string; family: string; description: string; audioPath: string; tags: string[];
   } | null>(null);
+  const [activeFusionBed, setActiveFusionBed] = useState<{ id: number; title: string; audioUrl: string } | null>(null);
   // Persisted Add Vocals state — survives tab switches
   const [vocalsTrackUrl, setVocalsTrackUrl] = useState<string | null>(null);
   const [vocalsTrackTitle, setVocalsTrackTitle] = useState<string | null>(null);
@@ -1512,11 +1530,13 @@ export default function TheSession() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden min-h-0">
         <SessionHeader theme={theme} />
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 min-h-0">
-          <SessionJourney activeTool={activeTool} onToolChange={setActiveTool} theme={theme} />
+          <SessionJourney activeTool={activeTool} onToolChange={setActiveTool} theme={theme} activeFusionBed={activeFusionBed} />
           <SessionStageCallout
             activeTool={activeTool}
             theme={theme}
             onOpenInstrumentPalette={() => setInstrumentPaletteOpen(true)}
+            activeFusionBed={activeFusionBed}
+            onExploreVoice={() => setActiveTool("vocals")}
           />
           <AnimatePresence mode="wait">
             <motion.div
@@ -1525,7 +1545,16 @@ export default function TheSession() {
               transition={{ duration: 0.2 }} className="w-full max-w-full"
             >
               {activeTool === "generate" ? (
-                <GeneratePage selectedInstrument={selectedInstrument} onClearInstrument={() => setSelectedInstrument(null)} />
+                <GeneratePage
+                  selectedInstrument={selectedInstrument}
+                  onClearInstrument={() => setSelectedInstrument(null)}
+                  sessionMode
+                  onFusionBedReady={(bed) => {
+                    setActiveFusionBed(bed);
+                    setVocalsTrackUrl(bed.audioUrl);
+                    setVocalsTrackTitle(bed.title);
+                  }}
+                />
               ) : activeTool === "vocals" ? (
                 <AddVocalsPanel theme={theme}
                   persistedTrackUrl={vocalsTrackUrl}
