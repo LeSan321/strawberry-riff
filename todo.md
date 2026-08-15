@@ -1437,3 +1437,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add hover-initiated audio preview and a subtle Clear Filter interaction to the filtered Match Family Shelf.
 - [ ] Audit every visible Session Room control against its real user-facing action, clarify empty or unavailable states, and deliver future work as connected testable milestones.
 - [x] Deliver the Create and Revisit a First Family milestone: empty shelf to fusion-bed creation, visible Match Family, Voice & Words handoff, and vocal-take shelf refresh.
+- [ ] Investigate the latest short non-bagpipe bespoke fusion by reviewing the exact transmitted MiniMax prompt, mode, duration, and returned metadata before changing prompt assembly.
+- [ ] Calibrate bespoke fusion-bed prompts by restoring structural anchor repetition, applying role-aware vocal space, and defining an explicit target-duration policy before validating further Sessions matching.
+- [ ] Audit and redesign the Instrument Palette-to-MiniMax prompt pipeline, including an evaluation of Riffy as a creator-facing translation and prompt-approval layer.
