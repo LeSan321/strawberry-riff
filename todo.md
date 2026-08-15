@@ -1440,3 +1440,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Investigate the latest short non-bagpipe bespoke fusion by reviewing the exact transmitted MiniMax prompt, mode, duration, and returned metadata before changing prompt assembly.
 - [ ] Calibrate bespoke fusion-bed prompts by restoring structural anchor repetition, applying role-aware vocal space, and defining an explicit target-duration policy before validating further Sessions matching.
 - [ ] Audit and redesign the Instrument Palette-to-MiniMax prompt pipeline, including an evaluation of Riffy as a creator-facing translation and prompt-approval layer.
+- [ ] Define the balance between deterministic fusion-plan safeguards and creative flexibility, and design Riffy’s Session Room presence as an embodied music collaboration partner.
