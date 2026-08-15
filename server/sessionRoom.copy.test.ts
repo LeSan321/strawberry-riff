@@ -45,7 +45,15 @@ describe("Session Room invitation-led framing", () => {
     expect(sessionSource).toContain("setFamilyFilter(activeFusionBed?.matchFamilyId ?? null)");
     expect(sessionSource).toContain("activeMatchFamilyId");
     expect(sessionSource).toContain("Showing Match Family");
-    expect(sessionSource).toContain("Browse all families");
+    expect(sessionSource).toContain("Clear filter");
+  });
+
+  it("supports gentle audio discovery and a subtle filter reset on a focused family", () => {
+    expect(sessionSource).toContain("handleTrackHoverStart");
+    expect(sessionSource).toContain("handleTrackHoverEnd");
+    expect(sessionSource).toContain("previewOrigin");
+    expect(sessionSource).toContain("Hover to listen");
+    expect(sessionSource).toContain("Clear filter");
   });
 
   it("uses Session-aware art direction rather than generic prompt-only generation", () => {

@@ -1494,7 +1494,9 @@ function MatchFamilyShelf({
 }) {
   const { data: myGenerations, isLoading } = trpc.musicGeneration.myGenerations.useQuery();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewOrigin, setPreviewOrigin] = useState<"manual" | "hover" | null>(null);
   const previewRef = useRef<HTMLAudioElement>(null);
+  const hoverPreviewTimerRef = useRef<number | null>(null);
 
   const families = new Map<string, {
     beds: Array<{ id: number; title: string; audioUrl: string }>;
@@ -1522,15 +1524,33 @@ function MatchFamilyShelf({
   const visibleFamilies = activeMatchFamilyId
     ? orderedFamilies.filter(([familyId]) => familyId === activeMatchFamilyId)
     : orderedFamilies;
+  const stopPreview = () => {
+    previewRef.current?.pause();
+    setPreviewUrl(null);
+    setPreviewOrigin(null);
+  };
+  const startPreview = (url: string, origin: "manual" | "hover") => {
+    previewRef.current?.pause();
+    setPreviewUrl(url);
+    setPreviewOrigin(origin);
+    window.setTimeout(() => previewRef.current?.play().catch(() => {}), 40);
+  };
   const togglePreview = (url: string) => {
     if (previewUrl === url) {
-      previewRef.current?.pause();
-      setPreviewUrl(null);
+      stopPreview();
     } else {
-      previewRef.current?.pause();
-      setPreviewUrl(url);
-      window.setTimeout(() => previewRef.current?.play().catch(() => {}), 40);
+      startPreview(url, "manual");
     }
+  };
+  const handleTrackHoverStart = (url: string) => {
+    if (!activeMatchFamilyId || previewUrl === url) return;
+    if (hoverPreviewTimerRef.current) window.clearTimeout(hoverPreviewTimerRef.current);
+    hoverPreviewTimerRef.current = window.setTimeout(() => startPreview(url, "hover"), 220);
+  };
+  const handleTrackHoverEnd = (url: string) => {
+    if (hoverPreviewTimerRef.current) window.clearTimeout(hoverPreviewTimerRef.current);
+    hoverPreviewTimerRef.current = null;
+    if (previewUrl === url && previewOrigin === "hover") stopPreview();
   };
 
   return (
@@ -1542,7 +1562,7 @@ function MatchFamilyShelf({
         {activeMatchFamilyId && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge className="bg-white/5 text-gray-200 border-white/10 text-[11px]">Showing Match Family {activeMatchFamilyId}</Badge>
-            <Button onClick={onClearFamilyFilter} variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white">Browse all families</Button>
+            <Button onClick={onClearFamilyFilter} variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs text-gray-400 hover:bg-white/10 hover:text-white"><X className="h-3 w-3" />Clear filter</Button>
           </div>
         )}
       </div>
@@ -1554,7 +1574,7 @@ function MatchFamilyShelf({
           <Layers className={`mx-auto mb-3 h-8 w-8 ${theme.textAccent}`} />
           <p className="text-sm font-medium text-white">{activeMatchFamilyId ? `Match Family ${activeMatchFamilyId} is still gathering.` : "Your first Match Family is waiting to begin."}</p>
           <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-gray-400">{activeMatchFamilyId ? "Keep the fusion bed and create vocal takes from it. They will gather here automatically as the family grows." : "Keep a new fusion bed in Sound World and the room will create a family label such as F-01. Vocal takes made from that bed will gather here automatically."}</p>
-          {activeMatchFamilyId && <Button onClick={onClearFamilyFilter} variant="outline" size="sm" className={`mt-4 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}>Browse all families</Button>}
+          {activeMatchFamilyId && <Button onClick={onClearFamilyFilter} variant="outline" size="sm" className={`mt-4 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}><X className="mr-1.5 h-3.5 w-3.5" />Clear filter</Button>}
         </div>
       ) : (
         <div className="space-y-4">
@@ -1575,9 +1595,10 @@ function MatchFamilyShelf({
                   <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.textAccent}`}>Fusion beds</p>
                   {family.beds.length === 0 ? <p className="text-xs text-gray-500">No tagged fusion bed is available in this family.</p> : (
                     <div className="space-y-2">{family.beds.map((bed) => (
-                      <div key={bed.id} className={`flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5`}>
+                      <div key={bed.id} onMouseEnter={() => handleTrackHoverStart(bed.audioUrl)} onMouseLeave={() => handleTrackHoverEnd(bed.audioUrl)} className={`group flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5 transition-colors ${activeMatchFamilyId ? "hover:bg-white/[0.09]" : ""}`}>
                         <button onClick={() => togglePreview(bed.audioUrl)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 text-gray-200 hover:bg-white/15">{previewUrl === bed.audioUrl ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}</button>
                         <span className="min-w-0 flex-1 truncate text-sm text-white">{bed.title}</span>
+                        {activeMatchFamilyId && <span className="hidden text-[10px] text-gray-500 transition-opacity group-hover:inline">Hover to listen</span>}
                         <Button onClick={() => onChooseBed({ ...bed, matchFamilyId: familyId })} size="sm" variant="outline" className={`border ${theme.borderAccent} bg-transparent text-xs text-white hover:bg-white/10`}>Use this bed</Button>
                       </div>
                     ))}</div>
@@ -1587,9 +1608,10 @@ function MatchFamilyShelf({
                   <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.textAccent}`}>Vocal takes</p>
                   {family.vocals.length === 0 ? <p className="text-xs text-gray-500">Create a vocal take from this family’s bed and it will appear here.</p> : (
                     <div className="space-y-2">{family.vocals.map((vocal) => (
-                      <div key={vocal.id} className={`flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5`}>
+                      <div key={vocal.id} onMouseEnter={() => handleTrackHoverStart(vocal.audioUrl)} onMouseLeave={() => handleTrackHoverEnd(vocal.audioUrl)} className={`group flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5 transition-colors ${activeMatchFamilyId ? "hover:bg-white/[0.09]" : ""}`}>
                         <button onClick={() => togglePreview(vocal.audioUrl)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 text-gray-200 hover:bg-white/15">{previewUrl === vocal.audioUrl ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}</button>
                         <span className="min-w-0 flex-1 truncate text-sm text-white">{vocal.title}</span>
+                        {activeMatchFamilyId && <span className="hidden text-[10px] text-gray-500 transition-opacity group-hover:inline">Hover to listen</span>}
                         <Badge className="bg-white/5 text-gray-300 border-white/10 text-[10px]">Vocal take</Badge>
                       </div>
                     ))}</div>
@@ -1600,7 +1622,7 @@ function MatchFamilyShelf({
           ))}
         </div>
       )}
-      <audio ref={previewRef} src={previewUrl ?? undefined} onEnded={() => setPreviewUrl(null)} />
+      <audio ref={previewRef} src={previewUrl ?? undefined} onEnded={() => { setPreviewUrl(null); setPreviewOrigin(null); }} />
     </div>
   );
 }

@@ -1434,3 +1434,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Assign visible Match Family identifiers to new fusion beds and carry their Shared Shape context into Voice & Words and Blend.
 - [x] Build a responsive Match Family Shelf that groups tagged fusion beds and vocal takes, supports previewing, and hands users into Voice & Words or Blend.
 - [x] Connect the Shared Shape stage control to the Match Family Shelf with active-family filtering and a clear all-families exploration option.
+- [x] Add hover-initiated audio preview and a subtle Clear Filter interaction to the filtered Match Family Shelf.
