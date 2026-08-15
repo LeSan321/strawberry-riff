@@ -486,7 +486,7 @@ function SessionStageCallout({
 }
 
 // ─── Add Vocals Panel ──────────────────────────────────────────────────────────
-function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persistedLyrics, persistedAccentId, persistedDialectEnabled, onTrackChange, onLyricsChange, onAccentChange, onDialectChange }: {
+function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persistedLyrics, persistedAccentId, persistedDialectEnabled, onTrackChange, onLyricsChange, onAccentChange, onDialectChange, onViewMatchFamily }: {
   theme: SessionTheme;
   persistedTrackUrl?: string | null;
   persistedTrackTitle?: string | null;
@@ -497,8 +497,10 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
   onLyricsChange?: (lyrics: string) => void;
   onAccentChange?: (accentId: string | null) => void;
   onDialectChange?: (enabled: boolean) => void;
+  onViewMatchFamily?: (matchFamilyId: string) => void;
 }) {
   const { user } = useAuth();
+  const utils = trpc.useUtils();
   const [selectedArchetype, setSelectedArchetype] = useState<VocalArchetypeId | null>(null);
   const [vocalGender, setVocalGender] = useState<"male" | "female" | "neutral">("neutral");
   const [spectrumValue, setSpectrumValue] = useState(50);
@@ -622,6 +624,7 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
       setIsGenerating(false);
       setPendingGenerationId(null);
       refetchGenerations();
+      utils.musicGeneration.myGenerations.invalidate();
       toast.success("Vocal take ready \u2014 it's in your library too!");
     } else if (pendingGeneration.status === "failed") {
       const msg = pendingGeneration.errorMessage ?? "Vocal generation failed";
@@ -965,6 +968,11 @@ function AddVocalsPanel({ theme, persistedTrackUrl, persistedTrackTitle, persist
                 <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
+            {selectedMatchFamilyId && onViewMatchFamily && (
+              <Button onClick={() => onViewMatchFamily(selectedMatchFamilyId)} variant="outline" size="sm" className={`w-full border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}>
+                <Layers className={`mr-1.5 h-3.5 w-3.5 ${theme.textAccent}`} />Return to Match Family {selectedMatchFamilyId}
+              </Button>
+            )}
           </div>
 
           {!splitComplete ? (
@@ -1484,11 +1492,12 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
 // ─── Match Family Shelf ─────────────────────────────────────────────────────────
 function MatchFamilyShelf({
-  theme, activeMatchFamilyId, onClearFamilyFilter, onChooseBed, onOpenBlend,
+  theme, activeMatchFamilyId, onClearFamilyFilter, onStartFamily, onChooseBed, onOpenBlend,
 }: {
   theme: SessionTheme;
   activeMatchFamilyId: string | null;
   onClearFamilyFilter: () => void;
+  onStartFamily: () => void;
   onChooseBed: (bed: { id: number; title: string; audioUrl: string; matchFamilyId: string }) => void;
   onOpenBlend: () => void;
 }) {
@@ -1574,7 +1583,11 @@ function MatchFamilyShelf({
           <Layers className={`mx-auto mb-3 h-8 w-8 ${theme.textAccent}`} />
           <p className="text-sm font-medium text-white">{activeMatchFamilyId ? `Match Family ${activeMatchFamilyId} is still gathering.` : "Your first Match Family is waiting to begin."}</p>
           <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-gray-400">{activeMatchFamilyId ? "Keep the fusion bed and create vocal takes from it. They will gather here automatically as the family grows." : "Keep a new fusion bed in Sound World and the room will create a family label such as F-01. Vocal takes made from that bed will gather here automatically."}</p>
-          {activeMatchFamilyId && <Button onClick={onClearFamilyFilter} variant="outline" size="sm" className={`mt-4 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}><X className="mr-1.5 h-3.5 w-3.5" />Clear filter</Button>}
+          {activeMatchFamilyId ? (
+            <Button onClick={onClearFamilyFilter} variant="outline" size="sm" className={`mt-4 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}><X className="mr-1.5 h-3.5 w-3.5" />Clear filter</Button>
+          ) : (
+            <Button onClick={onStartFamily} size="sm" className={`mt-4 bg-gradient-to-r ${theme.accent} text-white border-0`}><Piano className="mr-1.5 h-3.5 w-3.5" />Build a fusion bed</Button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -1748,6 +1761,8 @@ export default function TheSession() {
                     setActiveFusionBed(bed);
                     setVocalsTrackUrl(bed.audioUrl);
                     setVocalsTrackTitle(bed.title);
+                    setFamilyFilter(bed.matchFamilyId);
+                    setActiveTool("family");
                   }}
                 />
               ) : activeTool === "family" ? (
@@ -1755,6 +1770,7 @@ export default function TheSession() {
                   theme={theme}
                   activeMatchFamilyId={familyFilter}
                   onClearFamilyFilter={() => setFamilyFilter(null)}
+                  onStartFamily={() => { setFamilyFilter(null); setActiveTool("generate"); setInstrumentPaletteOpen(true); }}
                   onChooseBed={(bed) => {
                     setActiveFusionBed(bed);
                     setVocalsTrackUrl(bed.audioUrl);
@@ -1775,6 +1791,7 @@ export default function TheSession() {
                   onLyricsChange={setVocalsLyrics}
                   onAccentChange={setVocalsAccentId}
                   onDialectChange={setVocalsDialectEnabled}
+                  onViewMatchFamily={(matchFamilyId) => { setFamilyFilter(matchFamilyId); setActiveTool("family"); }}
                 />
               ) : activeTool === "mixer" ? (
                 <MixerPanel theme={theme} />

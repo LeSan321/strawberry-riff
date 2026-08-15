@@ -1435,3 +1435,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Build a responsive Match Family Shelf that groups tagged fusion beds and vocal takes, supports previewing, and hands users into Voice & Words or Blend.
 - [x] Connect the Shared Shape stage control to the Match Family Shelf with active-family filtering and a clear all-families exploration option.
 - [x] Add hover-initiated audio preview and a subtle Clear Filter interaction to the filtered Match Family Shelf.
+- [ ] Audit every visible Session Room control against its real user-facing action, clarify empty or unavailable states, and deliver future work as connected testable milestones.
+- [x] Deliver the Create and Revisit a First Family milestone: empty shelf to fusion-bed creation, visible Match Family, Voice & Words handoff, and vocal-take shelf refresh.

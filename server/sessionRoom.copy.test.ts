@@ -56,6 +56,14 @@ describe("Session Room invitation-led framing", () => {
     expect(sessionSource).toContain("Clear filter");
   });
 
+  it("connects an empty shelf to first-family creation and refreshes the family after a vocal take", () => {
+    expect(sessionSource).toContain("Build a fusion bed");
+    expect(sessionSource).toContain("setInstrumentPaletteOpen(true)");
+    expect(sessionSource).toContain("setFamilyFilter(bed.matchFamilyId)");
+    expect(sessionSource).toContain("Return to Match Family");
+    expect(sessionSource).toContain("utils.musicGeneration.myGenerations.invalidate()");
+  });
+
   it("uses Session-aware art direction rather than generic prompt-only generation", () => {
     expect(sessionSource).toContain("sessionMode");
     expect(generateSource).toContain("getSessionFusionStarters");
