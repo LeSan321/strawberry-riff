@@ -93,6 +93,7 @@ import { startMusicGeneration, pollMusicGeneration, fetchAudioBytes, validateMus
 import { generateBespokeInstrumental } from "./stableAudio";
 import { buildBespokePrompt } from "./instrumentBible";
 import { getNextMatchFamilyId, readMatchFamilyId } from "./matchFamily";
+import { FUSION_ANCHOR_ROLES, FUSION_VOCAL_RELATIONSHIPS } from "../shared/fusionPlan";
 import { buildPromptWithIntensity, buildPromptWithRefinement, IntensityLevel, RefinementType } from "./promptTemplates";
 import { generateLyrics, WRITING_TEAM, STRUCTURE_TEMPLATES, WritingTeamMember } from "./lyricsGenerator";
 import { generateVisualBrief } from "./visualBriefGenerator";
@@ -1425,6 +1426,13 @@ const musicGenerationRouter = router({
         instrumentAudioPath: z.string().min(1),  // Tigris S3 URL for the instrument sample
         instrumentName: z.string().min(1).max(100),  // display name for the instrument
         instrumentId: z.string().optional(),  // catalog ID for bible acoustic description
+        fusionPlan: z.object({
+          version: z.literal(1),
+          anchorRole: z.enum(FUSION_ANCHOR_ROLES),
+          vocalRelationship: z.enum(FUSION_VOCAL_RELATIONSHIPS),
+          tempo: z.number().int().min(40).max(230),
+          creatorDirection: z.string().max(1000),
+        }).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1440,7 +1448,7 @@ const musicGenerationRouter = router({
 
       // Build the MiniMax prompt using the proven acoustic vocabulary formula
       const conditionedPrompt = input.instrumentId
-        ? buildBespokePrompt(input.instrumentId, input.prompt ?? "")
+        ? buildBespokePrompt(input.instrumentId, input.prompt ?? "", input.fusionPlan)
         : input.prompt || input.instrumentName;
       const existingGenerations = await getMusicGenerationsByUserId(ctx.user.id);
       const matchFamilyId = getNextMatchFamilyId(existingGenerations);
@@ -1470,6 +1478,7 @@ const musicGenerationRouter = router({
           instrumentId: input.instrumentId,
           instrumentAudioPath: input.instrumentAudioPath,
           conditionedPrompt,
+          fusionPlan: input.fusionPlan,
           matchFamilyId,
         }),
         aceStepTaskId: null,
@@ -1527,7 +1536,9 @@ const musicGenerationRouter = router({
             isInstrumentalFusion: true,
             provider: "minimax-2.6",
             instrumentName: input.instrumentName,
+            instrumentId: input.instrumentId,
             conditionedPrompt,
+            fusionPlan: input.fusionPlan,
             matchFamilyId,
           }),
           ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),

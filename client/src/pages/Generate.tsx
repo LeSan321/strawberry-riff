@@ -30,6 +30,15 @@ import { toast } from "sonner";
 import { getRandomFusion } from "@shared/fusionLibrary";
 import { MOOD_CATEGORIES } from "../../../shared/moodTags";
 import { Tag } from "lucide-react";
+import {
+  FUSION_ANCHOR_ROLES,
+  FUSION_ROLE_COPY,
+  FUSION_VOCAL_RELATIONSHIP_COPY,
+  FUSION_VOCAL_RELATIONSHIPS,
+  getTempoFromDirection,
+  type FusionAnchorRole,
+  type FusionVocalRelationship,
+} from "@shared/fusionPlan";
 
 // ─── Instrument-aware starter prompts ─────────────────────────────────────────────────────────
 const INSTRUMENT_STARTERS: Record<string, string[]> = {
@@ -1225,6 +1234,10 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
   const [instrumentDescription, setInstrumentDescription] = useState<string | null>(null);
   const [instrumentFamily, setInstrumentFamily] = useState<string | null>(null);
   const [instrumentTags, setInstrumentTags] = useState<string[]>([]);
+  const [fusionAnchorRole, setFusionAnchorRole] = useState<FusionAnchorRole>("carry-hook");
+  const [fusionVocalRelationship, setFusionVocalRelationship] = useState<FusionVocalRelationship>("open-verses");
+  const [fusionTempo, setFusionTempo] = useState(120);
+  const isFusionPlanActive = sessionMode && generationMode === "bespoke" && !!instrumentId;
 
   const utils = trpc.useUtils();
   const generateMutation = trpc.musicGeneration.generate.useMutation();
@@ -1488,12 +1501,22 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
     try {
       // ── Bespoke Instrumental mode (MiniMax music-2.6 with instrumental_file) ──
       if (generationMode === "bespoke" && referenceAudioUrl) {
+        const fusionPlan = isFusionPlanActive
+          ? {
+              version: 1 as const,
+              anchorRole: fusionAnchorRole,
+              vocalRelationship: fusionVocalRelationship,
+              tempo: fusionTempo,
+              creatorDirection: prompt.trim(),
+            }
+          : undefined;
         const result = await bespokeMutation.mutateAsync({
           title: title.trim(),
           prompt: prompt.trim() || undefined,
           instrumentAudioPath: referenceAudioUrl,
           instrumentName: referenceAudioName ?? "Instrument",
           instrumentId: instrumentId ?? undefined,
+          fusionPlan,
         });
         await utils.musicGeneration.myGenerations.invalidate();
         await utils.musicGeneration.monthlyUsage.invalidate();
@@ -1653,6 +1676,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                             type="button"
                             onClick={() => {
                               setPrompt(starter);
+                              const starterTempo = getTempoFromDirection(starter);
+                              if (starterTempo) setFusionTempo(starterTempo);
                               setSelectedStarterIdx(i);
                               setTimeout(() => {
                                 promptRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1741,18 +1766,23 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
               {/* Prompt */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
-                  {sessionMode ? "Art Direction" : referenceAudioUrl ? "Musical Direction" : "Music Style Prompt"}
+                  {isFusionPlanActive ? "Name the musical world" : sessionMode ? "Art Direction" : referenceAudioUrl ? "Musical Direction" : "Music Style Prompt"}
                 </label>
                 <Textarea
                   ref={promptRef}
                   placeholder={referenceAudioUrl
                     ? sessionMode
-                      ? "How should this anchor change worlds? (e.g., rockabilly rhythm under Great Highland pipes, bright movement, open lane for a future voice)"
+                      ? "How should this anchor change worlds? (e.g., cyber rockabilly rhythm with samba hand percussion, festive and electric)"
                       : "What should this track do with the sound DNA? (e.g., melancholic slow burn, 90 BPM, intimate jazz club feel — the DNA provides the sonic character)"
                     : "What is this song carrying? (e.g., Acoustic folk-blues, fingerpicked guitar, harmonica, melancholic, 90 BPM, warm and intimate)"
                   }
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setPrompt(next);
+                    const detectedTempo = getTempoFromDirection(next);
+                    if (detectedTempo) setFusionTempo(detectedTempo);
+                  }}
                   disabled={isGenerating}
                   maxLength={1000}
                   rows={4}
@@ -1760,12 +1790,95 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                 <p className="mt-1 text-xs text-muted-foreground">
                   {referenceAudioUrl
                     ? sessionMode
-                      ? `${prompt.length}/1000 — the palette carries the acoustic detail; this is where you describe the new world, rhythm, energy, and vocal space`
+                      ? `${prompt.length}/1000 — describe the new world, movement, and rhythm. The Fusion Plan protects the instrument's role.`
                       : `${prompt.length}/1000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
                     : `${prompt.length}/1000 characters — describe genre, instruments, mood, and tempo`
                   }
                 </p>
               </div>
+
+              {isFusionPlanActive && (
+                <div className="rounded-xl border border-fuchsia-400/25 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-transparent p-4 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fuchsia-500/20 text-fuchsia-200">
+                      <Layers className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">Fusion Plan</p>
+                      <h3 className="mt-0.5 text-sm font-semibold text-white">Give {referenceAudioName} a clear job in this world.</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-gray-400">These choices become the hidden musical structure. You keep the world; the room protects the anchor from drifting away.</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-gray-200">What should the anchor do?</p>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {FUSION_ANCHOR_ROLES.map((role) => {
+                        const copy = FUSION_ROLE_COPY[role];
+                        const selected = fusionAnchorRole === role;
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => setFusionAnchorRole(role)}
+                            disabled={isGenerating}
+                            className={`rounded-lg border p-3 text-left transition-all ${selected ? "border-fuchsia-300 bg-fuchsia-500/20 ring-1 ring-fuchsia-300/30" : "border-white/10 bg-black/20 hover:border-fuchsia-300/30 hover:bg-white/5"}`}
+                          >
+                            <span className="block text-xs font-semibold text-white">{copy.label}</span>
+                            <span className="mt-1 block text-[11px] leading-relaxed text-gray-400">{copy.description}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-[1fr_160px]">
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-gray-200">How should a future voice relate to it?</p>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {FUSION_VOCAL_RELATIONSHIPS.map((relationship) => {
+                          const copy = FUSION_VOCAL_RELATIONSHIP_COPY[relationship];
+                          const selected = fusionVocalRelationship === relationship;
+                          return (
+                            <button
+                              key={relationship}
+                              type="button"
+                              onClick={() => setFusionVocalRelationship(relationship)}
+                              disabled={isGenerating}
+                              className={`rounded-lg border p-2.5 text-left transition-all ${selected ? "border-violet-300 bg-violet-500/20 ring-1 ring-violet-300/30" : "border-white/10 bg-black/20 hover:border-violet-300/30 hover:bg-white/5"}`}
+                            >
+                              <span className="block text-[11px] font-semibold text-white">{copy.label}</span>
+                              <span className="mt-1 block text-[10px] leading-relaxed text-gray-400">{copy.description}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-gray-200">Tempo</label>
+                      <div className="flex items-center rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                        <input
+                          type="number"
+                          min={40}
+                          max={230}
+                          value={fusionTempo}
+                          onChange={(e) => setFusionTempo(Math.min(230, Math.max(40, Number(e.target.value) || 40)))}
+                          disabled={isGenerating}
+                          className="w-full bg-transparent text-sm font-semibold text-white outline-none"
+                          aria-label="Fusion tempo in BPM"
+                        />
+                        <span className="text-[10px] uppercase tracking-wide text-gray-500">BPM</span>
+                      </div>
+                      <p className="mt-1.5 text-[10px] leading-relaxed text-gray-500">One tempo becomes part of the shared shape.</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2.5 text-xs leading-relaxed text-gray-300">
+                    <span className="font-semibold text-fuchsia-200">Your plan:</span>{" "}
+                    {referenceAudioName} will <span className="text-white">{FUSION_ROLE_COPY[fusionAnchorRole].label.toLowerCase()}</span> in a {fusionTempo} BPM world, with <span className="text-white">{FUSION_VOCAL_RELATIONSHIP_COPY[fusionVocalRelationship].label.toLowerCase()}</span>.
+                  </div>
+                </div>
+              )}
 
               {/* Intensity Level */}
               <div>

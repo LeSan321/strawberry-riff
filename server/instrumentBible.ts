@@ -1,5 +1,7 @@
+import type { FusionAnchorRole, FusionPlan, FusionVocalRelationship } from "../shared/fusionPlan";
+
 /**
- * Instrument Bible — Conditioning Tags for Stable Audio 2.5
+ * Instrument Bible — Conditioning Tags for Bespoke Fusion Generation
  *
  * Each entry maps a catalog instrument ID to a compact conditioning tag
  * derived from the full Instrument Bible (seven-dimension acoustic schema).
@@ -146,15 +148,66 @@ export function getInstrumentConditioningTag(instrumentId: string): string | nul
   return INSTRUMENT_BIBLE[instrumentId] ?? null;
 }
 
+function stripTempo(direction: string): string {
+  return direction
+    .replace(/\b(4[0-9]|[5-9][0-9]|1[0-9]{2}|2[0-2][0-9]|230)\s*bpm\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+,/g, ",")
+    .trim()
+    .replace(/[—–,;:\-\s]+$/, "");
+}
+
+function anchorLabel(instrumentId: string): string {
+  if (instrumentId === "bagpipes") return "Great Highland Bagpipe";
+  const tag = getInstrumentConditioningTag(instrumentId);
+  return tag?.match(/^Instrument:\s*([^—–]+)/)?.[1]?.trim() ?? "Selected instrument";
+}
+
+function anchorRoleClause(instrumentId: string, role: FusionAnchorRole): string {
+  if (instrumentId === "bagpipes") {
+    const roles: Record<FusionAnchorRole, string> = {
+      "carry-hook": "Great Highland Bagpipe: conical chanter with three fixed tonic drones producing continuous reedy overtone-dense sustain, grace-note ornamentation, and high-volume projection replacing lead guitar, playing high-energy melodic fills and solo breaks with grace-note articulation",
+      "trade-phrases": "Great Highland Bagpipe: conical chanter with three fixed tonic drones and grace-note articulation, trading recognizable melodic calls with the rhythm section and answering between phrases",
+      "haunt-edges": "Great Highland Bagpipe: fixed tonic drones, reedy overtone-dense sustain, and recurring grace-note motifs, remaining unmistakable in transitions and sectional lifts rather than dissolving into an anonymous pad",
+    };
+    return roles[role];
+  }
+
+  const label = anchorLabel(instrumentId);
+  const roles: Record<FusionAnchorRole, string> = {
+    "carry-hook": `${label}: audible lead voice with recurring melodic phrases, expressive fills, and short solo breaks`,
+    "trade-phrases": `${label}: recognizable call-and-response phrases trading with the rhythm section`,
+    "haunt-edges": `${label}: unmistakable recurring motifs and transitions, present as a signature color without becoming a constant lead`,
+  };
+  return roles[role];
+}
+
+function vocalRelationshipClause(instrumentId: string, relationship: FusionVocalRelationship): string {
+  const label = instrumentId === "bagpipes" ? "bagpipe" : anchorLabel(instrumentId).toLowerCase();
+  const relationships: Record<FusionVocalRelationship, string> = {
+    "open-verses": `Reserve verse space after the ${label} phrases for a future lead singer, while keeping instrumental breaks available for the anchor to return in full`,
+    "call-and-response": `Build clear answer spaces so a future lead singer and the ${label} can trade phrases without crowding each other`,
+    "instrumental-breaks": `Keep full instrumental breaks and transitions for the ${label}; any future lead singer should enter around those anchor-led moments`,
+  };
+  return relationships[relationship];
+}
+
 /**
  * Builds the full conditioned prompt for Bespoke generation:
  * [Instrument conditioning tag] + [Performance context] + [User prompt]
  */
 export function buildBespokePrompt(
   instrumentId: string,
-  userPrompt: string
+  userPrompt: string,
+  fusionPlan?: FusionPlan,
 ): string {
   const tag = getInstrumentConditioningTag(instrumentId);
+  if (fusionPlan) {
+    const direction = stripTempo(fusionPlan.creatorDirection || userPrompt) || "a distinctive new musical world";
+    const role = anchorRoleClause(instrumentId, fusionPlan.anchorRole);
+    const vocalRelationship = vocalRelationshipClause(instrumentId, fusionPlan.vocalRelationship);
+    return `${tag} ${direction} — ${role} over a clear, propulsive harmonic and rhythmic foundation. ${vocalRelationship}, ${fusionPlan.tempo} BPM.`;
+  }
   const vocalSpacingDirective = "Backing accompaniment arrangement leaving a clear midrange vocal lane for a lead singer, no competing melodic top-line hook.";
   const combined = `${tag} ${userPrompt} — ${vocalSpacingDirective}`;
   return combined;
