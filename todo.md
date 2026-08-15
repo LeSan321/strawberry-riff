@@ -1432,3 +1432,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Build the first visual Session Room iteration: invitation-led shell, creative sequence navigation, stage framing, Match Family placeholders, and progressive empty states.
 - [x] Connect Acoustic Palette choices to Session-aware fusion-bed creation and preserve the in-progress creative thread across Session stages.
 - [x] Assign visible Match Family identifiers to new fusion beds and carry their Shared Shape context into Voice & Words and Blend.
+- [x] Build a responsive Match Family Shelf that groups tagged fusion beds and vocal takes, supports previewing, and hands users into Voice & Words or Blend.

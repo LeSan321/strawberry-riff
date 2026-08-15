@@ -33,6 +33,14 @@ describe("Session Room invitation-led framing", () => {
     expect(sessionSource).toContain("Explore a voice");
   });
 
+  it("makes Shared Shape a responsive Match Family shelf", () => {
+    expect(sessionSource).toContain("MatchFamilyShelf");
+    expect(sessionSource).toContain("Browse Match Families");
+    expect(sessionSource).toContain("Return to the relationships you have already begun.");
+    expect(sessionSource).toContain("Use this bed");
+    expect(sessionSource).toContain("Open Blend");
+  });
+
   it("uses Session-aware art direction rather than generic prompt-only generation", () => {
     expect(sessionSource).toContain("sessionMode");
     expect(generateSource).toContain("getSessionFusionStarters");

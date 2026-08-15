@@ -201,8 +201,8 @@ function ThemePickerModal({
 function SessionSidebar({
   activeTool, onToolChange, theme, onOpenThemePicker, onOpenFusions, onOpenFrequency, onOpenInstrumentPalette,
 }: {
-  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
-  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
+  activeTool: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  onToolChange: (t: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
   theme: SessionTheme;
   onOpenThemePicker: () => void;
   onOpenFusions: () => void;
@@ -211,6 +211,7 @@ function SessionSidebar({
 }) {
   const tools = [
     { id: "generate" as const, label: "Sound World", icon: Music, desc: "Build a fusion landscape" },
+    { id: "family" as const, label: "Shared Shape", icon: Layers, desc: "Browse Match Families" },
     { id: "vocals" as const, label: "Voice & Words", icon: Mic, desc: "Explore vocal color" },
     { id: "mixer" as const, label: "Listen Together", icon: Layers, desc: "Keep a custom fusion" },
     { id: "lyrics" as const, label: "Shape the Words", icon: Pen, desc: "Develop the lyric world" },
@@ -351,14 +352,14 @@ function SessionHeader({ theme }: { theme: SessionTheme }) {
 function SessionJourney({
   activeTool, onToolChange, theme, activeFusionBed,
 }: {
-  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
-  onToolChange: (t: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
+  activeTool: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  onToolChange: (t: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => void;
   theme: SessionTheme;
   activeFusionBed?: { id: number; title: string; audioUrl: string; matchFamilyId: string } | null;
 }) {
   const stages = [
     { tool: "generate" as const, title: "Sound World", detail: "Build a fusion landscape", icon: Piano },
-    { tool: "generate" as const, title: "Shared Shape", detail: activeFusionBed ? `Match Family ${activeFusionBed.matchFamilyId}` : "Match Family appears here", icon: Layers },
+    { tool: "family" as const, title: "Shared Shape", detail: activeFusionBed ? `Match Family ${activeFusionBed.matchFamilyId}` : "Match Family appears here", icon: Layers },
     { tool: "vocals" as const, title: "Voice & Words", detail: "Explore vocal color", icon: Mic },
     { tool: "mixer" as const, title: "Listen Together", detail: "Keep the fusion", icon: Sparkles },
   ];
@@ -376,7 +377,7 @@ function SessionJourney({
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {stages.map((stage, index) => {
             const Icon = stage.icon;
-            const isCurrent = activeTool === stage.tool && !(stage.tool === "generate" && index === 1);
+            const isCurrent = activeTool === stage.tool;
             return (
               <button
                 key={stage.title}
@@ -403,7 +404,7 @@ function SessionJourney({
 function SessionStageCallout({
   activeTool, theme, onOpenInstrumentPalette, activeFusionBed, onExploreVoice,
 }: {
-  activeTool: "generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  activeTool: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
   theme: SessionTheme;
   onOpenInstrumentPalette: () => void;
   activeFusionBed?: { id: number; title: string; audioUrl: string; matchFamilyId: string } | null;
@@ -414,6 +415,11 @@ function SessionStageCallout({
       label: "Begin with a sound world",
       title: "What world should this sound grow up in?",
       body: "Choose an acoustic anchor, then describe the movement, place, rhythm, or collision you want to hear. The room handles the hidden musical conditioning.",
+    },
+    family: {
+      label: "Return to the shared shape",
+      title: "What else belongs in this family?",
+      body: "Browse the fusion beds and vocal takes that were made to meet. Start with the natural relationships, then follow your curiosity from there.",
     },
     vocals: {
       label: "Invite a voice in",
@@ -1476,10 +1482,121 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
   );
 }
 
+// ─── Match Family Shelf ─────────────────────────────────────────────────────────
+function MatchFamilyShelf({
+  theme, onChooseBed, onOpenBlend,
+}: {
+  theme: SessionTheme;
+  onChooseBed: (bed: { id: number; title: string; audioUrl: string; matchFamilyId: string }) => void;
+  onOpenBlend: () => void;
+}) {
+  const { data: myGenerations, isLoading } = trpc.musicGeneration.myGenerations.useQuery();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewRef = useRef<HTMLAudioElement>(null);
+
+  const families = new Map<string, {
+    beds: Array<{ id: number; title: string; audioUrl: string }>;
+    vocals: Array<{ id: number; title: string; audioUrl: string }>;
+  }>();
+
+  (myGenerations ?? []).forEach((generation) => {
+    if (generation.status !== "complete" || !generation.audioUrl) return;
+    const familyId = readMatchFamilyId(generation.metadata);
+    if (!familyId) return;
+    let metadata: Record<string, unknown> = {};
+    try { metadata = generation.metadata ? JSON.parse(generation.metadata) : {}; } catch { return; }
+    const family = families.get(familyId) ?? { beds: [], vocals: [] };
+    if (metadata.isInstrumentalFusion === true || metadata.mode === "bespoke-instrumental") {
+      family.beds.push({ id: generation.id, title: generation.title, audioUrl: generation.audioUrl });
+    } else if (metadata.generationType === "vocal-take") {
+      family.vocals.push({ id: generation.id, title: generation.title, audioUrl: generation.audioUrl });
+    }
+    families.set(familyId, family);
+  });
+
+  const orderedFamilies = Array.from(families.entries()).sort(([a], [b]) =>
+    Number(b.slice(2)) - Number(a.slice(2))
+  );
+  const togglePreview = (url: string) => {
+    if (previewUrl === url) {
+      previewRef.current?.pause();
+      setPreviewUrl(null);
+    } else {
+      previewRef.current?.pause();
+      setPreviewUrl(url);
+      window.setTimeout(() => previewRef.current?.play().catch(() => {}), 40);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-6 space-y-6 max-w-4xl">
+      <div className={`rounded-2xl border ${theme.borderAccent} bg-white/[0.035] p-4 md:p-5`}>
+        <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Shared Shape</p>
+        <h2 className="mt-1 text-xl font-semibold text-white">Return to the relationships you have already begun.</h2>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-400">A Match Family holds fusion beds and vocal takes designed around the same creative thread. Start with the natural pairing, then let your ear decide what else belongs.</p>
+      </div>
+
+      {isLoading ? (
+        <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-8 text-center text-sm text-gray-400`}>Gathering your creative families…</div>
+      ) : orderedFamilies.length === 0 ? (
+        <div className={`rounded-xl border border-dashed ${theme.borderAccent} bg-white/[0.025] p-8 text-center`}>
+          <Layers className={`mx-auto mb-3 h-8 w-8 ${theme.textAccent}`} />
+          <p className="text-sm font-medium text-white">Your first Match Family is waiting to begin.</p>
+          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-gray-400">Keep a new fusion bed in Sound World and the room will create a family label such as F-01. Vocal takes made from that bed will gather here automatically.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orderedFamilies.map(([familyId, family]) => (
+            <section key={familyId} className={`overflow-hidden rounded-2xl border ${theme.borderAccent} bg-white/[0.035]`}>
+              <div className="flex flex-col gap-3 border-b border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${theme.accent}`}><Layers className="h-4 w-4 text-white" /></div>
+                  <div>
+                    <div className="flex items-center gap-2"><h3 className="font-semibold text-white">Match Family {familyId}</h3><Badge className="bg-white/5 text-gray-300 border-white/10 text-[10px]">Shared Shape</Badge></div>
+                    <p className="mt-0.5 text-xs text-gray-400">{family.beds.length} fusion {family.beds.length === 1 ? "bed" : "beds"} · {family.vocals.length} vocal {family.vocals.length === 1 ? "take" : "takes"}</p>
+                  </div>
+                </div>
+                <Button onClick={onOpenBlend} variant="outline" size="sm" className={`border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}><Sparkles className={`mr-1.5 h-3.5 w-3.5 ${theme.textAccent}`} />Open Blend</Button>
+              </div>
+              <div className="grid gap-4 p-4 md:grid-cols-2">
+                <div>
+                  <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.textAccent}`}>Fusion beds</p>
+                  {family.beds.length === 0 ? <p className="text-xs text-gray-500">No tagged fusion bed is available in this family.</p> : (
+                    <div className="space-y-2">{family.beds.map((bed) => (
+                      <div key={bed.id} className={`flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5`}>
+                        <button onClick={() => togglePreview(bed.audioUrl)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 text-gray-200 hover:bg-white/15">{previewUrl === bed.audioUrl ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}</button>
+                        <span className="min-w-0 flex-1 truncate text-sm text-white">{bed.title}</span>
+                        <Button onClick={() => onChooseBed({ ...bed, matchFamilyId: familyId })} size="sm" variant="outline" className={`border ${theme.borderAccent} bg-transparent text-xs text-white hover:bg-white/10`}>Use this bed</Button>
+                      </div>
+                    ))}</div>
+                  )}
+                </div>
+                <div>
+                  <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.textAccent}`}>Vocal takes</p>
+                  {family.vocals.length === 0 ? <p className="text-xs text-gray-500">Create a vocal take from this family’s bed and it will appear here.</p> : (
+                    <div className="space-y-2">{family.vocals.map((vocal) => (
+                      <div key={vocal.id} className={`flex items-center gap-2 rounded-xl border ${theme.borderAccent} bg-white/5 p-2.5`}>
+                        <button onClick={() => togglePreview(vocal.audioUrl)} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 text-gray-200 hover:bg-white/15">{previewUrl === vocal.audioUrl ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}</button>
+                        <span className="min-w-0 flex-1 truncate text-sm text-white">{vocal.title}</span>
+                        <Badge className="bg-white/5 text-gray-300 border-white/10 text-[10px]">Vocal take</Badge>
+                      </div>
+                    ))}</div>
+                  )}
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+      <audio ref={previewRef} src={previewUrl ?? undefined} onEnded={() => setPreviewUrl(null)} />
+    </div>
+  );
+}
+
 // ─── Main Session Page ─────────────────────────────────────────────────────────
 export default function TheSession() {
   const { isAuthenticated } = useAuth();
-  const [activeTool, setActiveTool] = useState<"generate" | "vocals" | "lyrics" | "styles" | "stems" | "mixer">("generate");
+  const [activeTool, setActiveTool] = useState<"generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer">("generate");
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [fusionsOpen, setFusionsOpen] = useState(false);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
@@ -1593,6 +1710,17 @@ export default function TheSession() {
                     setVocalsTrackUrl(bed.audioUrl);
                     setVocalsTrackTitle(bed.title);
                   }}
+                />
+              ) : activeTool === "family" ? (
+                <MatchFamilyShelf
+                  theme={theme}
+                  onChooseBed={(bed) => {
+                    setActiveFusionBed(bed);
+                    setVocalsTrackUrl(bed.audioUrl);
+                    setVocalsTrackTitle(bed.title);
+                    setActiveTool("vocals");
+                  }}
+                  onOpenBlend={() => setActiveTool("mixer")}
                 />
               ) : activeTool === "vocals" ? (
                 <AddVocalsPanel theme={theme}
