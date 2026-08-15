@@ -1484,9 +1484,11 @@ function MixerPanel({ theme }: { theme: SessionTheme }) {
 
 // ─── Match Family Shelf ─────────────────────────────────────────────────────────
 function MatchFamilyShelf({
-  theme, onChooseBed, onOpenBlend,
+  theme, activeMatchFamilyId, onClearFamilyFilter, onChooseBed, onOpenBlend,
 }: {
   theme: SessionTheme;
+  activeMatchFamilyId: string | null;
+  onClearFamilyFilter: () => void;
   onChooseBed: (bed: { id: number; title: string; audioUrl: string; matchFamilyId: string }) => void;
   onOpenBlend: () => void;
 }) {
@@ -1517,6 +1519,9 @@ function MatchFamilyShelf({
   const orderedFamilies = Array.from(families.entries()).sort(([a], [b]) =>
     Number(b.slice(2)) - Number(a.slice(2))
   );
+  const visibleFamilies = activeMatchFamilyId
+    ? orderedFamilies.filter(([familyId]) => familyId === activeMatchFamilyId)
+    : orderedFamilies;
   const togglePreview = (url: string) => {
     if (previewUrl === url) {
       previewRef.current?.pause();
@@ -1534,19 +1539,26 @@ function MatchFamilyShelf({
         <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.textAccent}`}>Shared Shape</p>
         <h2 className="mt-1 text-xl font-semibold text-white">Return to the relationships you have already begun.</h2>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-400">A Match Family holds fusion beds and vocal takes designed around the same creative thread. Start with the natural pairing, then let your ear decide what else belongs.</p>
+        {activeMatchFamilyId && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge className="bg-white/5 text-gray-200 border-white/10 text-[11px]">Showing Match Family {activeMatchFamilyId}</Badge>
+            <Button onClick={onClearFamilyFilter} variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-300 hover:bg-white/10 hover:text-white">Browse all families</Button>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
         <div className={`rounded-xl border ${theme.borderAccent} bg-white/5 p-8 text-center text-sm text-gray-400`}>Gathering your creative families…</div>
-      ) : orderedFamilies.length === 0 ? (
+      ) : visibleFamilies.length === 0 ? (
         <div className={`rounded-xl border border-dashed ${theme.borderAccent} bg-white/[0.025] p-8 text-center`}>
           <Layers className={`mx-auto mb-3 h-8 w-8 ${theme.textAccent}`} />
-          <p className="text-sm font-medium text-white">Your first Match Family is waiting to begin.</p>
-          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-gray-400">Keep a new fusion bed in Sound World and the room will create a family label such as F-01. Vocal takes made from that bed will gather here automatically.</p>
+          <p className="text-sm font-medium text-white">{activeMatchFamilyId ? `Match Family ${activeMatchFamilyId} is still gathering.` : "Your first Match Family is waiting to begin."}</p>
+          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-gray-400">{activeMatchFamilyId ? "Keep the fusion bed and create vocal takes from it. They will gather here automatically as the family grows." : "Keep a new fusion bed in Sound World and the room will create a family label such as F-01. Vocal takes made from that bed will gather here automatically."}</p>
+          {activeMatchFamilyId && <Button onClick={onClearFamilyFilter} variant="outline" size="sm" className={`mt-4 border ${theme.borderAccent} bg-white/5 text-white hover:bg-white/10`}>Browse all families</Button>}
         </div>
       ) : (
         <div className="space-y-4">
-          {orderedFamilies.map(([familyId, family]) => (
+          {visibleFamilies.map(([familyId, family]) => (
             <section key={familyId} className={`overflow-hidden rounded-2xl border ${theme.borderAccent} bg-white/[0.035]`}>
               <div className="flex flex-col gap-3 border-b border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
@@ -1606,6 +1618,7 @@ export default function TheSession() {
     id: string; name: string; family: string; description: string; audioPath: string; tags: string[];
   } | null>(null);
   const [activeFusionBed, setActiveFusionBed] = useState<{ id: number; title: string; audioUrl: string; matchFamilyId: string } | null>(null);
+  const [familyFilter, setFamilyFilter] = useState<string | null>(null);
   // Persisted Add Vocals state — survives tab switches
   const [vocalsTrackUrl, setVocalsTrackUrl] = useState<string | null>(null);
   const [vocalsTrackTitle, setVocalsTrackTitle] = useState<string | null>(null);
@@ -1614,6 +1627,10 @@ export default function TheSession() {
   const [vocalsDialectEnabled, setVocalsDialectEnabled] = useState(false);
 
   const theme = SESSION_THEMES.find((t) => t.id === selectedThemeId) ?? SESSION_THEMES[0];
+  const handleToolChange = (tool: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => {
+    if (tool === "family") setFamilyFilter(activeFusionBed?.matchFamilyId ?? null);
+    setActiveTool(tool);
+  };
 
   useEffect(() => {
     const prev = document.documentElement.style.overflow;
@@ -1675,7 +1692,7 @@ export default function TheSession() {
     <div className={`flex overflow-hidden ${theme.canvasBg}`} style={{ ...darkVars, height: "100dvh" }}>
       <div className="hidden md:flex">
         <SessionSidebar
-          activeTool={activeTool} onToolChange={setActiveTool} theme={theme}
+          activeTool={activeTool} onToolChange={handleToolChange} theme={theme}
           onOpenThemePicker={() => setThemePickerOpen(true)}
           onOpenFusions={() => setFusionsOpen(true)}
           onOpenFrequency={() => setFrequencyOpen(true)}
@@ -1686,7 +1703,7 @@ export default function TheSession() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden min-h-0">
         <SessionHeader theme={theme} />
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 min-h-0">
-          <SessionJourney activeTool={activeTool} onToolChange={setActiveTool} theme={theme} activeFusionBed={activeFusionBed} />
+          <SessionJourney activeTool={activeTool} onToolChange={handleToolChange} theme={theme} activeFusionBed={activeFusionBed} />
           <SessionStageCallout
             activeTool={activeTool}
             theme={theme}
@@ -1714,10 +1731,13 @@ export default function TheSession() {
               ) : activeTool === "family" ? (
                 <MatchFamilyShelf
                   theme={theme}
+                  activeMatchFamilyId={familyFilter}
+                  onClearFamilyFilter={() => setFamilyFilter(null)}
                   onChooseBed={(bed) => {
                     setActiveFusionBed(bed);
                     setVocalsTrackUrl(bed.audioUrl);
                     setVocalsTrackTitle(bed.title);
+                    setFamilyFilter(bed.matchFamilyId);
                     setActiveTool("vocals");
                   }}
                   onOpenBlend={() => setActiveTool("mixer")}

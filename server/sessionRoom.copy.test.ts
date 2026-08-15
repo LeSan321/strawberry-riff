@@ -41,6 +41,13 @@ describe("Session Room invitation-led framing", () => {
     expect(sessionSource).toContain("Open Blend");
   });
 
+  it("opens the active Match Family from Shared Shape while keeping all-family exploration available", () => {
+    expect(sessionSource).toContain("setFamilyFilter(activeFusionBed?.matchFamilyId ?? null)");
+    expect(sessionSource).toContain("activeMatchFamilyId");
+    expect(sessionSource).toContain("Showing Match Family");
+    expect(sessionSource).toContain("Browse all families");
+  });
+
   it("uses Session-aware art direction rather than generic prompt-only generation", () => {
     expect(sessionSource).toContain("sessionMode");
     expect(generateSource).toContain("getSessionFusionStarters");
