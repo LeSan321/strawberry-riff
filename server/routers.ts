@@ -1426,6 +1426,8 @@ const musicGenerationRouter = router({
         instrumentAudioPath: z.string().min(1),  // Tigris S3 URL for the instrument sample
         instrumentName: z.string().min(1).max(100),  // display name for the instrument
         instrumentId: z.string().optional(),  // catalog ID for bible acoustic description
+        generationModel: z.enum(["music-2.6", "music-3.0"]).optional().default("music-2.6"),
+        skipPaletteReference: z.boolean().optional().default(false),
         fusionPlan: z.object({
           version: z.literal(1),
           anchorRole: z.enum(FUSION_ANCHOR_ROLES),
@@ -1453,12 +1455,12 @@ const musicGenerationRouter = router({
       const existingGenerations = await getMusicGenerationsByUserId(ctx.user.id);
       const matchFamilyId = getNextMatchFamilyId(existingGenerations);
 
-      console.log(`[Bespoke] Starting MiniMax generation — instrument=${input.instrumentName}`);
+      console.log(`[Bespoke] Starting ${input.generationModel} generation — instrument=${input.instrumentName}, textLed=${input.skipPaletteReference}`);
       console.log(`[Bespoke] Prompt: "${conditionedPrompt.slice(0, 120)}"`);
-      console.log(`[Bespoke] instrumental_file: ${input.instrumentAudioPath.slice(0, 80)}...`);
+      if (!input.skipPaletteReference) console.log(`[Bespoke] instrumental_file: ${input.instrumentAudioPath.slice(0, 80)}...`);
 
       // Resolve the instrument sample URL (Tigris S3 is private — MiniMax needs a public URL)
-      const resolvedInstrumentUrl = await resolveAudioUrl(input.instrumentAudioPath);
+      const resolvedInstrumentUrl = input.skipPaletteReference ? null : await resolveAudioUrl(input.instrumentAudioPath);
 
       // Create generation record immediately (status: generating)
       const generationId = await createMusicGeneration({
@@ -1473,13 +1475,15 @@ const musicGenerationRouter = router({
         metadata: JSON.stringify({
           mode: "bespoke-instrumental",
           isInstrumentalFusion: true,
-          provider: "minimax-2.6",
+          provider: input.generationModel,
           instrumentName: input.instrumentName,
           instrumentId: input.instrumentId,
           instrumentAudioPath: input.instrumentAudioPath,
           conditionedPrompt,
           fusionPlan: input.fusionPlan,
           matchFamilyId,
+          generationModel: input.generationModel,
+          textLedCalibration: input.skipPaletteReference,
         }),
         aceStepTaskId: null,
         errorMessage: null,
@@ -1496,11 +1500,12 @@ const musicGenerationRouter = router({
       }
 
       try {
-        // Start MiniMax generation with instrument sample as instrumental_file reference
+        // Calibration can omit the palette sample so model comparison tests the compiled text plan alone.
         const bespokeStart = await startMusicGeneration({
           prompt: conditionedPrompt,
           lyrics: "",
-          instrumentalReferenceUrl: resolvedInstrumentUrl,
+          model: input.generationModel,
+          instrumentalReferenceUrl: resolvedInstrumentUrl ?? undefined,
           isInstrumental: true,
         });
 
@@ -1534,12 +1539,14 @@ const musicGenerationRouter = router({
           metadata: JSON.stringify({
             mode: "bespoke-instrumental",
             isInstrumentalFusion: true,
-            provider: "minimax-2.6",
+            provider: input.generationModel,
             instrumentName: input.instrumentName,
             instrumentId: input.instrumentId,
             conditionedPrompt,
             fusionPlan: input.fusionPlan,
             matchFamilyId,
+            generationModel: input.generationModel,
+            textLedCalibration: input.skipPaletteReference,
           }),
           ...(visualBriefJson ? { visualBrief: visualBriefJson } : {}),
         });

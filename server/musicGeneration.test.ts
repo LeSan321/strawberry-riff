@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { appRouter } from "./routers";
 import { TRPCError } from "@trpc/server";
 import * as dbModule from "./db";
+import * as musicGenerationModule from "./musicGeneration";
 
 // Mock the music generation module (MiniMax Music 2.6 direct API)
 // New API format: startMusicGeneration returns SYNC:<audioUrl> for synchronous completions
@@ -303,6 +304,38 @@ describe("Music Generation Router", () => {
 
       expect(result).toBeDefined();
       expect(result.status).toBe("complete");
+    });
+
+    it("should route a text-led calibration to Music 3.0 without the palette sample", async () => {
+      const result = await caller.musicGeneration.generateBespoke({
+        title: "Music 3.0 Bagpipe Calibration",
+        prompt: "festive cyber rockabilly rhythm section with samba hand percussion",
+        instrumentAudioPath: "/manus-storage/bagpipe_sample.mp3",
+        instrumentName: "Great Highland Bagpipe",
+        instrumentId: "bagpipes",
+        generationModel: "music-3.0",
+        skipPaletteReference: true,
+        fusionPlan: {
+          version: 1,
+          anchorRole: "carry-hook",
+          vocalRelationship: "open-verses",
+          tempo: 160,
+          creatorDirection: "festive cyber rockabilly rhythm section with samba hand percussion",
+        },
+      });
+
+      expect(result.status).toBe("complete");
+      expect(vi.mocked(musicGenerationModule.startMusicGeneration)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: "music-3.0",
+          isInstrumental: true,
+          instrumentalReferenceUrl: undefined,
+        }),
+      );
+
+      const createdGeneration = vi.mocked(dbModule.createMusicGeneration).mock.calls.at(-1)?.[0];
+      expect(createdGeneration?.metadata).toContain('"generationModel":"music-3.0"');
+      expect(createdGeneration?.metadata).toContain('"textLedCalibration":true');
     });
 
     it("should reject when monthly limit is reached", async () => {

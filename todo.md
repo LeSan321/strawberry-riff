@@ -1437,8 +1437,10 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Add hover-initiated audio preview and a subtle Clear Filter interaction to the filtered Match Family Shelf.
 - [ ] Audit every visible Session Room control against its real user-facing action, clarify empty or unavailable states, and deliver future work as connected testable milestones.
 - [x] Deliver the Create and Revisit a First Family milestone: empty shelf to fusion-bed creation, visible Match Family, Voice & Words handoff, and vocal-take shelf refresh.
-- [ ] Investigate the latest short non-bagpipe bespoke fusion by reviewing the exact transmitted MiniMax prompt, mode, duration, and returned metadata before changing prompt assembly.
+- [x] Investigate the latest short non-bagpipe bespoke fusion by reviewing the exact transmitted MiniMax prompt, mode, duration, and returned metadata before changing prompt assembly.
 - [ ] Calibrate bespoke fusion-bed prompts by restoring structural anchor repetition, applying role-aware vocal space, and defining an explicit target-duration policy before validating further Sessions matching.
-- [ ] Audit and redesign the Instrument Palette-to-MiniMax prompt pipeline, including an evaluation of Riffy as a creator-facing translation and prompt-approval layer.
-- [ ] Define the balance between deterministic fusion-plan safeguards and creative flexibility, and design Riffy’s Session Room presence as an embodied music collaboration partner.
+- [x] Audit and redesign the Instrument Palette-to-MiniMax prompt pipeline, including an evaluation of Riffy as a creator-facing translation and prompt-approval layer.
+- [x] Define the balance between deterministic fusion-plan safeguards and creative flexibility, and design Riffy’s Session Room presence as an embodied music collaboration partner.
 - [x] Build a non-conversational Fusion Plan card with role choices and a deterministic Double-Reinforcement prompt compiler for bespoke fusion beds.
+- [x] Evaluate MiniMax M3’s current API availability and music-generation capabilities, then define a safe routing and controlled test strategy against Music 2.6.
+- [x] Build a controlled text-led Music 3.0 versus Music 2.6 calibration route that preserves Music 2.6 production routing and does not rely on palette-sample reference fields.

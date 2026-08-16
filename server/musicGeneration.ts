@@ -1,5 +1,5 @@
 /**
- * MiniMax Music 2.6 — Music Generation via MiniMax Direct API
+ * MiniMax Music Generation — Music 2.6 production path with controlled Music 3.0 calibration support
  *
  * Migrated from Replicate to MiniMax direct for:
  * - Access to Music 2.6 (latest model, Cover Reborn. Bass Redefined.)
@@ -30,6 +30,8 @@ export type MusicGenerationStart =
 export interface MusicGenerationOptions {
   prompt: string;
   lyrics: string;
+  /** Model is internal-only for now. Production defaults to Music 2.6. */
+  model?: "music-2.6" | "music-3.0";
   /** Optional: URL to a reference song (.wav or .mp3, >15s). MiniMax matches the style/vibe. */
   referenceAudioUrl?: string;
   /** Optional: URL to a voice reference (.wav or .mp3, >15s). MiniMax clones the vocal style. */
@@ -80,6 +82,7 @@ export async function startMusicGeneration(
   let voiceReferenceUrl: string | undefined;
   let instrumentalReferenceUrl: string | undefined;
   let isInstrumental = false;
+  let model: "music-2.6" | "music-3.0" = "music-2.6";
 
   if (typeof promptOrOptions === "string") {
     prompt = promptOrOptions;
@@ -91,16 +94,17 @@ export async function startMusicGeneration(
     voiceReferenceUrl = promptOrOptions.voiceReferenceUrl;
     instrumentalReferenceUrl = promptOrOptions.instrumentalReferenceUrl;
     isInstrumental = promptOrOptions.isInstrumental ?? false;
+    model = promptOrOptions.model ?? "music-2.6";
   }
 
-  console.log(`[MiniMax 2.6] Starting generation: ${prompt.substring(0, 60)}...`);
+  console.log(`[MiniMax ${model}] Starting generation: ${prompt.substring(0, 60)}...`);
   if (referenceAudioUrl) console.log(`[MiniMax 2.6] ✓ Using style reference: ${referenceAudioUrl.substring(0, 80)}...`);
   if (voiceReferenceUrl) console.log(`[MiniMax 2.6] ✓ Using voice reference: ${voiceReferenceUrl.substring(0, 80)}...`);
   if (!referenceAudioUrl && !voiceReferenceUrl) console.log(`[MiniMax 2.6] ⚠ No reference audio provided (text-only generation)`);
 
   // Build request body — omit lyrics entirely for instrumental mode
   const body: Record<string, unknown> = {
-    model: "music-2.6",
+    model,
     prompt,
     ...(isInstrumental ? { is_instrumental: true } : { lyrics }),
     audio_setting: {

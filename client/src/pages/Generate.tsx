@@ -1237,6 +1237,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
   const [fusionAnchorRole, setFusionAnchorRole] = useState<FusionAnchorRole>("carry-hook");
   const [fusionVocalRelationship, setFusionVocalRelationship] = useState<FusionVocalRelationship>("open-verses");
   const [fusionTempo, setFusionTempo] = useState(120);
+  const [fusionGenerationModel, setFusionGenerationModel] = useState<"music-2.6" | "music-3.0">("music-2.6");
+  const [textLedCalibration, setTextLedCalibration] = useState(false);
   const isFusionPlanActive = sessionMode && generationMode === "bespoke" && !!instrumentId;
 
   const utils = trpc.useUtils();
@@ -1517,6 +1519,8 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
           instrumentName: referenceAudioName ?? "Instrument",
           instrumentId: instrumentId ?? undefined,
           fusionPlan,
+          generationModel: fusionGenerationModel,
+          skipPaletteReference: textLedCalibration,
         });
         await utils.musicGeneration.myGenerations.invalidate();
         await utils.musicGeneration.monthlyUsage.invalidate();
@@ -1876,6 +1880,41 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                   <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2.5 text-xs leading-relaxed text-gray-300">
                     <span className="font-semibold text-fuchsia-200">Your plan:</span>{" "}
                     {referenceAudioName} will <span className="text-white">{FUSION_ROLE_COPY[fusionAnchorRole].label.toLowerCase()}</span> in a {fusionTempo} BPM world, with <span className="text-white">{FUSION_VOCAL_RELATIONSHIP_COPY[fusionVocalRelationship].label.toLowerCase()}</span>.
+                  </div>
+
+                  <div className="rounded-lg border border-amber-300/15 bg-amber-400/5 px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200">Calibration listening test</p>
+                        <p className="mt-1 text-[11px] text-gray-400">Compare the same written plan across Music 2.6 and Music 3.0. Music 2.6 remains the normal production path.</p>
+                      </div>
+                      <div className="flex rounded-lg border border-white/10 bg-black/25 p-0.5">
+                        {(["music-2.6", "music-3.0"] as const).map((model) => (
+                          <button
+                            key={model}
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => {
+                              setFusionGenerationModel(model);
+                              if (model === "music-3.0") setTextLedCalibration(true);
+                            }}
+                            className={`rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${fusionGenerationModel === model ? "bg-amber-300/20 text-amber-100" : "text-gray-400 hover:text-white"}`}
+                          >
+                            {model === "music-2.6" ? "2.6 baseline" : "3.0 challenger"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={textLedCalibration}
+                        onChange={(e) => setTextLedCalibration(e.target.checked)}
+                        disabled={isGenerating}
+                        className="mt-0.5 accent-amber-300"
+                      />
+                      <span><strong className="font-semibold text-amber-100">Text-led test:</strong> do not send the palette audio sample. This isolates how well the model follows the same compiled description and plan.</span>
+                    </label>
                   </div>
                 </div>
               )}
