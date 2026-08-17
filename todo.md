@@ -1446,3 +1446,4 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Build a controlled text-led Music 3.0 versus Music 2.6 calibration route that preserves Music 2.6 production routing and does not rely on palette-sample reference fields.
 - [ ] Audit and refine the Fusion Plan prompt-injection boundary using successful Music 3.0 full-prompt tests, ensuring creator direction and structural anchors reinforce rather than dilute one another.
 - [ ] Design Riffy as a meaning-preserving Fusion Plan translation partner that condenses vague or verbose creator intent into the precise prompt structure with explicit creator approval.
+- [ ] Develop the Frequency-inspired Fusion Listening Framework to guide Riffy and creators from intuitive musical possibility to an approved fusion plan.
