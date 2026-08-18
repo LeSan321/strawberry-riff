@@ -27,6 +27,12 @@ export type RepeatMode = "off" | "one" | "all";
 // When enabled, playback is held until CAR_MODE_BUFFER_SECONDS of audio is buffered.
 const CAR_MODE_BUFFER_SECONDS = 30;
 const CAR_MODE_STORAGE_KEY = "sr_car_mode";
+const STALL_RECOVERY_DELAY_MS = 8_000;
+const MAX_STALL_RECOVERY_ATTEMPTS = 1;
+
+export function canAttemptStallRecovery(isPlaying: boolean, attempts: number): boolean {
+  return isPlaying && attempts < MAX_STALL_RECOVERY_ATTEMPTS;
+}
 
 interface AudioPlayerState {
   currentTrack: PlayerTrack | null;
@@ -137,7 +143,49 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
     audio.onwaiting = null;
     audio.onplaying = null;
     audio.onstalled = null;
+    audio.oncanplay = null;
     audio.onerror = null;
+
+    let stallRecoveryTimer: ReturnType<typeof setTimeout> | null = null;
+    let stallRecoveryAttempts = 0;
+
+    const clearStallRecovery = () => {
+      if (stallRecoveryTimer) {
+        clearTimeout(stallRecoveryTimer);
+        stallRecoveryTimer = null;
+      }
+    };
+
+    const scheduleStallRecovery = () => {
+      const source = audio.currentSrc || audio.src;
+      if (!source || stallRecoveryTimer || !canAttemptStallRecovery(stateRef.current.isPlaying, stallRecoveryAttempts)) return;
+
+      stallRecoveryTimer = setTimeout(() => {
+        stallRecoveryTimer = null;
+        // A queue change, pause, or successful resume makes this old recovery irrelevant.
+        if (audio.currentSrc !== source || !stateRef.current.isPlaying) return;
+
+        stallRecoveryAttempts += 1;
+        const resumeAt = audio.currentTime;
+        console.warn("[AudioPlayer] Sustained stall — reloading current source once", { resumeAt, source });
+
+        const resumeAfterReload = () => {
+          audio.removeEventListener("loadedmetadata", resumeAfterReload);
+          if (Number.isFinite(resumeAt) && resumeAt > 0 && audio.duration > resumeAt) {
+            audio.currentTime = resumeAt;
+          }
+          audio.play().catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("[AudioPlayer] stalled-track recovery play failed:", err);
+            }
+          });
+        };
+
+        audio.addEventListener("loadedmetadata", resumeAfterReload, { once: true });
+        audio.src = source;
+        audio.load();
+      }, STALL_RECOVERY_DELAY_MS);
+    };
 
     audio.ontimeupdate = () => {
       const { currentTime, duration } = audio;
@@ -173,18 +221,29 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
       // flip isBuffering to true until we've confirmed we're past the pre-buffer gate.
       if (!carModeBufferingRef.current) {
         setState((s) => ({ ...s, isBuffering: true }));
+        scheduleStallRecovery();
       }
     };
     audio.onstalled = () => {
       if (!carModeBufferingRef.current) {
         setState((s) => ({ ...s, isBuffering: true }));
+        scheduleStallRecovery();
+      }
+    };
+    audio.oncanplay = () => {
+      clearStallRecovery();
+      if (!carModeBufferingRef.current) {
+        setState((s) => ({ ...s, isBuffering: false }));
       }
     };
     audio.onplaying = () => {
+      clearStallRecovery();
+      stallRecoveryAttempts = 0;
       carModeBufferingRef.current = false;
       setState((s) => ({ ...s, isBuffering: false, isPlaying: true }));
     };
     audio.onerror = (e) => {
+      clearStallRecovery();
       const { queue, queueIndex } = stateRef.current;
       console.warn("[AudioPlayer] Load error — attempting to skip to next track", e);
 
@@ -269,10 +328,11 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const loadAndPlay = useCallback((track: PlayerTrack) => {
     const audio = getOrCreateAudio();
     audio.pause();
+    // Attach before src/load so fast network errors and waiting events are not missed.
+    attachEventHandlers(audio);
     audio.src = getProxyAudioUrl(track);
     audio.volume = stateRef.current.volume;
     audio.load();
-    attachEventHandlers(audio);
 
     const { carMode } = stateRef.current;
 
