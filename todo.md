@@ -1447,4 +1447,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [ ] Audit and refine the Fusion Plan prompt-injection boundary using successful Music 3.0 full-prompt tests, ensuring creator direction and structural anchors reinforce rather than dilute one another.
 - [ ] Design Riffy as a meaning-preserving Fusion Plan translation partner that condenses vague or verbose creator intent into the precise prompt structure with explicit creator approval.
 - [ ] Develop the Frequency-inspired Fusion Listening Framework to guide Riffy and creators from intuitive musical possibility to an approved fusion plan.
+- [x] Assess sampled Vocal Accent and Region Bible drafts for salvageable technical knowledge, redundancy, and fit with the structured mining schema before processing the full set.
 - [x] Diagnose and fix intermittent auto-player stalls, stuttering, and stopped playback across queue transitions and media delivery.
