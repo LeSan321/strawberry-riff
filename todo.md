@@ -1450,4 +1450,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Assess sampled Vocal Accent and Region Bible drafts for salvageable technical knowledge, redundancy, and fit with the structured mining schema before processing the full set.
 - [x] Assess the tested Vocal Identity Bible Pilot Pack for production readiness, evidence quality, runtime compatibility, and its role as the new Accent and Region Bible foundation.
 - [x] Assess the twelve-document Vocal Identity Bible system for coherence, hierarchy, redundancies, gaps, and safe runtime integration sequencing.
+- [x] Outline how the Fusion Listening Framework and Vocal Identity Bible work together to translate wider sound-world intent into an approved vocal plan.
 - [x] Diagnose and fix intermittent auto-player stalls, stuttering, and stopped playback across queue transitions and media delivery.
