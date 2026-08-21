@@ -1452,4 +1452,6 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Assess the twelve-document Vocal Identity Bible system for coherence, hierarchy, redundancies, gaps, and safe runtime integration sequencing.
 - [x] Outline how the Fusion Listening Framework and Vocal Identity Bible work together to translate wider sound-world intent into an approved vocal plan.
 - [x] Audit Riffy’s live access to the Vocal and Fusion Bible materials, then define a creator-first story-to-sound collaboration flow and implementation plan.
+- [x] Assess the new Fusion Listening Framework for conceptual strength, practical Riffy integration, gaps, and real-story testing readiness.
+- [x] Analyze the submitted garden and national battle-anthem prompt tests for listening-framework behavior, compiler gaps, safety boundaries, and next validation actions.
 - [x] Diagnose and fix intermittent auto-player stalls, stuttering, and stopped playback across queue transitions and media delivery.
