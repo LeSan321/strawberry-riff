@@ -53,6 +53,9 @@ import FusionRecipesDrawer from "@/components/FusionRecipesDrawer";
 import InstrumentPaletteDrawer from "@/components/InstrumentPaletteDrawer";
 import { FrequencyModal } from "@/components/FrequencyModal";
 
+const RIFF_SESSION_CONTEXT_EVENT = "riff-session-context";
+type RiffSessionWindow = Window & { __riffSessionContext?: Record<string, unknown> };
+
 function readMatchFamilyId(metadata?: string | null): string | null {
   if (!metadata) return null;
   try {
@@ -1662,6 +1665,37 @@ export default function TheSession() {
   const [vocalsDialectEnabled, setVocalsDialectEnabled] = useState(false);
 
   const theme = SESSION_THEMES.find((t) => t.id === selectedThemeId) ?? SESSION_THEMES[0];
+
+  useEffect(() => {
+    const sessionContext = {
+      stage: activeTool,
+      selectedInstrumentName: selectedInstrument?.name,
+      selectedInstrumentFamily: selectedInstrument?.family,
+      activeFusionBedTitle: activeFusionBed?.title,
+      matchFamilyId: activeFusionBed?.matchFamilyId,
+      vocalsTrackTitle: vocalsTrackTitle ?? undefined,
+      hasLyrics: Boolean(vocalsLyrics.trim()),
+      accentProfileId: vocalsAccentId ?? undefined,
+      dialectSupportEnabled: vocalsDialectEnabled || undefined,
+    };
+    (window as RiffSessionWindow).__riffSessionContext = sessionContext;
+    window.dispatchEvent(new CustomEvent(RIFF_SESSION_CONTEXT_EVENT, { detail: sessionContext }));
+    return () => {
+      const sessionWindow = window as RiffSessionWindow;
+      if (sessionWindow.__riffSessionContext === sessionContext) {
+        delete sessionWindow.__riffSessionContext;
+        window.dispatchEvent(new CustomEvent(RIFF_SESSION_CONTEXT_EVENT, { detail: undefined }));
+      }
+    };
+  }, [
+    activeTool,
+    selectedInstrument,
+    activeFusionBed,
+    vocalsTrackTitle,
+    vocalsLyrics,
+    vocalsAccentId,
+    vocalsDialectEnabled,
+  ]);
   const handleToolChange = (tool: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer") => {
     if (tool === "family") setFamilyFilter(activeFusionBed?.matchFamilyId ?? null);
     setActiveTool(tool);

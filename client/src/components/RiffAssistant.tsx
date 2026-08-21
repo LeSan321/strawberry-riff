@@ -21,8 +21,21 @@ interface Message {
   content: string;
 }
 
+export interface RiffSessionContext {
+  stage?: "generate" | "family" | "vocals" | "lyrics" | "styles" | "stems" | "mixer";
+  selectedInstrumentName?: string;
+  selectedInstrumentFamily?: string;
+  activeFusionBedTitle?: string;
+  matchFamilyId?: string;
+  vocalsTrackTitle?: string;
+  hasLyrics?: boolean;
+  accentProfileId?: string;
+  dialectSupportEnabled?: boolean;
+}
+
 interface RiffAssistantProps {
   pageContext?: string;
+  sessionContext?: RiffSessionContext;
 }
 
 type PanelSize = "compact" | "expanded" | "full";
@@ -112,16 +125,26 @@ const PANEL_WIDTH: Record<PanelSize, string> = {
   full: "w-[520px]",
 };
 
-const WELCOME_MESSAGE: Message = {
-  role: "assistant",
-  content:
-    "Hey — I'm the Riff. I'm here for your music: lyrics, generation prompts, platform questions, whatever you're working on. What's on your mind?",
-};
+function getWelcomeMessage(pageContext: string): Message {
+  if (pageContext === "session") {
+    return {
+      role: "assistant",
+      content:
+        "I’m here to listen for the song beneath the idea. You can start with a memory, a feeling, a lyric, an instrument, a reference, or a fully formed direction. What are you trying to hear?",
+    };
+  }
 
-export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
+  return {
+    role: "assistant",
+    content:
+      "Hey — I'm the Riff. I'm here for your music: lyrics, generation prompts, platform questions, whatever you're working on. What's on your mind?",
+  };
+}
+
+export function RiffAssistant({ pageContext = "general", sessionContext }: RiffAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [panelSize, setPanelSize] = useState<PanelSize>("compact");
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(() => [getWelcomeMessage(pageContext)]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -140,6 +163,12 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen && messages.length === 1) {
+      setMessages([getWelcomeMessage(pageContext)]);
+    }
+  }, [isOpen, messages.length, pageContext]);
 
   const cycleSize = () => {
     setPanelSize((s) => SIZE_CYCLE[s]);
@@ -160,6 +189,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
       const result = await chatMutation.mutateAsync({
         messages: updatedMessages.slice(-50), // keep last 50 turns
         pageContext,
+        sessionContext: pageContext === "session" ? sessionContext : undefined,
       });
 
       setMessages((prev) => [
@@ -180,7 +210,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
     } finally {
       setIsThinking(false);
     }
-  }, [input, isThinking, messages, pageContext, chatMutation]);
+  }, [input, isThinking, messages, pageContext, sessionContext, chatMutation]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -190,7 +220,7 @@ export function RiffAssistant({ pageContext = "general" }: RiffAssistantProps) {
   };
 
   const clearConversation = () => {
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([getWelcomeMessage(pageContext)]);
   };
 
   return (

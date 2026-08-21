@@ -83,6 +83,23 @@ describe("System prompt builder", () => {
       expect(prompt).toContain(PAGE_CONTEXTS[key].posture);
     }
   });
+
+  it("loads Session Listening and Vocal Identity guidance only in the Session Room", () => {
+    const sessionPrompt = buildAssistantSystemPrompt("session", {
+      stage: "vocals",
+      selectedInstrumentName: "Great Highland Bagpipe",
+      activeFusionBedTitle: "Highland Shuffle",
+      matchFamilyId: "F-01",
+      hasLyrics: true,
+    });
+    const generalPrompt = buildAssistantSystemPrompt("general");
+
+    expect(PAGE_CONTEXTS.session.posture).toBe("Session Listener");
+    expect(sessionPrompt).toContain("Evidence-Bounded Reflection");
+    expect(sessionPrompt).toContain("primary carrier of regional or stylistic identity");
+    expect(sessionPrompt).toContain("Active Match Family: F-01");
+    expect(generalPrompt).not.toContain("Evidence-Bounded Reflection");
+  });
 });
 
 // ─── Diagnostic Question 1: Does it serve transcendence? ─────────────────────

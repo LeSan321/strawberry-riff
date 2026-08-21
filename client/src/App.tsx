@@ -33,6 +33,11 @@ import AdminMigrateSamples from "./pages/AdminMigrateSamples";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import type { RiffSessionContext } from "./components/RiffAssistant";
+
+const RIFF_SESSION_CONTEXT_EVENT = "riff-session-context";
+type RiffSessionWindow = Window & { __riffSessionContext?: RiffSessionContext };
 
 // Map URL path to page context key for the Riff Assistant
 function getPageContext(path: string): string {
@@ -59,9 +64,27 @@ function getPageContext(path: string): string {
 // Assistant wrapper that reads current route
 function AssistantPortal() {
   const [location] = useLocation();
+  const [sessionContext, setSessionContext] = useState<RiffSessionContext | undefined>(
+    () => (window as RiffSessionWindow).__riffSessionContext
+  );
+
+  useEffect(() => {
+    const onSessionContext = (event: Event) => {
+      const detail = (event as CustomEvent<RiffSessionContext | undefined>).detail;
+      setSessionContext(detail);
+    };
+    window.addEventListener(RIFF_SESSION_CONTEXT_EVENT, onSessionContext);
+    setSessionContext((window as RiffSessionWindow).__riffSessionContext);
+    return () => window.removeEventListener(RIFF_SESSION_CONTEXT_EVENT, onSessionContext);
+  }, []);
+
+  useEffect(() => {
+    if (!location.startsWith("/session")) setSessionContext(undefined);
+  }, [location]);
+
   // Don't show on preview/shared pages (public-facing, no auth context)
   if (location.startsWith("/preview/") || location.startsWith("/shared/")) return null;
-  return <RiffAssistant pageContext={getPageContext(location)} />;
+  return <RiffAssistant pageContext={getPageContext(location)} sessionContext={sessionContext} />;
 }
 
 function Router() {

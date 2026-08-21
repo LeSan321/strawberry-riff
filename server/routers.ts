@@ -1866,13 +1866,24 @@ const assistantRouter = router({
           })
         ).min(1).max(50),
         pageContext: z.string().default("general"),
+        sessionContext: z.object({
+          stage: z.enum(["generate", "family", "vocals", "lyrics", "styles", "stems", "mixer"]).optional(),
+          selectedInstrumentName: z.string().max(120).optional(),
+          selectedInstrumentFamily: z.string().max(80).optional(),
+          activeFusionBedTitle: z.string().max(200).optional(),
+          matchFamilyId: z.string().regex(/^F-\d+$/).optional(),
+          vocalsTrackTitle: z.string().max(200).optional(),
+          hasLyrics: z.boolean().optional(),
+          accentProfileId: z.string().max(80).optional(),
+          dialectSupportEnabled: z.boolean().optional(),
+        }).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { messages, pageContext } = input;
+      const { messages, pageContext, sessionContext } = input;
       const userId = ctx.user?.id;
       try {
-        const result = await assistantChat({ messages, pageContext, userId });
+        const result = await assistantChat({ messages, pageContext, sessionContext, userId });
         return { reply: result.reply, ok: true };
       } catch (err: unknown) {
         const status = (err as { status?: number })?.status;
