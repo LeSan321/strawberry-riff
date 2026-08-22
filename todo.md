@@ -1455,4 +1455,5 @@ Manus-managed services so the site can run entirely independently long-term.
 - [x] Assess the new Fusion Listening Framework for conceptual strength, practical Riffy integration, gaps, and real-story testing readiness.
 - [x] Analyze the submitted garden and national battle-anthem prompt tests for listening-framework behavior, compiler gaps, safety boundaries, and next validation actions.
 - [ ] Connect Riffy to a compact Fusion Listening and Vocal Identity knowledge set with Session-aware context, then test the garden and anthem workflows.
+- [x] Raise the visible MiniMax Art Direction prompt field from 1,000 to 2,000 characters and preserve clear prompt-budget guidance.
 - [x] Diagnose and fix intermittent auto-player stalls, stuttering, and stopped playback across queue transitions and media delivery.

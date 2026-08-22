@@ -1788,15 +1788,15 @@ export function GeneratePage({ selectedInstrument, onClearInstrument, sessionMod
                     if (detectedTempo) setFusionTempo(detectedTempo);
                   }}
                   disabled={isGenerating}
-                  maxLength={1000}
+                  maxLength={2000}
                   rows={4}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {referenceAudioUrl
                     ? sessionMode
-                      ? `${prompt.length}/1000 — describe the new world, movement, and rhythm. The Fusion Plan protects the instrument's role.`
-                      : `${prompt.length}/1000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
-                    : `${prompt.length}/1000 characters — describe genre, instruments, mood, and tempo`
+                      ? `${prompt.length}/2000 — describe the new world, movement, and rhythm. The Fusion Plan protects the instrument's role.`
+                      : `${prompt.length}/2000 — the DNA track provides the sonic character; this steers mood, energy, and structure`
+                    : `${prompt.length}/2000 characters — describe genre, instruments, mood, and tempo`
                   }
                 </p>
               </div>
